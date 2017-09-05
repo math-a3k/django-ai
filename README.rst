@@ -20,7 +20,8 @@ Django project so you can implement machine learning conveniently.
 It integrates several libraries and engines providing your Django app with a set of 
 tools so you can leverage the data generated in your project. 
 
-.. image:: ../django_ai.jpg
+.. image:: /django_ai.jpg
+    :target: https://django-ai.readthedocs.io/en/latest/overview.html
 
 Documentation
 -------------
@@ -65,7 +66,7 @@ Or you can clone it from the repository and install the requirements in a virtua
 and do the same steps, installing the requirements in a virtual
 environment from ``requirements.txt``
 
-For installing it in your project, please refer :ref:`here <installation>`.
+For installing it in your project, please refer `here <https://django-ai.readthedocs.io/en/latest/installation.html>`_.
 
 
 Features
@@ -73,7 +74,7 @@ Features
 
 * Bayesian Networks: Integrate Bayesian Networks through your models using the BayesPy framework.
 
-See the :ref:`overview` section in the documentation for more inforation.
+See the `Overview <https://django-ai.readthedocs.io/en/latest/overview.html>`_ section in the documentation for more inforation.
 
 Running Tests
 -------------
