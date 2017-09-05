@@ -1,0 +1,8 @@
+include AUTHORS.rst
+include CONTRIBUTING.rst
+include HISTORY.rst
+include LICENSE
+include README.rst
+recursive-include django_ai *.html *.png *.gif *js *.css *jpg *jpeg *svg *py
+exclude django_ai/bayesian_networks/migrations/00*
+exclude django_ai/media/django_ai/bayesian_networks/*
