@@ -7,6 +7,7 @@ from graphviz import Digraph
 
 from django.db import migrations
 from django.core.files.base import ContentFile
+from django.contrib.contenttypes.management import create_contenttypes
 
 from bayesian_networks.bayespy_constants import (
     DIST_GAUSSIAN_ARD, DIST_GAMMA)
@@ -37,6 +38,12 @@ def generate_bn_image(bn):
 
 
 def create_bn1_example(apps, schema_editor):
+    # Content Types Hackery for ensuring that it exists
+    app_config = apps.get_app_config('examples')
+    app_config.models_module = app_config.models_module or True
+    create_contenttypes(app_config)
+    ##
+
     BayesianNetwork = apps.get_model("bayesian_networks",
                                      "BayesianNetwork")
     BayesianNetworkEdge = apps.get_model("bayesian_networks",
