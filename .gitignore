@@ -41,6 +41,7 @@ django_ai/bayesian_networks/migrations/*
 
 # Ignore generated images
 django_ai/media/django_ai/bayesian_networks/*
+tests/media/*
 
 # Distribution / packaging
 .Python
