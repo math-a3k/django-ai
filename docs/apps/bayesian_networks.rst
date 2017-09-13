@@ -43,9 +43,10 @@ Nodes can be either `Stochastic` or `Deterministic`.
 
 `Stochastic` reffers to representing a Random Variable, `Deterministic` reffers to representing a transformation or function on other Nodes. 
 
-.. warning:: At the time of writing, no validations on the Django model have been written, you will have to deal with the errors yourself if you pass "inconsistent" parameters to the Nodes. See `BayesPy documentation <http://bayespy.org>`_ for further details on Nodes' construction.
+Each type of Nodes have a fields associated with it, which will need to be filled accordingly.
 
-The following fields are shown:
+General Fields
+^^^^^^^^^^^^^^
 
 ``Name``
 	The name of the Node. This must be an unique identifier inside the network. It will be used for passing the Node to other Nodes as a parameter among others.
@@ -53,30 +54,48 @@ The following fields are shown:
 ``Node Type``
 	If the Node is `Stochastic` or `Deterministic`. This determines which fields will be taken into account for Node creation.
 
-``Is Observable``
-	(`Stochastic only`) If the Random Variable is observable or not. If it is observable, then it will need to be linked to a field of a Django model where the data will be held, set in the ``Ref model`` and ``Ref column`` fields.
+Stochastic Fields
+^^^^^^^^^^^^^^^^^
 
 ``Distribution``
-	(`Stochastic only`) The Distribution of the Node
+	The Distribution of the Node
 
 ``Distribution Params``
-	(`Stochastic only`) The Parameters for the Distribution of the Node. They must be separated by a comma and a space ("``, ``") and currently only names (strings) or scalars (numbers) are supported. If it is a name, it must be the name of another Node in the network which you are passing to the Node.
+	The Parameters for the Distribution of the Node. They must be separated by a comma and a space ("``, ``") and currently only names (strings) or scalars (numbers) are supported. If it is a name, it must be the name of another Node in the network which you are passing to the Node.
 
 	The Parameters must be according to the Distribution chosen, otherwise the initialization of the BayesPy Node will fail. For a list of the Distribution Parameters see the `BayesPy documentation <http://bayespy.org/user_api/generated/bayespy.nodes.html#stochastic-nodes>`_.
 
+``Is Observable``
+	If the Random Variable is observable or not. If it is observable, then it will need to be linked to a field of a Django model where the data will be held, set in the ``Reference model`` and ``Reference column`` fields.
+
+``Reference Model``
+	The Django model that will held the data in the case of an Observable Stochastic Node.
+
+``Reference Column``
+	The name of the field in the Django model that will held the data in the case of an Observable Stochastic Node. It must be the name "callable" attribute.
+
+Deterministic Fields
+^^^^^^^^^^^^^^^^^^^^
+
 ``Deterministic``
-	(`Deterministic only`) The function or transformation that the Node applies
+	The function or transformation that the Node applies
 
 ``Deterministic Params``
-	(`Deterministic only`) The Parameters for the function of the Node. They must be separated by a comma and a space ("``, ``") and currently only names (strings) or scalars (numbers) are supported. If it is a name, it must be the name of another Node in the network which you are passing to the Node.
+	The Parameters for the function of the Node. They must be separated by a comma and a space ("``, ``") and currently only names (strings) or scalars (numbers) are supported. If it is a name, it must be the name of another Node in the network which you are passing to the Node.
 
 	The Parameters must be according to the Deterministic Node chosen, otherwise the initialization of the BayesPy Node will fail. For a list of the Deterministic Parameters see the `BayesPy documentation <http://bayespy.org/user_api/generated/bayespy.nodes.html#deterministic-nodes>`_.
 
-``Reference Model``
-	(`Stochastic only`) The Django model that will held the data in the case of an Observable Stochastic Node.
+Visualization
+^^^^^^^^^^^^^
 
-``Reference Column``
-	(`Stochastic only`) The name of the field in the Django model that will held the data in the case of an Observable Stochastic Node. It must be the name "callable" attribute.
+``Graph Interval``
+	(`Stochastic only`) Depending on the Distribution, a graphic may be available. This is the graphing interval, separated by a comma and a space, i.e. "``-10, 20``".
+
+``Image``
+	(`Stochastic only`) This is an auto-generated field, once the inference is run on the network, if it is available, an image with the graph of the distribution of the Random Variable will be stored here and shown at the bottom of the page.
+
+Timestamps
+^^^^^^^^^^
 
 ``Engine Object Timestamp``
 	The Timestamp of the BayesPy Node creation
@@ -84,11 +103,6 @@ The following fields are shown:
 ``Engine Inferred Object Timestamp``
 	The Timestamp of the last inference on the Node or the network.
 
-``Graph Interval``
-	(`Stochastic only`) Depending on the Distribution, a graphic may be available. This is the graphing interval, separated by a comma and a space, i.e. "``-10, 20``".
-
-``Image``
-	(`Stochastic only`) This is an auto-generated field, once the inference is run on the network, if it is available, an image with the graph of the distribution of the Random Variable will be stored here and shown at the bottom of the page.
 
 Bayesian Network Edge
 ---------------------

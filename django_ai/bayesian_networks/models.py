@@ -15,12 +15,15 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from django.db.models.signals import post_save
 from django.conf import settings
+from django.utils.translation import ugettext_lazy as _
+from django.core.exceptions import ValidationError
 
 from django_dag.models import node_factory, edge_factory
 from picklefield.fields import PickledObjectField
 
 from .bayespy_constants import (DISTRIBUTION_CHOICES,
                                 DETERMINISTIC_CHOICES)
+from .utils import is_float
 
 
 class BayesianNetwork(models.Model):
@@ -163,6 +166,13 @@ class BayesianNetworkNode(
         (NODE_TYPE_STOCHASTIC, "Stochastic"),
         (NODE_TYPE_DETERMINISTIC, "Deterministic"),
     )
+    FIELDS_STOCHASTIC = [
+        "is_observable", "distribution", "distribution_params",
+        "ref_model", "ref_column", "graph_interval"
+    ]
+    FIELDS_DETERMINISTIC = [
+        "deterministic", "deterministic_params"
+    ]
 
     network = models.ForeignKey(BayesianNetwork, related_name="nodes")
     name = models.CharField("Node Name", max_length=50)
@@ -194,6 +204,91 @@ class BayesianNetworkNode(
                                       blank=True, null=True)
     image = models.ImageField("Image", blank=True, null=True)
 
+    def clean(self):
+        error_dict = {}
+        # FIRST STEP: Check there are no fields that don't correspond to 
+        # the Node type
+        if self.node_type == self.NODE_TYPE_STOCHASTIC:
+            for field in self.FIELDS_DETERMINISTIC:
+                if getattr(self, field) is not None:
+                    error_dict[field] =  _(
+                        'Using Deterministic fields on a Stochastic '
+                        'Node is not allowed')
+        else:
+            for field in self.FIELDS_STOCHASTIC:
+                if getattr(self, field) is not None:
+                    error_dict[field] =  _(
+                        'Using Stochastic fields on a Deterministic '
+                        'Node is not allowed')
+        if error_dict:
+            raise ValidationError(error_dict)
+        # SECOND STEP: Check validity on Stochastic Nodes
+        if self.node_type == self.NODE_TYPE_STOCHASTIC:
+            # Validations on Stochastic Observable Nodes
+            if self.is_observable:
+                if self.ref_model is None:
+                    error_dict['ref_model'] = _(
+                        'An Observable Stochastic Node must be linked '
+                        'to a Django Model')
+                if self.ref_column is None:
+                    error_dict['ref_model'] = _(
+                        'An Observable Stochastic Node must be linked '
+                        'to a field of a Django Model')
+                # Raise if any
+                if error_dict:
+                    raise ValidationError(error_dict)
+                # Check the validity of the Reference Column
+                mc = self.ref_model.model_class()
+                try:
+                    getattr(mc, self.ref_column)
+                except Exception as e:
+                    raise ValidationError({'ref_column': _(
+                        'The column must be a valid attribute of '
+                        'the ' + self.ref_model.name + ' model'
+                        )})
+            else:
+                if self.ref_model is not None:
+                    error_dict['ref_model'] = _(
+                        'This field is allowed only in an Observable '
+                        'Stochastic Node')
+                if self.ref_column is not None:
+                    error_dict['ref_model'] = _(
+                        'This field is allowed only in an Observable '
+                        'Stochastic Node')
+
+            # Validations on the Distribution of Stochastic Nodes
+            if self.distribution is None:
+                error_dict['distribution'] = _(
+                        'A Stochastic Node must have a distribution')
+            if self.distribution_params is None:
+                error_dict['distribution_params'] = _(
+                        'A Stochastic Node must have a distribution'
+                        'parameters')
+            # Raise if any
+            if error_dict:
+                raise ValidationError(error_dict)
+        # THIRD STEP: Check Validity on Deterministic Nodes
+        else:
+            if self.deterministic is None:
+                error_dict['deterministic'] = _(
+                        'A Deterministic Node must have a function')
+            if self.deterministic_params is None:
+                error_dict['deterministic_params'] = _(
+                        'A Deterministic Node must have deterministic'
+                        'parameters')
+        # FINAL STEP: Check if the Engine Object (BayesPy) can be initialized
+        # Check only if the Node hasn't other Nodes as params (otherwise the 
+        # networkd Edges should have been created already to resolve the names
+        # to Nodes) 
+        dist_params = self.parse_dist_params()
+        if all([is_float(p) for p in dist_params]):
+            try:
+                eo = self.get_engine_object(reconstruct=True, save=False)
+            except Exception as e:
+                msg = e.args[0]
+                raise ValidationError({
+                    "distribution_params" : "[BayesPy] " + msg})
+    
     def get_data(self):
         if not self.is_observable:
             return(False)
@@ -204,12 +299,20 @@ class BayesianNetworkNode(
     def get_parents_names(self):
         return(self.parents.objects.values_list("name", flat=True))
 
+    def parse_dist_params(self):
+        """
+        Inital parsing of distribution parameters
+        """
+        # Does not support for kwargs yet.
+        return [n.strip() for n in self.distribution_params.split(",")]
+
     def parse_nodes_in_dist_params(self):
         """
         Returns the nodes names passed as params to the node distribution
         """
         nodes_in_bn = self.network.get_nodes_names()
-        nodes_in_params = [n for n in self.distribution_params.split(", ")
+        nodes_in_params = [n for n in
+                           self.distribution_params.split(", ")
                            if n in nodes_in_bn]
         return(nodes_in_params)
 

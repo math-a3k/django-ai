@@ -38,10 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'django_dag', # Dependency
     
+    #'django_ai.bayesian_networks.apps.BayesianNetworksConfig',
     'bayesian_networks',
     'examples',
-    'django_dag', # Dependency
 ]
 
 MIDDLEWARE = [
