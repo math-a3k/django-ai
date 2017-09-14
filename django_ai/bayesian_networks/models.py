@@ -329,7 +329,12 @@ class BayesianNetworkNode(
             # or nodes' names
             for p in self.distribution_params.split(", "):
                 if p not in parents:  # nodes_in_bn:
-                    params.append(float(p))
+                    try:
+                        params.append(float(p))
+                    except Exception as e:
+                        msg = e.args[0]
+                        raise ValueError(_(msg + 
+                            " - maybe Network Edges are missing?"))
                 else:
                     # node = BayesianNetworkNode.objects.get(name=p)
                     params.append(parents[p])
