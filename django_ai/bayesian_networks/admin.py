@@ -35,6 +35,17 @@ class BayesianNetworkEdgeInline(admin.TabularInline):
     model = BayesianNetworkEdge
     extra = 1
 
+    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        field = super(BayesianNetworkEdgeInline, self)\
+            .formfield_for_foreignkey(db_field, request, **kwargs)
+        # Display only Nodes from the Network or None
+        if db_field.name in ['child', 'parent']:
+            if request._obj_ is not None:
+                field.queryset = field.queryset.filter(network=request._obj_)
+            else:
+                field.queryset = field.queryset.none()
+        return field
+
 
 @admin.register(BayesianNetwork)
 class BayesianNetworkAdmin(admin.ModelAdmin):
@@ -43,6 +54,11 @@ class BayesianNetworkAdmin(admin.ModelAdmin):
         BayesianNetworkNodeInline,
         BayesianNetworkEdgeInline,
     ]
+
+    def get_form(self, request, obj=None, **kwargs):
+        # Save obj reference in the request for future processing in Inline
+        request._obj_ = obj
+        return super(BayesianNetworkAdmin, self).get_form(request, obj, **kwargs)
 
 
 # @admin.register(BayesianNetworkNode)
