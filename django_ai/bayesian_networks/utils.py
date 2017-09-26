@@ -52,7 +52,7 @@ def eval_function(parsed_fun):
 def parse_node_args(args_string, flat=False):
     """
     Parses the string intended for Node Initialization
-
+    Based on https://groups.google.com/forum/#!msg/comp.lang.python/vgOWCZ7Z8Yw/ZQgDJfXtCj0J
     """
     LPAR, RPAR, LBRACK, RBRACK, EQ, COMMA = \
         map(pp.Suppress,"()[]=,")
