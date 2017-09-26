@@ -16,7 +16,9 @@ from django.core.exceptions import ValidationError
 from django_ai.bayesian_networks import models
 from django_ai.bayesian_networks.bayespy_constants import (
     DIST_GAUSSIAN_ARD, DIST_GAMMA, DIST_GAUSSIAN, DET_ADD)
+from django_ai.bayesian_networks.utils import parse_node_args
 from tests.test_models.models import UserInfo
+
 
 class TestDjango_ai(TestCase):
 
@@ -172,6 +174,77 @@ class TestDjango_ai(TestCase):
         with self.assertRaises(ValidationError):
             self.mu.distribution_params = "1, 2, 3, 4, 5"
             self.mu.full_clean()
+
+    def test_node_args_parsing(self):
+        ### Test "general" parsing
+        args_string = ('True, numpy.ones(2), [[1,2], [3,4]], '
+                       'type=rect, sizes=[3, 4,], coords = ([1,2],[3,4]), '
+                       'func=numpy.zeros(2)')
+        expected_output = {
+            'args': [
+                    True,
+                    np.array([ 1.,  1.]),
+                    [[1, 2], [3, 4]]
+                    ],
+            'kwargs': {
+                    'type': 'rect',
+                    'sizes': [3, 4],
+                    'coords': ([1, 2], [3, 4]),
+                    'func': np.array([ 0.,  0.]),
+                    }
+        }
+        output = parse_node_args(args_string)
+
+        # "np.array == np.array" does not return a single bool in NumPy,
+        # then the comparison "output == expected_output" does not work
+        # with Django tests. I think I also hit a bug, because for some
+        # reason, the comparison function that unittest uses for nested
+        # lists is the array comparison of NumPy and not the standard list
+        # comparison of Python.
+
+        ## Test Positional Args
+        positions_tested = []
+        for position, arg in enumerate(output["args"]):
+            # For nested lists, don't know why but it keeps using the
+            # NumPy array comparison despites of not being of its class
+            if isinstance(arg, np.ndarray) or isinstance(arg, list):
+                comp = (expected_output["args"][position] 
+                        == output["args"][position])
+                if not isinstance(comp, bool):
+                    comp = all(comp)
+                self.assertEqual(comp, True)
+            else:
+                self.assertEqual(
+                    expected_output["args"][position],
+                    output["args"][position]
+                )
+            positions_tested.insert(0, position)
+        # Remove the tested elements from output
+        for pt in positions_tested:
+            del(output['args'][pt])
+        ## Test Keyword Args
+        for kw in expected_output['kwargs'].keys():
+            if (isinstance(expected_output['kwargs'][kw], np.ndarray)
+                or isinstance(expected_output['kwargs'][kw], list)):
+                comp = (expected_output['kwargs'][kw] == output["kwargs"][kw])
+                if not isinstance(comp, bool):
+                    comp = all(comp)
+                self.assertEqual(comp, True)
+            else:
+                self.assertEqual(
+                    expected_output['kwargs'][kw],
+                    output["kwargs"][kw]
+                )
+            # Remove the tested element from output
+            del(output['kwargs'][kw])
+        # Check there is nothing left in the output
+        self.assertEqual(output, {"args": [], "kwargs": {}})
+
+        ### Test not allowed functions
+        with self.assertRaises(ValueError):
+            parse_node_args("shutil.rmtree('/')")
+        with self.assertRaises(ValueError):
+            parse_node_args("eval('<malicious_code>')")
 
 
     def tearDown(self):
