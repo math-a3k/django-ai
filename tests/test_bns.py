@@ -18,7 +18,7 @@ from django_ai.bayesian_networks.bayespy_constants import (
     DIST_GAUSSIAN_ARD, DIST_GAMMA, DIST_GAUSSIAN, DET_ADD)
 from django_ai.bayesian_networks.utils import parse_node_args
 from tests.test_models.models import UserInfo
-import ipdb
+
 
 class TestDjango_ai(TestCase):
 
