@@ -23,7 +23,7 @@ from picklefield.fields import PickledObjectField
 
 from .bayespy_constants import (DISTRIBUTION_CHOICES,
                                 DETERMINISTIC_CHOICES)
-from .utils import is_float
+from .utils import (is_float, parse_node_args)
 
 
 class BayesianNetwork(models.Model):
@@ -89,7 +89,8 @@ class BayesianNetwork(models.Model):
         for node_name in root_nodes:
             nodes_eos.append(root_nodes[node_name])
         for c_n in child_nodes:
-            p_ns = {n: root_nodes[n] for n in c_n.parse_nodes_in_dist_params()}
+            p_ns = {n: root_nodes[n] 
+                    for n in c_n.parse_nodes_in_params(c_n.distribution_params)}
             nodes_eos.append(c_n.get_engine_object(
                 parents=p_ns, reconstruct=reconstruct))
         self.engine_object = bp.inference.VB(*nodes_eos)
@@ -280,7 +281,8 @@ class BayesianNetworkNode(
         # Check only if the Node hasn't other Nodes as params (otherwise the 
         # networkd Edges should have been created already to resolve the names
         # to Nodes) 
-        dist_params = self.parse_dist_params()
+        dist_params = parse_node_args(self.distribution_params, flat=True)
+        # collect all the values
         if all([is_float(p) for p in dist_params]):
             try:
                 eo = self.get_engine_object(reconstruct=True, save=False)
@@ -299,21 +301,13 @@ class BayesianNetworkNode(
     def get_parents_names(self):
         return(self.parents.objects.values_list("name", flat=True))
 
-    def parse_dist_params(self):
+    def parse_nodes_in_params(self, params_str):
         """
-        Inital parsing of distribution parameters
-        """
-        # Does not support for kwargs yet.
-        return [n.strip() for n in self.distribution_params.split(",")]
-
-    def parse_nodes_in_dist_params(self):
-        """
-        Returns the nodes names passed as params to the node distribution
+        Returns the nodes names passed as params to the node
         """
         nodes_in_bn = self.network.get_nodes_names()
-        nodes_in_params = [n for n in
-                           self.distribution_params.split(", ")
-                           if n in nodes_in_bn]
+        p_params = parse_node_args(params_str, flat=True)
+        nodes_in_params = [n for n in p_params if n in nodes_in_bn]
         return(nodes_in_params)
 
     def get_engine_object(self, parents={}, reconstruct=False, save=True):
@@ -323,21 +317,36 @@ class BayesianNetworkNode(
         if self.node_type == self.NODE_TYPE_STOCHASTIC:
             node_distribution = getattr(bp.nodes, self.distribution)
             nodes_in_bn = self.network.get_nodes_names()
-            params = []
-            kwparams = {'name': self.name}
-            # Params currently are only ", "-separated and can be scalars
-            # or nodes' names
-            for p in self.distribution_params.split(", "):
-                if p not in parents:  # nodes_in_bn:
-                    try:
-                        params.append(float(p))
-                    except Exception as e:
-                        msg = e.args[0]
-                        raise ValueError(_(msg + 
+            p_params = parse_node_args(self.distribution_params)
+            params, kwparams = p_params['args'], p_params['kwargs']
+            # import ipdb; ipdb.set_trace()
+            # Get the Nodes' objects passed in params
+            for index, param in enumerate(params):
+                if param in parents:
+                    params[index] = parents[param]
+                elif isinstance(param, str):
+                    # Strings can be only Node names
+                    raise ValueError(_("Can't resolve name to node" 
                             " - maybe Network Edges are missing?"))
-                else:
-                    # node = BayesianNetworkNode.objects.get(name=p)
-                    params.append(parents[p])
+            for kwparam in kwparams:
+                if kwparams[kwparam] in parents:
+                    kwparams[kwparam] = parents[kwparam]
+                elif isinstance(kwparams[kwparam], str):
+                    # Strings can be only Node names
+                    raise ValueError(_("Can't resolve name to node" 
+                            " - maybe Network Edges are missing?"))
+            kwparams['name'] = self.name
+            # for p in self.distribution_params.split(", "):
+            #     if p not in parents:  # nodes_in_bn:
+            #         try:
+            #             params.append(float(p))
+            #         except Exception as e:
+            #             msg = e.args[0]
+            #             raise ValueError(_(msg + 
+            #                 " - maybe Network Edges are missing?"))
+            #     else:
+            #         # node = BayesianNetworkNode.objects.get(name=p)
+            #         params.append(parents[p])
             if self.is_observable:
                 kwparams['plates'] = (self.ref_model.model_class()
                                       .objects.count(), )

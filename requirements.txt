@@ -5,3 +5,4 @@ django-dag==1.4.2
 django-picklefield==1.0.0
 graphviz==0.6
 Pillow==4.2.1
+pyparsing==2.2.0
