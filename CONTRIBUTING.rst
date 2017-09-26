@@ -43,30 +43,49 @@ articles, and such.
 Submit Feedback
 ~~~~~~~~~~~~~~~
 
-The best way to send feedback is to file an issue at https://github.com/math-a3k/django-ai/issues.
+The best way to send feedback is to file an issue at 
+https://github.com/math-a3k/django-ai/issues.
 
 If you are proposing a feature:
 
 * Explain in detail how it would work.
 * Keep the scope as narrow as possible, to make it easier to implement.
-* Remember that this is a volunteer-driven project, and that contributions
-  are welcome :)
+* Remember that this is a volunteer-driven project, and that contributions are welcome :)
+
+Monetary
+~~~~~~~~
+
+You can support and ensure the `django-ai` development by making money arrive to the project in its different ways:
+
+Donations
+  Software development has costs, any help for lessen them is highly appreciated and encourages to keep going.
+
+Sponsoring
+  Hire the devs for working in a specific feature you would like to have or a bug to squash in a timely manner.
+
+Hiring, Contracting and Consultancy
+  Hire the developers to work (implementing code, models, etc.) for you. Even if it is not `django-ai` related, as long as the devs have enough for a living, the project will keep evolving. 
+
+Contact the lead developer at matematica.a3k@gmail.com for details.
+
 
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up `django-ai` for local development.
+Ready to contribute code or documentation? Here's how to set up `django-ai` 
+for local development.
 
 1. Fork the `django-ai` repo on GitHub.
 2. Clone your fork locally::
 
     $ git clone git@github.com:your_name_here/django-ai.git
 
-3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
+3. Install your local copy into a virtualenv. This is how you set up your fork for local development::
 
-    $ mkvirtualenv django-ai
+    $ python3 -m venv django-ai-env
+    $ source django-ai-env/bin/activate
     $ cd django-ai/
-    $ python setup.py develop
+    $ pip install -r requirements_dev.txt
 
 4. Create a branch for local development::
 
