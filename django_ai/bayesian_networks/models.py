@@ -319,7 +319,7 @@ class BayesianNetworkNode(
             nodes_in_bn = self.network.get_nodes_names()
             p_params = parse_node_args(self.distribution_params)
             params, kwparams = p_params['args'], p_params['kwargs']
-            # import ipdb; ipdb.set_trace()
+
             # Get the Nodes' objects passed in params
             for index, param in enumerate(params):
                 if param in parents:
@@ -336,21 +336,11 @@ class BayesianNetworkNode(
                     raise ValueError(_("Can't resolve name to node" 
                             " - maybe Network Edges are missing?"))
             kwparams['name'] = self.name
-            # for p in self.distribution_params.split(", "):
-            #     if p not in parents:  # nodes_in_bn:
-            #         try:
-            #             params.append(float(p))
-            #         except Exception as e:
-            #             msg = e.args[0]
-            #             raise ValueError(_(msg + 
-            #                 " - maybe Network Edges are missing?"))
-            #     else:
-            #         # node = BayesianNetworkNode.objects.get(name=p)
-            #         params.append(parents[p])
+
             if self.is_observable:
                 kwparams['plates'] = (self.ref_model.model_class()
                                       .objects.count(), )
-            # import ipdb; ipdb.set_trace()
+
             self.engine_object = node_distribution(*params, **kwparams)
             # Once initialized, if observable, load the data
             if self.is_observable:
