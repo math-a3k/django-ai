@@ -1,15 +1,16 @@
 {% extends "admin/change_form.html" %}
+{% load static i18n %}
 
 {% block after_related_objects %}
   {% if original.pk %}  
-  <h2>BN: {{ original.name }}</h2>
+  <h2>{% trans "Bayesian Network" %}: {{ original.name }}</h2>
   <p>
     {% if original.image %}
       <img src="{{ original.image.url }}" />
     {% endif %}
   </p>
   {% if original.is_inferred %}
-  <h2>Inference</h2>
+  <h2>{% trans "Inference" %}</h2>
   {% for node in original.nodes.all %}
     {% if node.image %}
       <p>
@@ -19,10 +20,15 @@
   {% endfor %}
   {% endif %}
   <p>
-    <h3>Actions</h3>
+    <h3 class="actions">{% trans "Actions" %}</h3>
     <ul>
-      <li><a href="{% url 'bn_run_inference' original.pk %}">Run inference on the network</a></li>
-      <li><a href="{% url 'bn_reset_inference' original.pk %}">Reset inference on the network</a></li>
+      <li><a href="{% url 'bn_run_inference' original.pk %}">{% trans "Run inference on the network" %}</a></li>
+      <li><a href="{% url 'bn_reset_inference' original.pk %}">{% trans "Reset inference on the network" %}</a></li>
   </p>  
   {% endif %}
+{% endblock %}
+
+{% block admin_change_form_document_ready %}
+{{ block.super }}
+<script type="text/javascript" src="{% static 'js/admin/bayesian_networks.js' %}"></script>
 {% endblock %}
