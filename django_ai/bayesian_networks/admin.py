@@ -30,6 +30,12 @@ class BayesianNetworkNodeInline(admin.StackedInline):
         }),
     )
 
+    class Media:
+        css = {
+            'all': ('/static/css/admin/bayesian_networks.css',)
+        }
+
+
 
 class BayesianNetworkEdgeInline(admin.TabularInline):
     model = BayesianNetworkEdge
