@@ -79,20 +79,36 @@ class BayesianNetwork(models.Model):
         if self.engine_object and not reconstruct:
             return(self.engine_object)
 
-        nodes_eos = []
         nodes = self.nodes.all()
-        nodes_dict = {n.name: n for n in nodes}
-        root_nodes = {n.name: n.get_engine_object(reconstruct=reconstruct)
+        # Initialize the "EOs Struct" - a structure needed for keeping the
+        # same Python Objects in order to correctly initialize the BP's
+        # Inference Engine.
+        # {node_name: {django_model:, engine_object:}}
+        eos_struct = {n.name: {"dm": n, "eo": None}
+                      for n in nodes}
+        
+        # Root nodes have no problem getting their engine object and serve
+        # as the recursion base step
+        root_nodes = {n.name:
+                        {   "dm": n,
+                            "eo": n.get_engine_object(reconstruct=reconstruct)
+                        }
                       for n in nodes if not n.parents()}
+        # Update with the root nodes
+        eos_struct.update(root_nodes)
+
+        # Child nodes are "intermediate" nodes and "final" ones ("leafs" in
+        # trees). These are the ones that need the EOs Struct for recursion 
         child_nodes = [n for n in nodes if n.parents()]
-        # TODO: Currently support for one level of depth, pending for any graph
-        for node_name in root_nodes:
-            nodes_eos.append(root_nodes[node_name])
-        for c_n in child_nodes:
-            p_ns = {n: root_nodes[n] 
-                    for n in c_n.parse_nodes_in_params(c_n.distribution_params)}
-            nodes_eos.append(c_n.get_engine_object(
-                parents=p_ns, reconstruct=reconstruct))
+        for cn in child_nodes:
+            eos_struct = BayesianNetwork.update_eos_struct(eos_struct, cn)
+
+        # Collect the EOs
+        nodes_eos = []
+        for node in eos_struct:
+            nodes_eos.append(eos_struct[node]["eo"])
+
+        # Initialize the BP's Inference Engine
         self.engine_object = bp.inference.VB(*nodes_eos)
 
         if save:
@@ -132,6 +148,28 @@ class BayesianNetwork(models.Model):
             node.reset_inference(save=save)
         return(True)
 
+    @staticmethod
+    def update_eos_struct(eos_struct, node):
+        """
+        Auxiliary recursive function to "populate" a "branch" (all the ancestors
+        of the node) of the "EOs Struct" of the Network DAG.
+
+        By how BayesPy is implemented, this is needed to hold the same objects
+        in order to correctly initialize the BP inference engine ("simple
+        recursion" via Django models does not work, different "branches" may point
+        to different instances of objects, as they are initialized independently)
+        """
+        parents = [p.name for p in node.parents()]
+        # Check if the parents' eos are already present, otherwise initialize them
+        # recursively (until there )
+        for parent in parents:
+            if not eos_struct[parent]["eo"]:
+                update_eos_struct(eos_struct, eos_struct[parent]["dm"])
+        # Initialize the Node EO and store it in the matrix
+        eos_struct[node.name]["eo"] = node.get_engine_object(parents=eos_struct,
+                                                             reconstruct=True)
+        return(eos_struct)
+
     @property
     def is_inferred(self):
         return(self.engine_object is not None)
@@ -150,6 +188,7 @@ class BayesianNetworkEdge(
 
     def save(self, *args, **kwargs):
         self.network = self.parent.network
+
         super(BayesianNetworkEdge, self).save(*args, **kwargs)
 
 
@@ -207,18 +246,18 @@ class BayesianNetworkNode(
 
     def clean(self):
         error_dict = {}
-        # FIRST STEP: Check there are no fields that don't correspond to 
+        # FIRST STEP: Check there are no fields that don't correspond to
         # the Node type
         if self.node_type == self.NODE_TYPE_STOCHASTIC:
             for field in self.FIELDS_DETERMINISTIC:
                 if getattr(self, field) is not None:
-                    error_dict[field] =  _(
+                    error_dict[field] = _(
                         'Using Deterministic fields on a Stochastic '
                         'Node is not allowed')
         else:
             for field in self.FIELDS_STOCHASTIC:
                 if getattr(self, field) is not None:
-                    error_dict[field] =  _(
+                    error_dict[field] = _(
                         'Using Stochastic fields on a Deterministic '
                         'Node is not allowed')
         if error_dict:
@@ -246,7 +285,7 @@ class BayesianNetworkNode(
                     raise ValidationError({'ref_column': _(
                         'The column must be a valid attribute of '
                         'the ' + self.ref_model.name + ' model'
-                        )})
+                    )})
             else:
                 if self.ref_model is not None:
                     error_dict['ref_model'] = _(
@@ -260,11 +299,11 @@ class BayesianNetworkNode(
             # Validations on the Distribution of Stochastic Nodes
             if self.distribution is None:
                 error_dict['distribution'] = _(
-                        'A Stochastic Node must have a distribution')
+                    'A Stochastic Node must have a distribution')
             if self.distribution_params is None:
                 error_dict['distribution_params'] = _(
-                        'A Stochastic Node must have a distribution'
-                        'parameters')
+                    'A Stochastic Node must have a distribution'
+                    'parameters')
             # Raise if any
             if error_dict:
                 raise ValidationError(error_dict)
@@ -272,15 +311,15 @@ class BayesianNetworkNode(
         else:
             if self.deterministic is None:
                 error_dict['deterministic'] = _(
-                        'A Deterministic Node must have a function')
+                    'A Deterministic Node must have a function')
             if self.deterministic_params is None:
                 error_dict['deterministic_params'] = _(
-                        'A Deterministic Node must have deterministic'
-                        'parameters')
+                    'A Deterministic Node must have deterministic'
+                    'parameters')
         # FINAL STEP: Check if the Engine Object (BayesPy) can be initialized
-        # Check only if the Node hasn't other Nodes as params (otherwise the 
+        # Check only if the Node hasn't other Nodes as params (otherwise the
         # networkd Edges should have been created already to resolve the names
-        # to Nodes) 
+        # to Nodes)
         dist_params = parse_node_args(self.distribution_params, flat=True)
         # collect all the values
         if all([is_float(p) for p in dist_params]):
@@ -289,8 +328,8 @@ class BayesianNetworkNode(
             except Exception as e:
                 msg = e.args[0]
                 raise ValidationError({
-                    "distribution_params" : "[BayesPy] " + msg})
-    
+                    "distribution_params": "[BayesPy] " + msg})
+
     def get_data(self):
         if not self.is_observable:
             return(False)
@@ -311,9 +350,19 @@ class BayesianNetworkNode(
         return(nodes_in_params)
 
     def get_engine_object(self, parents={}, reconstruct=False, save=True):
-        # Currently Bayespy only
+        """
+        Method for initializing the Node's Engine Object (currently BayesPy
+        only).
+
+        This is meant to be called from the Bayesian Network Object method -
+        BN.get_engine_object() - as it handles all the dependecies of the DAG,
+        passing the proper parents' objects.
+
+        Otherwise, if not a root node, you will have to provide the parents.
+        """
         if self.engine_object and not reconstruct:
             return self.engine_object
+
         if self.node_type == self.NODE_TYPE_STOCHASTIC:
             node_distribution = getattr(bp.nodes, self.distribution)
             nodes_in_bn = self.network.get_nodes_names()
@@ -323,29 +372,32 @@ class BayesianNetworkNode(
             # Get the Nodes' objects passed in params
             for index, param in enumerate(params):
                 if param in parents:
-                    params[index] = parents[param]
+                    params[index] = parents[param]["eo"]
                 elif isinstance(param, str):
                     # Strings can be only Node names
-                    raise ValueError(_("Can't resolve name to node" 
-                            " - maybe Network Edges are missing?"))
+                    raise ValueError(_("Can't resolve name to node"
+                                       " - maybe Network Edges are missing?"))
+            # and get them from kwparams
             for kwparam in kwparams:
                 if kwparams[kwparam] in parents:
-                    kwparams[kwparam] = parents[kwparam]
+                    kwparams[kwparam] = parents[kwparam]["eo"]
                 elif isinstance(kwparams[kwparam], str):
                     # Strings can be only Node names
-                    raise ValueError(_("Can't resolve name to node" 
-                            " - maybe Network Edges are missing?"))
+                    raise ValueError(_("Can't resolve name to node"
+                                       " - maybe Network Edges are missing?"))
             kwparams['name'] = self.name
 
             if self.is_observable:
                 kwparams['plates'] = (self.ref_model.model_class()
                                       .objects.count(), )
 
+            # Initialize the BP Node
             self.engine_object = node_distribution(*params, **kwparams)
-            # Once initialized, if observable, load the data
+            # and if it is observable, load the data
             if self.is_observable:
                 data = self.get_data()
                 self.engine_object.observe(data)
+
             if save:
                 self.engine_object_timestamp = timezone.now()
                 self.save()
