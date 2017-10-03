@@ -114,6 +114,17 @@ class TestDjango_ai(TestCase):
         self.assertEqual(str(mu)[:5], '9.809')
         self.assertEqual(str(tau)[:5], '0.039')
 
+    def test_bn_deterministic_nodes(self):
+        bn2_eo = self.bn2.get_engine_object(reconstruct=True, save=True)
+        self.z.refresh_from_db()
+        z_eo = self.z.get_engine_object()
+        expected_moments = [np.array([ 1.,  1.]),
+                            np.array([[ 3.,  1.], [ 1.,  3.]])]
+        moments = z_eo.get_moments()
+        self.assertTrue(all(expected_moments[0] == moments[0]))
+        self.assertTrue(all(expected_moments[1][0] == moments[1][0]))
+        self.assertTrue(all(expected_moments[1][1] == moments[1][1]))
+
     def test_bn_node_validation(self):
         ## Test First Step: fields corresponds to Node type
         with self.assertRaises(ValidationError):
