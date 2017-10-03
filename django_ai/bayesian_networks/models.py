@@ -28,7 +28,11 @@ from .utils import (is_float, parse_node_args)
 
 class BayesianNetwork(models.Model):
     """
-    Model for a Bayesian Network
+    Main object of a Bayesian Network.
+
+    It gathers all Nodes and Edges of the DAG that defines the Network and
+    provides an interface for performing and resetting the inference and 
+    related objects.
     """
     _Q = None
 
@@ -80,8 +84,9 @@ class BayesianNetwork(models.Model):
         Constructs the Engine Objects of all Nodes in the Network for
         initializing the Inference Engine of the Network.
 
-        This is the method that should be called for initializing the EOs of the
-        Nodes, as it handle the dependencies correctly.
+        This is the method that should be called for initializing the EOs of
+        the Nodes, as it handle the dependencies correctly and then propagate 
+        them to the Nodes' objects.
 
         CAVEAT: You might have to call 'node.refresh_from_db()' if for some
         reason the Nodes are already retrieved before this method is ran.
@@ -137,6 +142,10 @@ class BayesianNetwork(models.Model):
         return(self.engine_object)
 
     def perform_inference(self, iters=100, recalculate=False, save=True):
+        """
+        Retrieves the Engine Object of the Network, performs the inference
+        and propagates the results to the Nodes.
+        """
         if not self.engine_object or recalculate:
             Q = self.get_engine_object(reconstruct=True)
             # Run the inference
@@ -163,6 +172,10 @@ class BayesianNetwork(models.Model):
         return(True)
 
     def reset_inference(self, save=True):
+        """
+        Resets the Engine Object and timestamp from the Network
+        (the Network object itself and all the Nodes objects in it)
+        """
         self.reset_engine_object(save=save)
         for node in self.nodes.all():
             node.reset_inference(save=save)
@@ -186,8 +199,8 @@ class BayesianNetwork(models.Model):
             if not eos_struct[parent]["eo"]:
                 update_eos_struct(eos_struct, eos_struct[parent]["dm"])
         # Initialize the Node EO and store it in the matrix
-        eos_struct[node.name]["eo"] = node.get_engine_object(parents=eos_struct,
-                                                             reconstruct=True)
+        eos_struct[node.name]["eo"] = \
+            node.get_engine_object(parents=eos_struct, reconstruct=True)
         return(eos_struct)
 
     @property

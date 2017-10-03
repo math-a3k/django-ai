@@ -19,7 +19,7 @@ Bayesian Network
 
 This is the main object for a Bayesian Network.
 
-It gathers all nodes and edges of the DAG that defines the network.
+It gathers all Nodes and Edges of the DAG that defines the Network.
 
 All the results of the inference will be available here and this object is what you will be using inside the code.
 
@@ -32,12 +32,12 @@ The following fields are shown:
     This is an auto-generated field, timestamping the last inference done or `None` if not available.
 
 ``Image``
-    This is an auto-generated field, shown at the bottom of the page. It will be updated each time a Node or an Edge is added or modified to the network.
+    This is an auto-generated field, shown at the bottom of the page. It will be updated each time a Node or an Edge is added or modified to the Network.
 
 Bayesian Network Node
 ---------------------
 
-Each BayesPy Node in the network is represented here.
+Each BayesPy Node in the Network is represented here.
 
 Nodes can be either `Stochastic` or `Deterministic`.
 
@@ -65,12 +65,11 @@ Stochastic Fields
 
     The Parameters must be according to the Distribution chosen, otherwise the initialization of the BayesPy Node will fail. For a list of the Distribution Parameters see the `BayesPy documentation for Stochastic Nodes <http://bayespy.org/user_api/generated/bayespy.nodes.html#stochastic-nodes>`_.
 
-
 ``Is Observable``
-    If the Random Variable is observable or not. If it is observable, then it will need to be linked to a field of a Django model where the data will be held, set in the ``Reference model`` and ``Reference column`` fields.
+    If the Random Variable is observable or not. If it is observable, then it will need to be linked to a field of a Django Model where the data will be held, set in the ``Reference model`` and ``Reference column`` fields.
 
 ``Reference Model``
-    The Django model that will held the data in the case of an Observable Stochastic Node.
+    The Django Model that will held the data in the case of an Observable Stochastic Node.
 
 ``Reference Column``
     The name of the field in the Django model that will held the data in the case of an Observable Stochastic Node. It must be the name "callable" attribute.
@@ -79,7 +78,7 @@ Deterministic Fields
 ^^^^^^^^^^^^^^^^^^^^
 
 ``Deterministic``
-    The function or transformation that the Node applies
+    The function or transformation that the Node applies.
 
 ``Deterministic Params``
     The Parameters for the function of the Node. See :ref:`node_parameters` below for more details.
@@ -103,7 +102,7 @@ It is designed to be a just like the ``*args`` and ``**kwargs`` you pass to a fu
 ``Structures``
     Lists and Tuples, i.e. ``[1, 2], [[1e-06, 2], [3, 4]], (2, 3,), ([1, 2], [3, 4])``.
 ``Strings``
-    Strings are reserved for Node names. To pass another Node as a parameter to it simply use its name. Nodes' names are resolved through Network Edges of the graph (see :ref:`bayesian_networks_edge`), only Node's parents are available.  
+    Strings are reserved for Node names. To pass another Node as a parameter to it simply use its name. Nodes' names are resolved through Network Edges of the graph (see :ref:`bayesian_networks_edge`).  
 ``Functions``
     Functions *must be namespaced* and their arguments can be anything of the above.
     Due to security reasons, the allowed namespaces must be specified in a list named ``DJANGO_AI_WHITELISTED_MODULES`` in your settings, i.e.::
@@ -142,7 +141,7 @@ Timestamps
 ^^^^^^^^^^
 
 ``Engine Object Timestamp``
-    The Timestamp of the BayesPy Node creation
+    The Timestamp of the BayesPy Node creation.
 
 ``Engine Inferred Object Timestamp``
     The Timestamp of the last inference on the Node or the network.
@@ -155,18 +154,18 @@ Bayesian Network Edge
 
 Each Edge between Nodes in the Direct Acyclic Graph of the Bayesian Network is represented here.
 
-Edges are neccesary for resolving dependencies between nodes, i.e. if Node takes another Node as a parameter, there must be an Edge between the Nodes so the Child is able to access his Parents.
+Edges are neccesary for resolving dependencies between nodes, i.e. if Node takes another Node as a parameter, there must be an Edge between the Nodes so the Child is able to access its Parents.
 
 The following fields are shown:
 
 ``Parent``
-    The "From" Node
+    The "From" Node.
 
 ``Child``
-    The "To" Node
+    The "To" Node.
 
 ``Description``
-    A brief description of the Edge (i.e. "``mu -> tau``")
+    A brief description of the Edge (i.e. "``mu -> tau``").
 
 Actions
 -------
@@ -174,7 +173,9 @@ Actions
 The main are:
 
 ``Run inference on the network``
-    This will run the Inference on the current state of the network. It will initialize or create all the BayesPy Nodes, initialize the Inference Engine of BayesPy and perform the inference with it. Once is run, it will save all the results in the Bayesian Network object and the corresponding in each Node, generating the Node image where corresponds and updating the timestamps. See the API section for accesing the results. 
+    This will run the Inference on the current state of the network.
+
+    It will initialize or create all the BayesPy Nodes, initialize the Inference Engine of BayesPy and perform the inference with it. Once is run, it will save all the results in the Bayesian Network object and the corresponding in each Node, generating the Node image where corresponds and updating the timestamps. See the API section for accesing the results. 
 
 ``Reset inference on the network``
     This will reset (set to `None`) all the engine- and inference-related fields in the network.
@@ -189,9 +190,9 @@ For integrating the objects into your code, you simply have to import the Django
 
     from django_ai.models.bayesian_networks import BayesianNetwork
 
-    bn = BayesianNetwork.objects.get(name="<NAME OF MY BN>")
+    bn = BayesianNetwork.objects.get(name="<NAME-OF-MY-BN>")
 
-If the network is inferred, the results of it, the ``VB`` object is stored in the ``engine_object`` field. This is a BayesPy object which you can use at your will:
+If the network is inferred, the results of it - the ``VB`` object - is stored in the ``engine_object`` field. This is a BayesPy object which you can use at your will:
 
 .. code-block:: python
 
@@ -203,10 +204,15 @@ If the network is inferred, the results of it, the ``VB`` object is stored in th
         request.user.avg1 > mu + 2 * sigma):
         print("Hmmm... the user seems to be atypical on avg1, I shall do something")
 
+You can perform all the Actions on the Network with the following methods of the ``BayesianNetwork`` objects:
+
+.. autoclass:: bayesian_networks.models.BayesianNetwork
+   :members: get_engine_object, perform_inference, reset_inference
+
 If you want to do things programatically, you should see this migration of the ``examples`` app:
 
-.. literalinclude:: ../../django_ai/examples/migrations/0004_bn_example.py
+.. autofunction:: examples.migrations.0004_bn_example.create_bn1_example
 
-and take a look at the :download:`model definition <../../django_ai/bayesian_networks/models.py>`
+and take a look at the :download:`tests <../../tests/test_bns.py>`.
 
 .. _`bayespy-quickstart`: http://bayespy.org/user_guide/quickstart.html
