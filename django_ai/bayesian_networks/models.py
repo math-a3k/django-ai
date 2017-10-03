@@ -38,7 +38,7 @@ class BayesianNetwork(models.Model):
     engine_object_timestamp = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
-        return("BN: " + self.name)
+        return("[BN: {0}]".format(self.name))
 
     def save(self, *args, **kwargs):
         """
@@ -75,7 +75,17 @@ class BayesianNetwork(models.Model):
     def get_nodes_names(self):
         return(self.nodes.all().values_list("name", flat=True))
 
-    def get_engine_object(self, reconstruct=False, save=True):
+    def get_engine_object(self, reconstruct=False, propagate=True, save=True):
+        """
+        Constructs the Engine Objects of all Nodes in the Network for
+        initializing the Inference Engine of the Network.
+
+        This is the method that should be called for initializing the EOs of the
+        Nodes, as it handle the dependencies correctly.
+
+        CAVEAT: You might have to call 'node.refresh_from_db()' if for some
+        reason the Nodes are already retrieved before this method is ran.
+        """
         if self.engine_object and not reconstruct:
             return(self.engine_object)
 
@@ -86,19 +96,19 @@ class BayesianNetwork(models.Model):
         # {node_name: {django_model:, engine_object:}}
         eos_struct = {n.name: {"dm": n, "eo": None}
                       for n in nodes}
-        
+
         # Root nodes have no problem getting their engine object and serve
         # as the recursion base step
         root_nodes = {n.name:
-                        {   "dm": n,
-                            "eo": n.get_engine_object(reconstruct=reconstruct)
-                        }
+                      {"dm": n,
+                       "eo": n.get_engine_object(reconstruct=reconstruct)
+                       }
                       for n in nodes if not n.parents()}
         # Update with the root nodes
         eos_struct.update(root_nodes)
 
         # Child nodes are "intermediate" nodes and "final" ones ("leafs" in
-        # trees). These are the ones that need the EOs Struct for recursion 
+        # trees). These are the ones that need the EOs Struct for recursion
         child_nodes = [n for n in nodes if n.parents()]
         for cn in child_nodes:
             eos_struct = BayesianNetwork.update_eos_struct(eos_struct, cn)
@@ -111,9 +121,19 @@ class BayesianNetwork(models.Model):
         # Initialize the BP's Inference Engine
         self.engine_object = bp.inference.VB(*nodes_eos)
 
+        # Propagate to the network
+        if propagate:
+            for node in eos_struct:
+                eos_struct[node]["dm"].engine_object = self.engine_object[node]
+
+        # Save the BN and its nodes
         if save:
             self.engine_object_timestamp = timezone.now()
             self.save()
+            if propagate:
+                for node in eos_struct:
+                    eos_struct[node]["dm"].save()
+
         return(self.engine_object)
 
     def perform_inference(self, iters=100, recalculate=False, save=True):
@@ -218,7 +238,7 @@ class BayesianNetworkNode(
     name = models.CharField("Node Name", max_length=50)
     node_type = models.SmallIntegerField("Type", choices=NODE_TYPE_CHOICES,
                                          default=NODE_TYPE_STOCHASTIC)
-    is_observable = models.BooleanField("Is Observable?", default=True)
+    is_observable = models.BooleanField("Is Observable?", default=False)
     distribution = models.CharField("Distribution", max_length=50,
                                     choices=DISTRIBUTION_CHOICES,
                                     blank=True, null=True)
@@ -256,7 +276,11 @@ class BayesianNetworkNode(
                         'Node is not allowed')
         else:
             for field in self.FIELDS_STOCHASTIC:
-                if getattr(self, field) is not None:
+                field_value = getattr(self, field)
+                # For avoiding the use of NullBooleanField in 'is_observable'
+                if field_value == False:
+                    field_value = None
+                if field_value is not None:
                     error_dict[field] = _(
                         'Using Stochastic fields on a Deterministic '
                         'Node is not allowed')
@@ -316,13 +340,18 @@ class BayesianNetworkNode(
                 error_dict['deterministic_params'] = _(
                     'A Deterministic Node must have deterministic'
                     'parameters')
+            # Raise if any
+            if error_dict:
+                raise ValidationError(error_dict)
+
         # FINAL STEP: Check if the Engine Object (BayesPy) can be initialized
         # Check only if the Node hasn't other Nodes as params (otherwise the
         # networkd Edges should have been created already to resolve the names
         # to Nodes)
-        dist_params = parse_node_args(self.distribution_params, flat=True)
+
+        params = parse_node_args(self.get_params(), flat=True)
         # collect all the values
-        if all([is_float(p) for p in dist_params]):
+        if all([is_float(p) for p in params]):
             try:
                 eo = self.get_engine_object(reconstruct=True, save=False)
             except Exception as e:
@@ -337,6 +366,15 @@ class BayesianNetworkNode(
             self.ref_column, flat=True)
         return(data)
 
+    def get_params(self):
+        """
+        Returns the params according to the node type
+        """
+        if self.node_type == self.NODE_TYPE_STOCHASTIC:
+            return(self.distribution_params)
+        else:
+            return(self.deterministic_params)
+
     def get_parents_names(self):
         return(self.parents.objects.values_list("name", flat=True))
 
@@ -349,45 +387,55 @@ class BayesianNetworkNode(
         nodes_in_params = [n for n in p_params if n in nodes_in_bn]
         return(nodes_in_params)
 
+    def resolve_eos_in_params(self, params=[], kwparams={}, parents={}):
+        """
+        Resolve Nodes' EOs from names passed in params and kwparams
+        """
+        error_str = _("Can't resolve name to node"
+                      " - maybe Network Edges are missing?")
+        for index, param in enumerate(params):
+            if isinstance(param, str):
+                if param in parents:
+                    params[index] = parents[param]["eo"]
+                else:
+                    # Strings can be only Node names
+                    raise ValueError(error_str)
+        for kwparam in kwparams:
+            if isinstance(kwparams[kwparam], str):
+                if kwparams[kwparam] in parents:
+                    kwparams[kwparam] = parents[kwparam]["eo"]
+                else:
+                    # Strings can be only Node names
+                    raise ValueError(error_str)
+        return((params, kwparams))
+
     def get_engine_object(self, parents={}, reconstruct=False, save=True):
         """
         Method for initializing the Node's Engine Object (currently BayesPy
         only).
 
-        This is meant to be called from the Bayesian Network Object method -
+        This is meant to be called from the BayesianNetwork object method -
         BN.get_engine_object() - as it handles all the dependecies of the DAG,
-        passing the proper parents' objects.
+        passing the proper parents' objects and then propagating the results
+        to the Nodes.
 
         Otherwise, if not a root node, you will have to provide the parents.
         """
         if self.engine_object and not reconstruct:
             return self.engine_object
 
+        # Parse Params
+        nodes_in_bn = self.network.get_nodes_names()
+        parsed_params = parse_node_args(self.get_params())
+        params, kwparams = self.resolve_eos_in_params(parsed_params['args'],
+                                                      parsed_params['kwargs'],
+                                                      parents)
+        kwparams['name'] = self.name
+
         if self.node_type == self.NODE_TYPE_STOCHASTIC:
             node_distribution = getattr(bp.nodes, self.distribution)
-            nodes_in_bn = self.network.get_nodes_names()
-            p_params = parse_node_args(self.distribution_params)
-            params, kwparams = p_params['args'], p_params['kwargs']
-
-            # Get the Nodes' objects passed in params
-            for index, param in enumerate(params):
-                if param in parents:
-                    params[index] = parents[param]["eo"]
-                elif isinstance(param, str):
-                    # Strings can be only Node names
-                    raise ValueError(_("Can't resolve name to node"
-                                       " - maybe Network Edges are missing?"))
-            # and get them from kwparams
-            for kwparam in kwparams:
-                if kwparams[kwparam] in parents:
-                    kwparams[kwparam] = parents[kwparam]["eo"]
-                elif isinstance(kwparams[kwparam], str):
-                    # Strings can be only Node names
-                    raise ValueError(_("Can't resolve name to node"
-                                       " - maybe Network Edges are missing?"))
-            kwparams['name'] = self.name
-
-            if self.is_observable:
+            # Only assign if plates are not provided
+            if self.is_observable and not 'plates' in kwparams:
                 kwparams['plates'] = (self.ref_model.model_class()
                                       .objects.count(), )
 
@@ -397,11 +445,16 @@ class BayesianNetworkNode(
             if self.is_observable:
                 data = self.get_data()
                 self.engine_object.observe(data)
+        else:
+            # Deterministic Type
+            node_deterministic_fun = getattr(bp.nodes, self.deterministic)
+            # Initialize the BP Node
+            self.engine_object = node_deterministic_fun(*params, **kwparams)
 
-            if save:
-                self.engine_object_timestamp = timezone.now()
-                self.save()
-            return(self.engine_object)
+        if save:
+            self.engine_object_timestamp = timezone.now()
+            self.save()
+        return(self.engine_object)
 
     def get_engine_inferred_object(self, recalculate=False, save=True):
         Q = self.network.perform_inference(recalculate=recalculate)
