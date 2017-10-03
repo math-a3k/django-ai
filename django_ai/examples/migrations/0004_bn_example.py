@@ -38,6 +38,9 @@ def generate_bn_image(bn):
 
 
 def create_bn1_example(apps, schema_editor):
+    """
+    Create a Bayesian Network from the scratch.
+    """
     # Content Types Hackery for ensuring that it exists
     app_config = apps.get_app_config('examples')
     app_config.models_module = app_config.models_module or True
