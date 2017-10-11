@@ -66,13 +66,7 @@ Stochastic Fields
     The Parameters must be according to the Distribution chosen, otherwise the initialization of the BayesPy Node will fail. For a list of the Distribution Parameters see the `BayesPy documentation for Stochastic Nodes <http://bayespy.org/user_api/generated/bayespy.nodes.html#stochastic-nodes>`_.
 
 ``Is Observable``
-    If the Random Variable is observable or not. If it is observable, then it will need to be linked to a field of a Django Model where the data will be held, set in the ``Reference model`` and ``Reference column`` fields.
-
-``Reference Model``
-    The Django Model that will held the data in the case of an Observable Stochastic Node.
-
-``Reference Column``
-    The name of the field in the Django model that will held the data in the case of an Observable Stochastic Node. It must be the name "callable" attribute.
+    If the Random Variable is observable or not. If it is observable, then it will need to be linked to fields or callables of a Django Model where the data will be held, set in :ref:`bayesian_networks_node_column`.
 
 Deterministic Fields
 ^^^^^^^^^^^^^^^^^^^^
@@ -102,14 +96,19 @@ It is designed to be a just like the ``*args`` and ``**kwargs`` you pass to a fu
 ``Structures``
     Lists and Tuples, i.e. ``[1, 2], [[1e-06, 2], [3, 4]], (2, 3,), ([1, 2], [3, 4])``.
 ``Strings``
-    Strings are reserved for Node names. To pass another Node as a parameter to it simply use its name. Nodes' names are resolved through Network Edges of the graph (see :ref:`bayesian_networks_edge`).  
+    Strings are reserved for Node names. To pass another Node as a parameter to it simply use its name. Nodes' names are resolved through Network Edges of the graph (see :ref:`bayesian_networks_edge`).
+``Custom Keywords``
+    Strings starting with ``:`` - i.e. ``:no`` are considered as "Custom Keywords" for ``django-ai`` and triggers different behaviours. See :ref:`custom_keywords`.
 ``Functions``
     Functions *must be namespaced* and their arguments can be anything of the above.
+
+    In some ocassions, there must be a reference to a function instead of the result of it, this is done by preceding the function with an ``@``, i.e. ``@bayespy.nodes.Gaussian()`` will return the function object (in this case the whole class) instead of the result of it.
+
     Due to security reasons, the allowed namespaces must be specified in a list named ``DJANGO_AI_WHITELISTED_MODULES`` in your settings, i.e.::
 
-        DJANGO_AI_WHITELISTED_MODULES = ['numpy', 'scipy']
+        DJANGO_AI_WHITELISTED_MODULES = ['numpy', 'bayespy.nodes', 'scipy']
 
-    By default, only ``numpy`` is enabled.
+    By default, only ``numpy`` and ``bayespy.nodes`` are enabled.
 
 For example, the string::
   
@@ -126,6 +125,23 @@ With this, a ``GaussianARD`` Node can be initialized with::
 where ``mu`` and ``tau`` are parents Nodes, or for a 2D ``Gaussian`` Node::
   
   numpy.ones(2), numpy.zeros(2)
+
+
+.. _custom_keywords:
+
+Custom Keywords
+~~~~~~~~~~~~~~~
+
+Node parameters' strings starting with ``:`` are considered *Custom Keywords*, they should be used at an ``*arg`` level and their meaning or behaviour triggered is described below:
+
+``:noplates``
+    Triggers the deletion of a keyword argument. Use this when you do not want a keyword argument to be set automatically. Currently, only ``plates`` is set automatically for Stochastic Observable Nodes when it is not specified and it is set to the "shape" of the data being observed. In some types of networks this can interfere with `BayesPy` plates propagation. To avoid this, use ``:noplates`` in the Node's parameters.
+
+``:ifr``
+    Triggers Initializate from Random in the Node's engine object.
+
+``:dl|<NODE_NAME>``
+    Uses the Data Length of of Node ``NODE_NAME``. Meant to be used in plates, i.e. ``plates=(:dl|Y, )`` 
 
 
 Visualization
@@ -145,6 +161,27 @@ Timestamps
 
 ``Engine Inferred Object Timestamp``
     The Timestamp of the last inference on the Node or the network.
+
+
+.. _bayesian_networks_node_column:
+
+Bayesian Network Node Column
+----------------------------
+
+In the case of Stochastic Observable Nodes, an inline will be displayed for setting the columns / axis / dimensions that will represent the observations of the Random Variable of the Node.
+
+There is no restrictions on number of columns nor they should be on the same Django model, only that they must contain the same amount of records / size.
+
+The following fields are shown:  
+
+``Reference Model``
+    The Django Model that will held the data.
+
+``Reference Column``
+    The name of the field or attribute in the Django model that will held the data.
+
+``Position``
+    The ordering of the columns, set automatically by the nested inline.
 
 
 .. _bayesian_networks_edge:

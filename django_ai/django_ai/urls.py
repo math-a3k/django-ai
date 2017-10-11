@@ -21,5 +21,6 @@ from django.contrib import admin
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
+    url(r'^nested_admin/', include('nested_admin.urls')),
     url(r'^bayesian_networks/', include('bayesian_networks.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
