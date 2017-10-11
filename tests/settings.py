@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     'django_dag', # Dependency
+    'nested_admin', # Dependency
     'django_ai.bayesian_networks.apps.BayesianNetworksConfig',
     # 'django_ai.examples',
     'tests.test_models'

@@ -53,6 +53,8 @@ def create_bn1_example(apps, schema_editor):
                                          "BayesianNetworkEdge")
     BayesianNetworkNode = apps.get_model("bayesian_networks",
                                          "BayesianNetworkNode")
+    BayesianNetworkNodeColumn = apps.get_model("bayesian_networks",
+                                         "BayesianNetworkNodeColumn")
     ContentType = apps.get_model("contenttypes",
                                 "ContentType")
     
@@ -83,15 +85,19 @@ def create_bn1_example(apps, schema_editor):
         is_observable=True,
         distribution=DIST_GAUSSIAN_ARD,
         distribution_params="mu, tau",
-        ref_model=ContentType.objects.get(model="userinfo",
-                                          app_label="examples"),
-        ref_column="avg1",
-
     )
     mu.save()
     tau.save()
     ui_avg1.save()
-
+    #
+    ui_avg1_col = BayesianNetworkNodeColumn(
+            node=ui_avg1,
+            ref_model=ContentType.objects.get(model="userinfo",
+                                              app_label="examples"),
+            ref_column="avg1"
+    )
+    ui_avg1_col.save()
+    #
     mu_to_ui_avg1 = BayesianNetworkEdge(
         network=bn1,
         description="mu -> userinfo.avg1",

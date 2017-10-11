@@ -25,7 +25,7 @@ Once you are "happy" with your model you can incorporate it into your code, i.e.
         # Do something with the user classification
         return redirect(route_user(user_class))
 
-This "kind of hybrid approach" is what gives you the convenience: you can state the model easily in the front-end (admin), and after you incorporate it in your code, you can mantain, improve or update it in the front-end.
+This "kind of hybrid approach" is what gives you the convenience: you can state the model easily in the front-end (admin), and after you incorporate it in your code, you can mantain, improve or update it in the front-end. See :ref:`examples` for more.
 
 ``django-ai`` aims to provide with 2 classes of apps or statistical models: "low level" and "high level".
 
