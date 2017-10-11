@@ -38,7 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'django_dag', # Dependency
+    # Dependencies
+    'django_dag',
+    'nested_admin', 
     
     #'django_ai.bayesian_networks.apps.BayesianNetworksConfig',
     'bayesian_networks',

@@ -8,6 +8,7 @@ test_django-ai
 Tests for `django-ai` models module.
 """
 import numpy as np
+from bayespy.nodes import Gaussian
 
 from django.test import TestCase
 from django.contrib.contenttypes.models import ContentType
@@ -50,6 +51,9 @@ class TestDjango_ai(TestCase):
             is_observable=True,
             distribution=DIST_GAUSSIAN_ARD,
             distribution_params="mu, tau",
+        )
+        self.ui_avg1_col = models.BayesianNetworkNodeColumn.objects.create(
+            node=self.ui_avg1,
             ref_model=ContentType.objects.get(model="userinfo",
                                               app_label="test_models"),
             ref_column="avg1",
@@ -137,26 +141,6 @@ class TestDjango_ai(TestCase):
             self.mu.full_clean()
 
         ## Test Second Step: Validations on Stochastic Types
-        # Observables must be linked to a model
-        self.setUp()
-        with self.assertRaises(ValidationError):
-            self.ui_avg1.ref_model = None
-            self.ui_avg1.full_clean()
-        # Observables must be linked to a field of a model
-        self.setUp()
-        with self.assertRaises(ValidationError):
-            self.ui_avg1.ref_column = None
-            self.ui_avg1.full_clean()
-        # Observables must be linked to an existing field of a model
-        self.setUp()
-        with self.assertRaises(ValidationError):
-            self.ui_avg1.ref_column = "non-existant-field"
-            self.ui_avg1.full_clean()
-        # If not Observable, ref_model and ref_column musts be empty
-        self.setUp()
-        with self.assertRaises(ValidationError):
-            self.ui_avg1.is_observable = False
-            self.ui_avg1.full_clean()
         # Stochastic Nodes must have a Distribution
         self.setUp()
         with self.assertRaises(ValidationError):
@@ -186,14 +170,47 @@ class TestDjango_ai(TestCase):
             self.mu.distribution_params = "1, 2, 3, 4, 5"
             self.mu.full_clean()
 
+    def test_node_column_validation(self):
+        # Node Columns must reference a model
+        self.setUp()
+        with self.assertRaises(ValidationError):
+            self.ui_avg1_col.ref_model = None
+            self.ui_avg1_col.full_clean()
+        # Node Columns must be linked to a field or a callable of a model
+        self.setUp()
+        with self.assertRaises(ValidationError):
+            self.ui_avg1_col.ref_column = None
+            self.ui_avg1_col.full_clean()
+        # Node Columns must be linked to an existing fields of a model
+        self.setUp()
+        with self.assertRaises(ValidationError):
+            self.ui_avg1_col.ref_column = "non-existant-field"
+            self.ui_avg1_col.full_clean()
+
+    def test_node_get_data(self):
+        # Test no columns assigned
+        self.setUp()
+        with self.assertRaises(ValueError):
+            self.ui_avg1.columns.all().delete()
+            self.ui_avg1.get_data()
+        # TODO:
+        ## Test not-matching column lengths
+        # with self.assertRaises(ValidationError):
+            # - Create other model
+            # - Populate with 100 records
+            # - Add the column with the userinfo column
+            # - Call get_data()
+        ## Test correct functioning
+
     def test_node_args_parsing(self):
         ### Test "general" parsing
-        args_string = ('True, numpy.ones(2), [[1,2], [3,4]], '
+        args_string = ('True, :ifr, numpy.ones(2), [[1,2], [3,4]], '
                        'type=rect, sizes=[3, 4,], coords = ([1,2],[3,4]), '
-                       'func=numpy.zeros(2)')
+                       'func=numpy.zeros(2), plates=:no' )
         expected_output = {
             'args': [
                     True,
+                    ':ifr',
                     np.array([ 1.,  1.]),
                     [[1, 2], [3, 4]]
                     ],
@@ -202,6 +219,7 @@ class TestDjango_ai(TestCase):
                     'sizes': [3, 4],
                     'coords': ([1, 2], [3, 4]),
                     'func': np.array([ 0.,  0.]),
+                    'plates': ':no',
                     }
         }
         output = parse_node_args(args_string)
@@ -256,6 +274,15 @@ class TestDjango_ai(TestCase):
             parse_node_args("shutil.rmtree('/')")
         with self.assertRaises(ValueError):
             parse_node_args("eval('<malicious_code>')")
+
+        ### Test referencing to a function
+        args_string = ('@bayespy.nodes.Gaussian()')
+        expected_output = {
+            'args': [ Gaussian ],
+            'kwargs': { }
+        }
+        output = parse_node_args(args_string)
+        self.assertEqual(output, expected_output)
 
 
     def tearDown(self):

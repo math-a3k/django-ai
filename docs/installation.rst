@@ -15,6 +15,7 @@ For installing ``django-ai`` in your Django project use the following steps:
     INSTALLED_APPS = (
         ...
         'django_dag', # Dependency
+        'nested_admin', # Dependency
         'django_ai.bayesian_networks',
         'django_ai.examples',
         ...
@@ -27,10 +28,12 @@ For installing ``django-ai`` in your Django project use the following steps:
 
 The ``django_ai.examples`` is optional but it is highly recommended that you keep it as a reference.
 
-4. Add django-ai's apps URL patterns::
+4. Add django-ai's apps URL patterns and its dependencies::
     
     urlpatterns = [
         ...
+        url(r'^nested_admin/', # Dependency
+            include('nested_admin.urls')),
         url(r'^django-ai/bayesian_networks/',
             include(django_ai.bayesian_networks)),
         ...
