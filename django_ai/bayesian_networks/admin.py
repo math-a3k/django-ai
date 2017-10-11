@@ -1,26 +1,36 @@
 # coding: utf-8
 
 from django.contrib import admin
+from nested_admin import (NestedModelAdmin, NestedStackedInline,
+                          NestedTabularInline)
 
 from .models import (BayesianNetwork, BayesianNetworkNode,
-                     BayesianNetworkEdge)
+                     BayesianNetworkNodeColumn, BayesianNetworkEdge)
+
+class BayesianNetworkNodeColumnInline(NestedTabularInline):
+    model = BayesianNetworkNodeColumn
+    sortable_field_name = "position"
+    fields = ["ref_model", "ref_column", "position"]
+    extra = 1
 
 
-class BayesianNetworkNodeInline(admin.StackedInline):
+class BayesianNetworkNodeInline(NestedStackedInline):
     model = BayesianNetworkNode
     extra = 1
+    inlines = [BayesianNetworkNodeColumnInline, ]
     fieldsets = (
         (None, {
             'fields': ('name', 'node_type',)
         }),
         ("Stochastic Type", {
             'fields': (('distribution', 'distribution_params'),
-                        'is_observable', ('ref_model', 'ref_column'), ),
+                        'is_observable', ),
         }),
         ("Deterministic Type", {
             'fields': (('deterministic', 'deterministic_params'), ),
         }),
         ("Visualization", {
+            'classes': ('collapse',),
             'fields': (('graph_interval', 'image'), ),
         }),
         ("Timestamps", {
@@ -37,7 +47,7 @@ class BayesianNetworkNodeInline(admin.StackedInline):
 
 
 
-class BayesianNetworkEdgeInline(admin.TabularInline):
+class BayesianNetworkEdgeInline(NestedTabularInline):
     model = BayesianNetworkEdge
     extra = 1
 
@@ -54,7 +64,7 @@ class BayesianNetworkEdgeInline(admin.TabularInline):
 
 
 @admin.register(BayesianNetwork)
-class BayesianNetworkAdmin(admin.ModelAdmin):
+class BayesianNetworkAdmin(NestedModelAdmin):
     readonly_fields = ['image', ]
     inlines = [
         BayesianNetworkNodeInline,

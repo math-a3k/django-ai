@@ -20,6 +20,7 @@ else:
     # Default modules
     allowed_modules = [
         "numpy",
+        "bayespy.nodes"
     ]
 # Import all the WL modules 
 modules = {}
@@ -31,8 +32,13 @@ def eval_function(parsed_fun):
     """
     Eval a function without the need of sanitizing
     """
+    if parsed_fun[0] == "@":
+        parsed_fun.pop(0)
+        reference = True
+    else:
+        reference = False
     try:
-        namespace, functor = parsed_fun.fun.asList()[0].rsplit(".", -1)
+        namespace, functor = parsed_fun.asList()[0].rsplit(".", 1)
     except Exception as e:
         raise ValueError("Functions must be namespaced")
     functor_args = parsed_fun[1:]
@@ -42,8 +48,11 @@ def eval_function(parsed_fun):
         raise ValueError("Module / Namespace not allowed, whitelist it first")
     try:
         method = getattr(mod, functor)
-        # No support for kwargs yet
-        return(method(*functor_args)) 
+        if reference:
+            return(method)
+        else:
+            # No support for kwargs yet
+            return(method(*functor_args)) 
     except Exception as e:
         msg = e.args[0]
         raise ValueError("Invalid function invocation:" + msg)
@@ -67,7 +76,7 @@ def parse_node_args(args_string, flat=False):
             pp.Word(pp.nums) + pp.oneOf(". e") + pp.Optional(pp.oneOf("+ -")) + \
                    pp.Optional(pp.Word(pp.nums))).setName("real")
     # Identifiers
-    identifier = pp.Word(pp.alphas + "_", pp.alphanums + "_")
+    identifier = pp.Word(pp.alphas + "_:", pp.alphanums + "_:")
     funStr = pp.Forward().setResultsName("fun")
     # Structures
     listStr = pp.Forward()
@@ -78,7 +87,8 @@ def parse_node_args(args_string, flat=False):
                 pp.quotedString.setParseAction(pp.removeQuotes) |
                 pp.Group(listStr()) | tupleStr() | identifier)
 
-    funStr << (pp.delimitedList(identifier, delim=".", combine=True) +
+    funStr << (pp.Optional("@") +
+                    pp.delimitedList(identifier, delim=".", combine=True) +
                     (LPAR + pp.Optional(pp.delimitedList(listItem)) + RPAR))
     listStr << (LBRACK + pp.Optional(pp.delimitedList(listItem)) +
                     pp.Optional(COMMA) + RBRACK)

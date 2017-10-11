@@ -22,7 +22,9 @@ from django_dag.models import node_factory, edge_factory
 from picklefield.fields import PickledObjectField
 
 from .bayespy_constants import (DISTRIBUTION_CHOICES,
-                                DETERMINISTIC_CHOICES)
+                                DETERMINISTIC_CHOICES,
+                                DIST_GAUSSIAN_ARD,
+                                DIST_MIXTURE)
 from .utils import (is_float, parse_node_args)
 
 
@@ -225,6 +227,43 @@ class BayesianNetworkEdge(
         super(BayesianNetworkEdge, self).save(*args, **kwargs)
 
 
+class BayesianNetworkNodeColumn(models.Model):
+    """
+    A dimension / axis / column of an Observable Bayesian Network Node.
+    """
+    node = models.ForeignKey("BayesianNetworkNode",
+                             on_delete=models.CASCADE, related_name="columns")
+    ref_model = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    ref_column = models.CharField("Reference Column", max_length=100)
+    position = models.SmallIntegerField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Bayesian Networks Node Column"
+        verbose_name_plural = "Bayesian Networks Node Columns"
+        unique_together = [("node", "ref_model", "ref_column"),
+                           ("node", "position")]
+
+    def __str__(self):
+        return("{0} | {1} - {2}".format(self.node, self.ref_model,
+                                        self.ref_column))
+
+    def clean(self):
+        # Check the validity of the Reference Column
+        try:
+            mc = self.ref_model.model_class()
+        except Exception as e:
+            raise ValidationError({'ref_model': _(
+                'The Reference Model must be a valid Django Model'
+            )})
+        try:
+            getattr(mc, self.ref_column)
+        except Exception as e:
+            raise ValidationError({'ref_column': _(
+                'The column must be a valid attribute of '
+                'the ' + self.ref_model.name + ' model'
+            )})
+
+
 class BayesianNetworkNode(
         node_factory('bayesian_networks.BayesianNetworkEdge')):
     """
@@ -232,6 +271,7 @@ class BayesianNetworkNode(
     """
     _engine_object = None  # Deprecated?
     _engine_inferred_object = None
+    _data = None
 
     NODE_TYPE_STOCHASTIC = 0
     NODE_TYPE_DETERMINISTIC = 1
@@ -241,7 +281,7 @@ class BayesianNetworkNode(
     )
     FIELDS_STOCHASTIC = [
         "is_observable", "distribution", "distribution_params",
-        "ref_model", "ref_column", "graph_interval"
+        "graph_interval"
     ]
     FIELDS_DETERMINISTIC = [
         "deterministic", "deterministic_params"
@@ -264,10 +304,6 @@ class BayesianNetworkNode(
     deterministic_params = models.CharField("Deterministic Parameters",
                                             max_length=200,
                                             blank=True, null=True)
-    ref_model = models.ForeignKey(ContentType, on_delete=models.CASCADE,
-                                  blank=True, null=True)
-    ref_column = models.CharField("Reference Column", max_length=100,
-                                  blank=True, null=True)
     engine_object = PickledObjectField(blank=True, null=True)
     engine_object_timestamp = models.DateTimeField(blank=True, null=True)
     engine_inferred_object = PickledObjectField(blank=True, null=True)
@@ -301,38 +337,6 @@ class BayesianNetworkNode(
             raise ValidationError(error_dict)
         # SECOND STEP: Check validity on Stochastic Nodes
         if self.node_type == self.NODE_TYPE_STOCHASTIC:
-            # Validations on Stochastic Observable Nodes
-            if self.is_observable:
-                if self.ref_model is None:
-                    error_dict['ref_model'] = _(
-                        'An Observable Stochastic Node must be linked '
-                        'to a Django Model')
-                if self.ref_column is None:
-                    error_dict['ref_model'] = _(
-                        'An Observable Stochastic Node must be linked '
-                        'to a field of a Django Model')
-                # Raise if any
-                if error_dict:
-                    raise ValidationError(error_dict)
-                # Check the validity of the Reference Column
-                mc = self.ref_model.model_class()
-                try:
-                    getattr(mc, self.ref_column)
-                except Exception as e:
-                    raise ValidationError({'ref_column': _(
-                        'The column must be a valid attribute of '
-                        'the ' + self.ref_model.name + ' model'
-                    )})
-            else:
-                if self.ref_model is not None:
-                    error_dict['ref_model'] = _(
-                        'This field is allowed only in an Observable '
-                        'Stochastic Node')
-                if self.ref_column is not None:
-                    error_dict['ref_model'] = _(
-                        'This field is allowed only in an Observable '
-                        'Stochastic Node')
-
             # Validations on the Distribution of Stochastic Nodes
             if self.distribution is None:
                 error_dict['distribution'] = _(
@@ -357,14 +361,21 @@ class BayesianNetworkNode(
             if error_dict:
                 raise ValidationError(error_dict)
 
+        # FOURTH STEP: Check args parsing
+        try:
+            params = parse_node_args(self.get_params(), flat=True)
+        except Exception as e:
+            msg = e.args[0]
+            raise ValidationError({
+                self.get_params_type() + "_params": msg
+            })
+
         # FINAL STEP: Check if the Engine Object (BayesPy) can be initialized
         # Check only if the Node hasn't other Nodes as params (otherwise the
         # networkd Edges should have been created already to resolve the names
         # to Nodes)
 
-        params = parse_node_args(self.get_params(), flat=True)
-        # collect all the values
-        if all([is_float(p) for p in params]):
+        if not any([isinstance(p, str) for p in params]):
             try:
                 eo = self.get_engine_object(reconstruct=True, save=False)
             except Exception as e:
@@ -373,11 +384,31 @@ class BayesianNetworkNode(
                     "distribution_params": "[BayesPy] " + msg})
 
     def get_data(self):
+        """
+        Returns a list of R^d points, represented as list of length d,
+        constructed from the Node's columns.
+        """
         if not self.is_observable:
             return(False)
-        data = self.ref_model.model_class().objects.values_list(
-            self.ref_column, flat=True)
-        return(data)
+        data = {}
+        columns = self.columns.all().order_by("position")
+        if len(columns) == 0:
+            raise ValueError(_("No columns defined for an Observable Node"))
+        # As they may not be from the same model, the can't be retrieved
+        # straight from the ORM
+        for column in columns:
+            colname = "{0}.{1}".format(column.ref_model, column.ref_column)
+            data[colname] = column.ref_model.model_class().objects.values_list(
+                column.ref_column, flat=True)
+        # and the len of the columns shouls be checked
+        lengths = [len(col) for col in data]
+        h = lengths[0]
+        if any([h == t for t in lengths[1:]]):
+            raise ValidationError(
+                {"ref_column": _("Columns lengths does not match.")})
+        # Construct the list
+        data_list = np.stack([data[col] for col in data], axis=-1)
+        return(data_list)
 
     def get_params(self):
         """
@@ -387,6 +418,15 @@ class BayesianNetworkNode(
             return(self.distribution_params)
         else:
             return(self.deterministic_params)
+
+    def get_params_type(self):
+        """
+        Returns the node type as a string
+        """
+        if self.node_type == self.NODE_TYPE_STOCHASTIC:
+            return("distribution")
+        else:
+            return("deterministic")
 
     def get_parents_names(self):
         return(self.parents.objects.values_list("name", flat=True))
@@ -407,14 +447,15 @@ class BayesianNetworkNode(
         error_str = _("Can't resolve name to node"
                       " - maybe Network Edges are missing?")
         for index, param in enumerate(params):
-            if isinstance(param, str):
+            if isinstance(param, str) and not param.startswith(":"):
                 if param in parents:
                     params[index] = parents[param]["eo"]
                 else:
                     # Strings can be only Node names
                     raise ValueError(error_str)
         for kwparam in kwparams:
-            if isinstance(kwparams[kwparam], str):
+            if (isinstance(kwparams[kwparam], str)
+                    and not kwparams[kwparam].startswith(":")):
                 if kwparams[kwparam] in parents:
                     kwparams[kwparam] = parents[kwparam]["eo"]
                 else:
@@ -443,14 +484,35 @@ class BayesianNetworkNode(
         params, kwparams = self.resolve_eos_in_params(parsed_params['args'],
                                                       parsed_params['kwargs'],
                                                       parents)
+        # Remove Custom Keywords from params
+        custom_keywords = []
+        for p in params:
+            if isinstance(p, str) and p.startswith(":"):
+                params.remove(p)
+                custom_keywords.append(p)
+
         kwparams['name'] = self.name
 
         if self.node_type == self.NODE_TYPE_STOCHASTIC:
             node_distribution = getattr(bp.nodes, self.distribution)
-            # Only assign if plates are not provided
-            if self.is_observable and not 'plates' in kwparams:
-                kwparams['plates'] = (self.ref_model.model_class()
-                                      .objects.count(), )
+            # Only assign if plates are not provided on observables
+            if self.is_observable:
+                self._data = self.get_data()
+                if not 'plates' in kwparams:
+                    kwparams['plates'] = np.shape(self._data)
+            else:
+                if 'plates' in kwparams:
+                    # Process Custom Keywords in plates
+                    length = kwparams['plates'][0]
+                    if isinstance(length, str) and length.startswith(":dl"):
+                        node = self.network.nodes.get(name=length[4:])
+                        length = node.get_data().shape[0]
+                    if len(kwparams['plates']) == 2:
+                        kwparams['plates'] = (length, kwparams['plates'][1])
+                    else:
+                        kwparams['plates'] = (length, )
+            if ":noplates" in custom_keywords:
+                del(kwparams['plates'])
 
             # Initialize the BP Node
             self.engine_object = node_distribution(*params, **kwparams)
@@ -458,6 +520,10 @@ class BayesianNetworkNode(
             if self.is_observable:
                 data = self.get_data()
                 self.engine_object.observe(data)
+            # Initializate from random if requested
+            if ":ifr" in custom_keywords:
+                self.engine_object.initialize_from_random()
+
         else:
             # Deterministic Type
             node_deterministic_fun = getattr(bp.nodes, self.deterministic)
@@ -494,23 +560,37 @@ class BayesianNetworkNode(
 
     def update_image(self):
         if (not self.engine_inferred_object or
-                not self.node_type == self.NODE_TYPE_STOCHASTIC or
-                not self.graph_interval):
+                not self.node_type == self.NODE_TYPE_STOCHASTIC):
             return False
         if self.image:
             self.image.delete()
 
-        a, b = self.graph_interval.split(", ")
-        bp.plot.pdf(self.engine_inferred_object,
-                    np.linspace(float(a), float(b), num=100), name=self.name)
         image_name = "{0}/{1}".format(
             os.path.join("django_ai",
                          "bayesian_networks"),
             self.network.name + "_" + self.name + ".png")
-        bp.plot.pyplot.savefig(settings.MEDIA_ROOT + '/' + image_name)
-        bp.plot.pyplot.close()
-        self.image = image_name
-        self.save()
+
+        save = False
+        if self.distribution == DIST_GAUSSIAN_ARD:
+            if not self.graph_interval:
+                return(False)
+            a, b = self.graph_interval.split(", ")
+            bp.plot.pdf(self.engine_inferred_object,
+                        np.linspace(float(a), float(b), num=100), name=self.name)
+            bp.plot.pyplot.savefig(settings.MEDIA_ROOT + '/' + image_name)
+            bp.plot.pyplot.close()
+            save = True
+        elif self.distribution == DIST_MIXTURE:
+            if self.columns.count() == 2:
+                y = self.get_data()
+                bp.plot.gaussian_mixture_2d(self.engine_inferred_object, scale=2)
+                bp.plot.pyplot.savefig(settings.MEDIA_ROOT + '/' + image_name)
+                bp.plot.pyplot.close()
+                save = True
+
+        if save:
+            self.image = image_name
+            self.save()
 
     def __str__(self):
         return(str(self.network) + " - " + self.name)

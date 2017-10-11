@@ -25,17 +25,13 @@
     is_observable_cbs = $("input[name$='is_observable']");
     is_observable_cbs.change(function() {
         io_cb = $(this);
-        io_row = io_cb.closest("div[class$='is_observable']");
-        ref_model_row = io_row.next(); 
-        visualization_fieldset = io_cb.closest("fieldset").nextAll("fieldset:has(h2:contains('Visualization'))");
+        io_fieldset = io_cb.closest("fieldset");
+        columns_inline = io_fieldset.nextAll("div[id$='columns-group']"); 
 
         if (io_cb.is(':checked')) { 
-            ref_model_row.show();
-            // Visualization is not supported for Observable Nodes 
-            visualization_fieldset.hide();
+            columns_inline.show();
         } else { 
-            ref_model_row.hide();
-            visualization_fieldset.show();
+            columns_inline.hide();
         }
     });
     is_observable_cbs.change();
