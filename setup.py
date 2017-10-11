@@ -60,6 +60,7 @@ setup(
         'bayespy==0.5.6',
         'Django>=1.11, <2.0',
         'django-dag==1.4.1',
+        'django-nested-admin==3.0.20',
         'django-picklefield==1.0.0',
         'graphviz==0.6',
         'Pillow==4.2.1',
