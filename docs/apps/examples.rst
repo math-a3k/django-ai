@@ -74,9 +74,11 @@ This is an adaptation of the `BayesPy Gaussian Mixture Model Example <http://bay
 ``Y``
     The mixture of itself.
 
-Once the inference is performed, the model identifies 4 clusters from the 10 initial ones.
+After the inference is performed, the model should identify the 4 real clusters from the 10 initial ones. Note that due to the random initialization of the BayesPy VB engine the algorithm may converge to local optimums which are not the global optima. You can watch this effect by running the inference several times from the admin's interface. A way of solving this is by running the algorithm several times and comparing the results for the "best" (i.e. likelihood, "stability"). This is out of the scope of this example.
 
-The next step is assigning the users to their clusters:
+Also note that his model (Gaussians Mixture) can't "discern" when the clusters are overlapped - like the "central" ones. Those users will be highly likely assigned to the wrong ones. 
+
+Once you are confident with the results, the next step is assigning the users to their clusters:
 
 .. code-block:: python
 
