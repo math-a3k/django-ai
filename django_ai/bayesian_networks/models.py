@@ -21,10 +21,7 @@ from django.core.exceptions import ValidationError
 from django_dag.models import node_factory, edge_factory
 from picklefield.fields import PickledObjectField
 
-from .bayespy_constants import (DISTRIBUTION_CHOICES,
-                                DETERMINISTIC_CHOICES,
-                                DIST_GAUSSIAN_ARD,
-                                DIST_MIXTURE)
+from bayesian_networks import bayespy_constants as bp_consts
 from .utils import (is_float, parse_node_args)
 
 
@@ -38,17 +35,26 @@ class BayesianNetwork(models.Model):
     """
     _Q = None
 
+    TYPE_GENERAL = 0
+    TYPE_CLUSTERING = 1
+
+    NETWORK_TYPE_CHOICES = (
+        (TYPE_GENERAL, "General"),
+        (TYPE_CLUSTERING, "Clustering"),
+    )
+
     name = models.CharField("Name", max_length=100)
     image = models.ImageField("Image", blank=True, null=True)
     engine_object = PickledObjectField(blank=True, null=True)
     engine_object_timestamp = models.DateTimeField(blank=True, null=True)
+    network_type = models.SmallIntegerField(choices=NETWORK_TYPE_CHOICES,
+                                            default=TYPE_GENERAL,
+                                            blank=True, null=True)
 
     def __str__(self):
         return("[BN: {0}]".format(self.name))
 
     def save(self, *args, **kwargs):
-        """
-        """
         super(BayesianNetwork, self).save(*args, **kwargs)
 
     def get_graph(self):
@@ -163,10 +169,10 @@ class BayesianNetwork(models.Model):
                     node.save()
         return(self.engine_object)
 
-    def get_inf_object(self):
-        return(self.engine_object)
-
     def reset_engine_object(self, save=True):
+        """
+        Resets the Engine Object and timestamp
+        """
         self.engine_object = None
         self.engine_object_timestamp = None
         if save:
@@ -182,6 +188,38 @@ class BayesianNetwork(models.Model):
         for node in self.nodes.all():
             node.reset_inference(save=save)
         return(True)
+
+    def assign_cluster(self, observation):
+        """
+        If the Network is for Clustering, returns the cluster label for a
+        new observation given the current state of the inference.
+        Assumptions:
+            - The network has a topology of a Gaussian Mixture Model with
+              one Categorical Node for cluster assigments with prior Dirichlet
+              probabilities
+        """
+        if self.network_type == self.TYPE_CLUSTERING:
+            if not self.is_inferred:
+                return(False)
+            eo = self.engine_object
+            prior_cluster_probs = self.nodes.get(
+                distribution=bp_consts.DIST_DIRICHLET).engine_inferred_object
+            cluster_means = self.nodes.get(
+                distribution=bp_consts.DIST_GAUSSIAN).engine_inferred_object
+            cluster_cov_matrices = self.nodes.get(
+                distribution=bp_consts.DIST_WISHART).engine_inferred_object
+            #
+            Z_new = bp.nodes.Categorical(prior_cluster_probs)
+            Z_new.initialize_from_random()
+            Y_new = bp.nodes.Mixture(Z_new, bp.nodes.Gaussian,
+                                     cluster_means, cluster_cov_matrices)
+            Y_new.observe(observation)
+            Q_0 = bp.inference.VB(Z_new, Y_new, *eo.model)
+            Q_0.update(Z_new)
+            cluster_label = np.argmax(Z_new.get_moments()[0])
+            return(cluster_label)
+        else:
+            return(False)
 
     @staticmethod
     def update_eos_struct(eos_struct, node):
@@ -293,13 +331,13 @@ class BayesianNetworkNode(
                                          default=NODE_TYPE_STOCHASTIC)
     is_observable = models.BooleanField("Is Observable?", default=False)
     distribution = models.CharField("Distribution", max_length=50,
-                                    choices=DISTRIBUTION_CHOICES,
+                                    choices=bp_consts.DISTRIBUTION_CHOICES,
                                     blank=True, null=True)
     distribution_params = models.CharField("Distribution Parameters",
                                            max_length=200,
                                            blank=True, null=True)
     deterministic = models.CharField("Deterministic", max_length=50,
-                                     choices=DETERMINISTIC_CHOICES,
+                                     choices=bp_consts.DETERMINISTIC_CHOICES,
                                      blank=True, null=True)
     deterministic_params = models.CharField("Deterministic Parameters",
                                             max_length=200,
@@ -571,7 +609,7 @@ class BayesianNetworkNode(
             self.network.name + "_" + self.name + ".png")
 
         save = False
-        if self.distribution == DIST_GAUSSIAN_ARD:
+        if self.distribution == bp_consts.DIST_GAUSSIAN_ARD:
             if not self.graph_interval:
                 return(False)
             a, b = self.graph_interval.split(", ")
@@ -580,10 +618,11 @@ class BayesianNetworkNode(
             bp.plot.pyplot.savefig(settings.MEDIA_ROOT + '/' + image_name)
             bp.plot.pyplot.close()
             save = True
-        elif self.distribution == DIST_MIXTURE:
+        elif self.distribution == bp_consts.DIST_MIXTURE:
             if self.columns.count() == 2:
                 y = self.get_data()
-                bp.plot.gaussian_mixture_2d(self.engine_inferred_object, scale=2)
+                bp.plot.gaussian_mixture_2d(
+                    self.engine_inferred_object, scale=2)
                 bp.plot.pyplot.savefig(settings.MEDIA_ROOT + '/' + image_name)
                 bp.plot.pyplot.close()
                 save = True
