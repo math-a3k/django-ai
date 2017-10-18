@@ -7,6 +7,7 @@ from nested_admin import (NestedModelAdmin, NestedStackedInline,
 from .models import (BayesianNetwork, BayesianNetworkNode,
                      BayesianNetworkNodeColumn, BayesianNetworkEdge)
 
+
 class BayesianNetworkNodeColumnInline(NestedTabularInline):
     model = BayesianNetworkNodeColumn
     sortable_field_name = "position"
@@ -24,7 +25,7 @@ class BayesianNetworkNodeInline(NestedStackedInline):
         }),
         ("Stochastic Type", {
             'fields': (('distribution', 'distribution_params'),
-                        'is_observable', ),
+                       'is_observable', ),
         }),
         ("Deterministic Type", {
             'fields': (('deterministic', 'deterministic_params'), ),
@@ -44,7 +45,6 @@ class BayesianNetworkNodeInline(NestedStackedInline):
         css = {
             'all': ('/static/css/admin/bayesian_networks.css',)
         }
-
 
 
 class BayesianNetworkEdgeInline(NestedTabularInline):
@@ -78,10 +78,12 @@ class BayesianNetworkAdmin(NestedModelAdmin):
         BayesianNetworkNodeInline,
         BayesianNetworkEdgeInline,
     ]
+
     def get_form(self, request, obj=None, **kwargs):
         # Save obj reference in the request for future processing in Inline
         request._obj_ = obj
-        return super(BayesianNetworkAdmin, self).get_form(request, obj, **kwargs)
+        return super(BayesianNetworkAdmin, self).get_form(request, obj,
+                                                          **kwargs)
 
 
 # @admin.register(BayesianNetworkNode)

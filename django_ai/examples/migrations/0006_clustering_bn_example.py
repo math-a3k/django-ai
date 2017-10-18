@@ -26,14 +26,13 @@ def generate_bn_image(bn):
         dot.node(name=node.name, label=node.name)
     edges = bn.edges.all()
     for edge in edges:
-         dot.edge(str(edge.parent.name),
+        dot.edge(str(edge.parent.name),
                  str(edge.child.name))
     dot.format = "png"
     contentfile = ContentFile(dot.pipe())
     image_name = "{0}/{1}".format(
-            os.path.join("django_ai",
-                         "bayesian_networks"),
-            bn.name + ".png")
+        os.path.join("django_ai", "bayesian_networks"),
+        bn.name + ".png")
     bn.image.save(image_name, contentfile)
     bn.save()
 
@@ -48,18 +47,18 @@ def create_clustering_bn_example(apps, schema_editor):
     create_contenttypes(app_config)
     ##
 
-    BayesianNetwork = apps.get_model("bayesian_networks",
-                                     "BayesianNetwork")
-    BayesianNetworkEdge = apps.get_model("bayesian_networks",
-                                         "BayesianNetworkEdge")
-    BayesianNetworkNode = apps.get_model("bayesian_networks",
-                                         "BayesianNetworkNode")
-    BayesianNetworkNodeColumn = apps.get_model("bayesian_networks",
-                                     "BayesianNetworkNodeColumn")
+    BayesianNetwork = apps.get_model(
+        "bayesian_networks", "BayesianNetwork")
+    BayesianNetworkEdge = apps.get_model(
+        "bayesian_networks", "BayesianNetworkEdge")
+    BayesianNetworkNode = apps.get_model(
+        "bayesian_networks", "BayesianNetworkNode")
+    BayesianNetworkNodeColumn = apps.get_model(
+        "bayesian_networks", "BayesianNetworkNodeColumn")
 
-    ContentType = apps.get_model("contenttypes",
-                                "ContentType")
-    
+    ContentType = apps.get_model(
+        "contenttypes", "ContentType")
+
     bn = BayesianNetwork(name="Clustering (Example)")
     bn.save()
     alpha = BayesianNetworkNode(
@@ -111,16 +110,16 @@ def create_clustering_bn_example(apps, schema_editor):
     Y.save()
     #
     Y_col_avg_logged = BayesianNetworkNodeColumn(
-            node=Y,
-            ref_model=ContentType.objects.get(model="userinfo",
-                                              app_label="examples"),
-            ref_column="avg_time_logged"
+        node=Y,
+        ref_model=ContentType.objects.get(
+            model="userinfo", app_label="examples"),
+        ref_column="avg_time_logged"
     )
     Y_col_avg_pages_a = BayesianNetworkNodeColumn(
-            node=Y,
-            ref_model=ContentType.objects.get(model="userinfo",
-                                              app_label="examples"),
-            ref_column="avg_time_pages_a"
+        node=Y,
+        ref_model=ContentType.objects.get(
+            model="userinfo", app_label="examples"),
+        ref_column="avg_time_pages_a"
     )
     Y_col_avg_logged.save()
     Y_col_avg_pages_a.save()

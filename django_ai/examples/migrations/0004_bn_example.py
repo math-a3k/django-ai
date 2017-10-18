@@ -25,14 +25,14 @@ def generate_bn_image(bn):
         dot.node(name=node.name, label=node.name)
     edges = bn.edges.all()
     for edge in edges:
-         dot.edge(str(edge.parent.name),
+        dot.edge(str(edge.parent.name),
                  str(edge.child.name))
     dot.format = "png"
     contentfile = ContentFile(dot.pipe())
     image_name = "{0}/{1}".format(
-            os.path.join("django_ai",
-                         "bayesian_networks"),
-            bn.name + ".png")
+        os.path.join("django_ai",
+                     "bayesian_networks"),
+        bn.name + ".png")
     bn.image.save(image_name, contentfile)
     bn.save()
 
@@ -54,10 +54,10 @@ def create_bn1_example(apps, schema_editor):
     BayesianNetworkNode = apps.get_model("bayesian_networks",
                                          "BayesianNetworkNode")
     BayesianNetworkNodeColumn = apps.get_model("bayesian_networks",
-                                         "BayesianNetworkNodeColumn")
+                                               "BayesianNetworkNodeColumn")
     ContentType = apps.get_model("contenttypes",
-                                "ContentType")
-    
+                                 "ContentType")
+
     bn1 = BayesianNetwork(name="BN1 (Example)")
     bn1.save()
     mu = BayesianNetworkNode(
@@ -91,10 +91,10 @@ def create_bn1_example(apps, schema_editor):
     ui_avg1.save()
     #
     ui_avg1_col = BayesianNetworkNodeColumn(
-            node=ui_avg1,
-            ref_model=ContentType.objects.get(model="userinfo",
-                                              app_label="examples"),
-            ref_column="avg1"
+        node=ui_avg1,
+        ref_model=ContentType.objects.get(model="userinfo",
+                                          app_label="examples"),
+        ref_column="avg1"
     )
     ui_avg1_col.save()
     #
