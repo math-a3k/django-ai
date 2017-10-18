@@ -65,12 +65,19 @@ class BayesianNetworkEdgeInline(NestedTabularInline):
 
 @admin.register(BayesianNetwork)
 class BayesianNetworkAdmin(NestedModelAdmin):
-    readonly_fields = ['image', ]
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'network_type',)
+        }),
+        ("Miscellanous", {
+            'classes': ('collapse',),
+            'fields': (('engine_object_timestamp', 'image'), ),
+        }),
+    )
     inlines = [
         BayesianNetworkNodeInline,
         BayesianNetworkEdgeInline,
     ]
-
     def get_form(self, request, obj=None, **kwargs):
         # Save obj reference in the request for future processing in Inline
         request._obj_ = obj
