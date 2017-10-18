@@ -120,6 +120,8 @@ class TestDjango_ai(TestCase):
         self.assertEqual(str(tau)[:5], '0.039')
 
     def test_bn_deterministic_nodes(self):
+        # Initialize the EO
+        self.bn2.get_engine_object(reconstruct=True, save=True)
         self.z.refresh_from_db()
         z_eo = self.z.get_engine_object()
         expected_moments = [np.array([1., 1.]),
