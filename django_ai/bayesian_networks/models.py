@@ -21,8 +21,11 @@ from django.core.exceptions import ValidationError
 from django_dag.models import node_factory, edge_factory
 from picklefield.fields import PickledObjectField
 
-from bayesian_networks import bayespy_constants as bp_consts
-from .utils import (is_float, parse_node_args)
+from .utils import (parse_node_args, )
+if 'DJANGO_TEST' in os.environ:
+    from django_ai.bayesian_networks import bayespy_constants as bp_consts
+else:
+    from bayesian_networks import bayespy_constants as bp_consts
 
 
 class BayesianNetwork(models.Model):
@@ -30,10 +33,12 @@ class BayesianNetwork(models.Model):
     Main object of a Bayesian Network.
 
     It gathers all Nodes and Edges of the DAG that defines the Network and
-    provides an interface for performing and resetting the inference and 
+    provides an interface for performing and resetting the inference and
     related objects.
     """
-    _Q = None
+    _alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    _prev_cluster_labels = None
+    _cluster_labels = None
 
     TYPE_GENERAL = 0
     TYPE_CLUSTERING = 1
@@ -93,7 +98,7 @@ class BayesianNetwork(models.Model):
         initializing the Inference Engine of the Network.
 
         This is the method that should be called for initializing the EOs of
-        the Nodes, as it handle the dependencies correctly and then propagate 
+        the Nodes, as it handle the dependencies correctly and then propagate
         them to the Nodes' objects.
 
         CAVEAT: You might have to call 'node.refresh_from_db()' if for some
@@ -202,17 +207,17 @@ class BayesianNetwork(models.Model):
             if not self.is_inferred:
                 return(False)
             eo = self.engine_object
-            prior_cluster_probs = self.nodes.get(
+            prior_clusters_probs = self.nodes.get(
                 distribution=bp_consts.DIST_DIRICHLET).engine_inferred_object
-            cluster_means = self.nodes.get(
+            clusters_means = self.nodes.get(
                 distribution=bp_consts.DIST_GAUSSIAN).engine_inferred_object
-            cluster_cov_matrices = self.nodes.get(
+            clusters_cov_matrices = self.nodes.get(
                 distribution=bp_consts.DIST_WISHART).engine_inferred_object
             #
-            Z_new = bp.nodes.Categorical(prior_cluster_probs)
+            Z_new = bp.nodes.Categorical(prior_clusters_probs)
             Z_new.initialize_from_random()
             Y_new = bp.nodes.Mixture(Z_new, bp.nodes.Gaussian,
-                                     cluster_means, cluster_cov_matrices)
+                                     clusters_means, clusters_cov_matrices)
             Y_new.observe(observation)
             Q_0 = bp.inference.VB(Z_new, Y_new, *eo.model)
             Q_0.update(Z_new)
@@ -220,6 +225,25 @@ class BayesianNetwork(models.Model):
             return(cluster_label)
         else:
             return(False)
+
+    def get_clusters_labels(self):
+        """
+        Filters the clusters and constructs a dict with the labels
+        Assumptions:
+            - The network as a topology of a Gaussian Mixture Model
+            - There are no clusters in the origin (should be repeated instead)
+        """
+        clusters_means_node_eo = self.nodes.get(
+            distribution=bp_consts.DIST_GAUSSIAN).engine_inferred_object
+        clusters_means = clusters_means_node_eo.get_moments()[0]
+        cmean_dim = len(clusters_means[0][0])
+        origin = np.zeros(cmean_dim)
+        filtered_means = [mu for mu in clusters_means
+                          if not all(mu == origin)]
+        for index, cm in clusters_means:
+           if not all(cm == origin):
+                # WIP...
+                pass
 
     @staticmethod
     def update_eos_struct(eos_struct, node):
@@ -237,7 +261,8 @@ class BayesianNetwork(models.Model):
         # recursively (until there )
         for parent in parents:
             if not eos_struct[parent]["eo"]:
-                update_eos_struct(eos_struct, eos_struct[parent]["dm"])
+                BayesianNetwork.update_eos_struct(
+                    eos_struct, eos_struct[parent]["dm"])
         # Initialize the Node EO and store it in the matrix
         eos_struct[node.name]["eo"] = \
             node.get_engine_object(parents=eos_struct, reconstruct=True)
@@ -365,7 +390,7 @@ class BayesianNetworkNode(
             for field in self.FIELDS_STOCHASTIC:
                 field_value = getattr(self, field)
                 # For avoiding the use of NullBooleanField in 'is_observable'
-                if field_value == False:
+                if field_value is False:
                     field_value = None
                 if field_value is not None:
                     error_dict[field] = _(
@@ -415,7 +440,7 @@ class BayesianNetworkNode(
 
         if not any([isinstance(p, str) for p in params]):
             try:
-                eo = self.get_engine_object(reconstruct=True, save=False)
+                self.get_engine_object(reconstruct=True, save=False)
             except Exception as e:
                 msg = e.args[0]
                 raise ValidationError({
@@ -492,8 +517,8 @@ class BayesianNetworkNode(
                     # Strings can be only Node names
                     raise ValueError(error_str)
         for kwparam in kwparams:
-            if (isinstance(kwparams[kwparam], str)
-                    and not kwparams[kwparam].startswith(":")):
+            if (isinstance(kwparams[kwparam], str) and
+                    not kwparams[kwparam].startswith(":")):
                 if kwparams[kwparam] in parents:
                     kwparams[kwparam] = parents[kwparam]["eo"]
                 else:
@@ -517,7 +542,6 @@ class BayesianNetworkNode(
             return self.engine_object
 
         # Parse Params
-        nodes_in_bn = self.network.get_nodes_names()
         parsed_params = parse_node_args(self.get_params())
         params, kwparams = self.resolve_eos_in_params(parsed_params['args'],
                                                       parsed_params['kwargs'],
@@ -536,7 +560,7 @@ class BayesianNetworkNode(
             # Only assign if plates are not provided on observables
             if self.is_observable:
                 self._data = self.get_data()
-                if not 'plates' in kwparams:
+                if 'plates' not in kwparams:
                     kwparams['plates'] = np.shape(self._data)
             else:
                 if 'plates' in kwparams:
@@ -614,13 +638,13 @@ class BayesianNetworkNode(
                 return(False)
             a, b = self.graph_interval.split(", ")
             bp.plot.pdf(self.engine_inferred_object,
-                        np.linspace(float(a), float(b), num=100), name=self.name)
+                        np.linspace(float(a), float(b), num=100),
+                        name=self.name)
             bp.plot.pyplot.savefig(settings.MEDIA_ROOT + '/' + image_name)
             bp.plot.pyplot.close()
             save = True
         elif self.distribution == bp_consts.DIST_MIXTURE:
             if self.columns.count() == 2:
-                y = self.get_data()
                 bp.plot.gaussian_mixture_2d(
                     self.engine_inferred_object, scale=2)
                 bp.plot.pyplot.savefig(settings.MEDIA_ROOT + '/' + image_name)
@@ -640,6 +664,7 @@ class BayesianNetworkNode(
 
 def update_bn_image(sender, **kwargs):
     kwargs['instance'].network.update_image()
+
 
 post_save.connect(update_bn_image, sender=BayesianNetworkNode)
 post_save.connect(update_bn_image, sender=BayesianNetworkEdge)

@@ -19,8 +19,8 @@ def bn_run_inference(request, bn_id):
         mod = inspect.getmodule(frm[0])
         modname = mod.__name__ if mod else frm[1]
         messages.error(request,
-            "ERROR WHILE PERFORMING INFERENCE: [{}] {}".format(
-                modname, str(msg)))
+                       "ERROR WHILE PERFORMING INFERENCE: [{}] {}".format(
+                           modname, str(msg)))
 
     return redirect(request.META.get('HTTP_REFERER', '/'))
 

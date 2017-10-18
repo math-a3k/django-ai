@@ -18,14 +18,14 @@ from django_ai.bayesian_networks import models
 from django_ai.bayesian_networks.bayespy_constants import (
     DIST_GAUSSIAN_ARD, DIST_GAMMA, DIST_GAUSSIAN, DET_ADD)
 from django_ai.bayesian_networks.utils import parse_node_args
-from tests.test_models.models import UserInfo
 
 
 class TestDjango_ai(TestCase):
 
     def setUp(self):
         # BN 1
-        self.bn1 = models.BayesianNetwork.objects.create(name="BN for tests - 1")
+        self.bn1 = models.BayesianNetwork.objects.create(
+            name="BN for tests - 1")
         self.mu = models.BayesianNetworkNode.objects.create(
             network=self.bn1,
             name="mu",
@@ -71,7 +71,8 @@ class TestDjango_ai(TestCase):
             child=self.ui_avg1
         )
         # BN 2
-        self.bn2 = models.BayesianNetwork.objects.create(name="BN for tests - 2")
+        self.bn2 = models.BayesianNetwork.objects.create(
+            name="BN for tests - 2")
         self.x1 = models.BayesianNetworkNode.objects.create(
             network=self.bn2,
             name="x1",
@@ -119,18 +120,17 @@ class TestDjango_ai(TestCase):
         self.assertEqual(str(tau)[:5], '0.039')
 
     def test_bn_deterministic_nodes(self):
-        bn2_eo = self.bn2.get_engine_object(reconstruct=True, save=True)
         self.z.refresh_from_db()
         z_eo = self.z.get_engine_object()
-        expected_moments = [np.array([ 1.,  1.]),
-                            np.array([[ 3.,  1.], [ 1.,  3.]])]
+        expected_moments = [np.array([1., 1.]),
+                            np.array([[3., 1.], [1., 3.]])]
         moments = z_eo.get_moments()
         self.assertTrue(all(expected_moments[0] == moments[0]))
         self.assertTrue(all(expected_moments[1][0] == moments[1][0]))
         self.assertTrue(all(expected_moments[1][1] == moments[1][1]))
 
     def test_bn_node_validation(self):
-        ## Test First Step: fields corresponds to Node type
+        # Test First Step: fields corresponds to Node type
         with self.assertRaises(ValidationError):
             self.mu.deterministic_params = "a, b"
             self.mu.full_clean()
@@ -140,7 +140,7 @@ class TestDjango_ai(TestCase):
                 models.BayesianNetworkNode.NODE_TYPE_DETERMINISTIC
             self.mu.full_clean()
 
-        ## Test Second Step: Validations on Stochastic Types
+        # Test Second Step: Validations on Stochastic Types
         # Stochastic Nodes must have a Distribution
         self.setUp()
         with self.assertRaises(ValidationError):
@@ -152,7 +152,7 @@ class TestDjango_ai(TestCase):
             self.mu.distribution_params = None
             self.mu.full_clean()
 
-        ## Test Third Step: Validations on Deterministic Types
+        # Test Third Step: Validations on Deterministic Types
         # Deterministic Nodes must have a function
         self.setUp()
         with self.assertRaises(ValidationError):
@@ -164,7 +164,7 @@ class TestDjango_ai(TestCase):
             self.z.deterministic_params = None
             self.z.full_clean()
 
-        ## Test Final Step: BayesPy initialization
+        # Test Final Step: BayesPy initialization
         self.setUp()
         with self.assertRaises(ValidationError):
             self.mu.distribution_params = "1, 2, 3, 4, 5"
@@ -194,33 +194,33 @@ class TestDjango_ai(TestCase):
             self.ui_avg1.columns.all().delete()
             self.ui_avg1.get_data()
         # TODO:
-        ## Test not-matching column lengths
+        # Test not-matching column lengths
         # with self.assertRaises(ValidationError):
             # - Create other model
             # - Populate with 100 records
             # - Add the column with the userinfo column
             # - Call get_data()
-        ## Test correct functioning
+        # Test correct functioning
 
     def test_node_args_parsing(self):
-        ### Test "general" parsing
+        # Test "general" parsing
         args_string = ('True, :ifr, numpy.ones(2), [[1,2], [3,4]], '
                        'type=rect, sizes=[3, 4,], coords = ([1,2],[3,4]), '
-                       'func=numpy.zeros(2), plates=:no' )
+                       'func=numpy.zeros(2), plates=:no')
         expected_output = {
             'args': [
-                    True,
-                    ':ifr',
-                    np.array([ 1.,  1.]),
+                True,
+                ':ifr',
+                np.array([1., 1.]),
                     [[1, 2], [3, 4]]
-                    ],
+            ],
             'kwargs': {
-                    'type': 'rect',
-                    'sizes': [3, 4],
-                    'coords': ([1, 2], [3, 4]),
-                    'func': np.array([ 0.,  0.]),
-                    'plates': ':no',
-                    }
+                'type': 'rect',
+                'sizes': [3, 4],
+                'coords': ([1, 2], [3, 4]),
+                'func': np.array([0., 0.]),
+                'plates': ':no',
+            }
         }
         output = parse_node_args(args_string)
 
@@ -231,14 +231,14 @@ class TestDjango_ai(TestCase):
         # lists is the array comparison of NumPy and not the standard list
         # comparison of Python.
 
-        ## Test Positional Args
+        # Test Positional Args
         positions_tested = []
         for position, arg in enumerate(output["args"]):
             # For nested lists, don't know why but it keeps using the
             # NumPy array comparison despites of not being of its class
             if isinstance(arg, np.ndarray) or isinstance(arg, list):
-                comp = (expected_output["args"][position] 
-                        == output["args"][position])
+                comp = (expected_output["args"][position] ==
+                        output["args"][position])
                 if not isinstance(comp, bool):
                     comp = all(comp)
                 self.assertEqual(comp, True)
@@ -251,10 +251,10 @@ class TestDjango_ai(TestCase):
         # Remove the tested elements from output
         for pt in positions_tested:
             del(output['args'][pt])
-        ## Test Keyword Args
+        # Test Keyword Args
         for kw in expected_output['kwargs'].keys():
-            if (isinstance(expected_output['kwargs'][kw], np.ndarray)
-                or isinstance(expected_output['kwargs'][kw], list)):
+            if (isinstance(expected_output['kwargs'][kw], np.ndarray) or
+                    isinstance(expected_output['kwargs'][kw], list)):
                 comp = (expected_output['kwargs'][kw] == output["kwargs"][kw])
                 if not isinstance(comp, bool):
                     comp = all(comp)
@@ -269,21 +269,20 @@ class TestDjango_ai(TestCase):
         # Check there is nothing left in the output
         self.assertEqual(output, {"args": [], "kwargs": {}})
 
-        ### Test not allowed functions
+        # Test not allowed functions
         with self.assertRaises(ValueError):
             parse_node_args("shutil.rmtree('/')")
         with self.assertRaises(ValueError):
             parse_node_args("eval('<malicious_code>')")
 
-        ### Test referencing to a function
+        # Test referencing to a function
         args_string = ('@bayespy.nodes.Gaussian()')
         expected_output = {
-            'args': [ Gaussian ],
-            'kwargs': { }
+            'args': [Gaussian],
+            'kwargs': {}
         }
         output = parse_node_args(args_string)
         self.assertEqual(output, expected_output)
-
 
     def tearDown(self):
         self.bn1.image.delete()

@@ -5,6 +5,7 @@ from importlib import import_module
 
 from django.conf import settings
 
+
 def is_float(value):
     try:
         float(value)
@@ -13,7 +14,7 @@ def is_float(value):
         return(False)
 
 
-## Load all the modules 
+# Load all the modules
 if hasattr(settings, "DJANGO_AI_WHITELISTED_MODULES"):
     allowed_modules = settings.DJANGO_AI_WHITELISTED_MODULES
 else:
@@ -22,7 +23,7 @@ else:
         "numpy",
         "bayespy.nodes"
     ]
-# Import all the WL modules 
+# Import all the WL modules
 modules = {}
 for module in allowed_modules:
     modules[module] = import_module(module)
@@ -52,7 +53,7 @@ def eval_function(parsed_fun):
             return(method)
         else:
             # No support for kwargs yet
-            return(method(*functor_args)) 
+            return(method(*functor_args))
     except Exception as e:
         msg = e.args[0]
         raise ValueError("Invalid function invocation:" + msg)
@@ -64,17 +65,18 @@ def parse_node_args(args_string, flat=False):
     Based on https://groups.google.com/forum/#!msg/comp.lang.python/vgOWCZ7Z8Yw/ZQgDJfXtCj0J
     """
     LPAR, RPAR, LBRACK, RBRACK, EQ, COMMA = \
-        map(pp.Suppress,"()[]=,")
+        map(pp.Suppress, "()[]=,")
 
     # Booleans and Keywords
     noneLiteral = pp.Literal("None")
     boolLiteral = pp.oneOf("True False")
     # Scalars
-    integer = pp.Combine(pp.Optional(pp.oneOf("+ -")) + \
-                pp.Word(pp.nums)).setName("integer")
-    real = pp.Combine(pp.Optional(pp.oneOf("+ -")) + \
-            pp.Word(pp.nums) + pp.oneOf(". e") + pp.Optional(pp.oneOf("+ -")) + \
-                   pp.Optional(pp.Word(pp.nums))).setName("real")
+    integer = pp.Combine(pp.Optional(pp.oneOf("+ -")) +
+                         pp.Word(pp.nums)).setName("integer")
+    real = pp.Combine(pp.Optional(pp.oneOf("+ -")) +
+                      pp.Word(pp.nums) + pp.oneOf(". e") +
+                      pp.Optional(pp.oneOf("+ -")) +
+                      pp.Optional(pp.Word(pp.nums))).setName("real")
     # Identifiers
     identifier = pp.Word(pp.alphas + "_:", pp.alphanums + "_:")
     funStr = pp.Forward().setResultsName("fun")
@@ -83,27 +85,27 @@ def parse_node_args(args_string, flat=False):
     tupleStr = pp.Forward()
 
     listItem = (real | integer |
-                noneLiteral | boolLiteral | 
+                noneLiteral | boolLiteral |
                 pp.quotedString.setParseAction(pp.removeQuotes) |
                 pp.Group(listStr()) | tupleStr() | identifier)
 
     funStr << (pp.Optional("@") +
-                    pp.delimitedList(identifier, delim=".", combine=True) +
-                    (LPAR + pp.Optional(pp.delimitedList(listItem)) + RPAR))
+               pp.delimitedList(identifier, delim=".", combine=True) +
+               (LPAR + pp.Optional(pp.delimitedList(listItem)) + RPAR))
     listStr << (LBRACK + pp.Optional(pp.delimitedList(listItem)) +
-                    pp.Optional(COMMA) + RBRACK)
+                pp.Optional(COMMA) + RBRACK)
     tupleStr << (LPAR + pp.Optional(pp.delimitedList(listItem)) +
-                    pp.Optional(COMMA) + RPAR)
-    kwarg = (pp.Group(identifier("kwarg") + EQ + 
-                (pp.Group(funStr("fun")) | listItem()
-                ).setResultsName("kwvalue")))
+                 pp.Optional(COMMA) + RPAR)
+    kwarg = (pp.Group(identifier("kwarg") + EQ +
+                      (pp.Group(funStr("fun")) | listItem()
+                       ).setResultsName("kwvalue")))
 
     arg = pp.Group(funStr("fun")) | kwarg("kwarg") | listItem
     args = pp.delimitedList(arg)
 
     # parse actions perform parse-time conversions
     noneLiteral.setParseAction(lambda: None)
-    boolLiteral.setParseAction(lambda toks: toks[0]=="True")
+    boolLiteral.setParseAction(lambda toks: toks[0] == "True")
     integer    .setParseAction(lambda toks: int(toks[0]))
     real       .setParseAction(lambda toks: float(toks[0]))
     listStr    .setParseAction(lambda toks: toks.asList())
