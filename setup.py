@@ -63,6 +63,7 @@ setup(
         'django-nested-admin==3.0.20',
         'django-picklefield==1.0.0',
         'graphviz==0.6',
+        'jsonfield==2.0.2',
         'Pillow==4.2.1',
     ],
     license="LGPLv3",
