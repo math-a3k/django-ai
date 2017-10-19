@@ -20,6 +20,7 @@ from django.core.exceptions import ValidationError
 
 from django_dag.models import node_factory, edge_factory
 from picklefield.fields import PickledObjectField
+from jsonfield import JSONField
 
 from .utils import (parse_node_args, )
 if 'DJANGO_TEST' in os.environ:
@@ -37,8 +38,6 @@ class BayesianNetwork(models.Model):
     related objects.
     """
     _alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    _prev_cluster_labels = None
-    _cluster_labels = None
 
     TYPE_GENERAL = 0
     TYPE_CLUSTERING = 1
@@ -55,11 +54,19 @@ class BayesianNetwork(models.Model):
     network_type = models.SmallIntegerField(choices=NETWORK_TYPE_CHOICES,
                                             default=TYPE_GENERAL,
                                             blank=True, null=True)
+    metadata = JSONField(default={}, blank=True, null=True)
 
     def __str__(self):
         return("[BN: {0}]".format(self.name))
 
     def save(self, *args, **kwargs):
+        # Initialize metadata field if corresponds
+        if self.metadata == {}:
+            if self.network_type == self.TYPE_CLUSTERING:
+                self.metadata["clusters_labels"] = {}
+                self.metadata["prev_clusters_labels"] = {}
+                self.metadata["clusters_means"] = {}
+                self.metadata["prev_clusters_means"] = {}
         super(BayesianNetwork, self).save(*args, **kwargs)
 
     def get_graph(self):
@@ -206,6 +213,8 @@ class BayesianNetwork(models.Model):
         if self.network_type == self.TYPE_CLUSTERING:
             if not self.is_inferred:
                 return(False)
+            # if not self._clusters_labels:
+            #     self.assign_clusters_labels()
             eo = self.engine_object
             prior_clusters_probs = self.nodes.get(
                 distribution=bp_consts.DIST_DIRICHLET).engine_inferred_object
@@ -221,14 +230,15 @@ class BayesianNetwork(models.Model):
             Y_new.observe(observation)
             Q_0 = bp.inference.VB(Z_new, Y_new, *eo.model)
             Q_0.update(Z_new)
-            cluster_label = np.argmax(Z_new.get_moments()[0])
+            cluster_label = self.metadata["clusters_labels"][
+                np.argmax(Z_new.get_moments()[0])]
             return(cluster_label)
         else:
             return(False)
 
-    def get_clusters_labels(self):
+    def assign_clusters_labels(self, save=True):
         """
-        Filters the clusters and constructs a dict with the labels
+        Filters the clusters and constructs a dict for labelling
         Assumptions:
             - The network as a topology of a Gaussian Mixture Model
             - There are no clusters in the origin (should be repeated instead)
@@ -236,14 +246,26 @@ class BayesianNetwork(models.Model):
         clusters_means_node_eo = self.nodes.get(
             distribution=bp_consts.DIST_GAUSSIAN).engine_inferred_object
         clusters_means = clusters_means_node_eo.get_moments()[0]
-        cmean_dim = len(clusters_means[0][0])
+        cmean_dim = len(clusters_means[0])
         origin = np.zeros(cmean_dim)
         filtered_means = [mu for mu in clusters_means
                           if not all(mu == origin)]
-        for index, cm in clusters_means:
-           if not all(cm == origin):
-                # WIP...
-                pass
+        if not self.metadata["clusters_labels"] == {}:
+            self.metadata["prev_clusters_labels"] = self.metadata[
+                "clusters_labels"]
+            self.metadata["clusters_labels"] = {}
+        if not self.metadata["clusters_means"] == {}:
+            self.metadata["prev_clusters_means"] = self.metadata[
+                "clusters_means"]
+            self.metadata["clusters_means"] = {}
+        for index, cm in enumerate(clusters_means):
+            if not all(cm == origin):
+                fm_index = np.argwhere(filtered_means == cm)[0][0]
+                cluster_label = self._alphabet[fm_index]
+                self.metadata["clusters_labels"][index] = cluster_label
+                self.metadata["clusters_means"][cluster_label] = cm
+        if save:
+            self.save()
 
     @staticmethod
     def update_eos_struct(eos_struct, node):

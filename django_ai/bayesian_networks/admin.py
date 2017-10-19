@@ -71,7 +71,7 @@ class BayesianNetworkAdmin(NestedModelAdmin):
         }),
         ("Miscellanous", {
             'classes': ('collapse',),
-            'fields': (('engine_object_timestamp', 'image'), ),
+            'fields': ('metadata', ('engine_object_timestamp', 'image'), ),
         }),
     )
     inlines = [
