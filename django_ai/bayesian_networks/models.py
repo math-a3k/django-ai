@@ -250,6 +250,8 @@ class BayesianNetwork(models.Model):
         origin = np.zeros(cmean_dim)
         filtered_means = [mu for mu in clusters_means
                           if not all(mu == origin)]
+        # Sort cluster means by norm
+        filtered_means.sort(key=np.linalg.norm)
         if not self.metadata["clusters_labels"] == {}:
             self.metadata["prev_clusters_labels"] = self.metadata[
                 "clusters_labels"]
