@@ -67,6 +67,7 @@ class BayesianNetwork(models.Model):
                 self.metadata["prev_clusters_labels"] = {}
                 self.metadata["clusters_means"] = {}
                 self.metadata["prev_clusters_means"] = {}
+                self.metadata["columns"] = []
         super(BayesianNetwork, self).save(*args, **kwargs)
 
     def get_graph(self):
@@ -266,6 +267,20 @@ class BayesianNetwork(models.Model):
                 cluster_label = self._alphabet[fm_index]
                 self.metadata["clusters_labels"][index] = cluster_label
                 self.metadata["clusters_means"][cluster_label] = cm
+        if save:
+            self.save()
+
+    def columns_names_to_metadata(self, save=True):
+        """
+        Gets the columns names and stores them in metadata
+        Assumptions:
+            - The network as a topology of a Gaussian Mixture Model
+        """
+        observations_node = self.nodes.get(
+            distribution=bp_consts.DIST_MIXTURE)
+        columns = observations_node.columns.order_by("position")
+        columns_names = columns.values_list("ref_column", flat=True)
+        self.metadata["columns"] = list(columns_names)
         if save:
             self.save()
 
