@@ -180,6 +180,10 @@ class BayesianNetwork(models.Model):
                     node.engine_object_timestamp = timezone.now()
                     node.update_image()
                     node.save()
+            # Update metadata
+            if self.network_type == self.TYPE_CLUSTERING:
+                self.assign_clusters_labels(save=save)
+                self.columns_names_to_metadata(save=save)
         return(self.engine_object)
 
     def reset_engine_object(self, save=True):
@@ -188,6 +192,7 @@ class BayesianNetwork(models.Model):
         """
         self.engine_object = None
         self.engine_object_timestamp = None
+        self.metadata = {}
         if save:
             self.save()
         return(True)
