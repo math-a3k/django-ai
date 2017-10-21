@@ -18,6 +18,20 @@
       </p>
     {% endif %}
   {% endfor %}
+    {% if original.network_type == original.TYPE_CLUSTERING %}
+      <ul class="cm_tables">
+        <li>
+          <h3>Clusters Means (Current)</h3>
+          {% include "./snippets/cm_table.html" with clusters_means=original.metadata.clusters_means %}
+        </li>
+        {% if original.metadata.prev_clusters_means %}
+        <li>
+          <h3>Clusters Means (Previous Inference)</h3>
+          {% include "./snippets/cm_table.html" with clusters_means=original.metadata.prev_clusters_means %}
+        </li>
+        {% endif %}
+      </ul>
+    {% endif %}
   {% endif %}
   <p>
     <h3 class="actions">{% trans "Actions" %}</h3>
