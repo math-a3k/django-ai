@@ -14,6 +14,8 @@ Front-end
 
 All the configuration should be done through the admin of Bayesian Networks - or more specifically, through the `change form`.
 
+.. _bayesian_network:
+
 Bayesian Network
 ----------------
 
@@ -33,6 +35,9 @@ The following fields are shown:
 
 ``Image``
     This is an auto-generated field, shown at the bottom of the page. It will be updated each time a Node or an Edge is added or modified to the Network.
+
+``Engine Meta Iterations``
+    Runs the Inference Engine (BayesPy's VB) *N* times and picks the result with the highest likelihood. This is only useful when a Node in the Network requires random initialization (see :ref:`custom_keywords`), as the algorithm may converge to a local optimum. Otherwise, it will repeat the result *N* times. It defaults to 1. 
 
 Bayesian Network Node
 ---------------------

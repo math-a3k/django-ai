@@ -38,6 +38,7 @@ class BayesianNetwork(models.Model):
     related objects.
     """
     _alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    _eo_meta_iterations = {}
 
     TYPE_GENERAL = 0
     TYPE_CLUSTERING = 1
@@ -55,6 +56,7 @@ class BayesianNetwork(models.Model):
                                             default=TYPE_GENERAL,
                                             blank=True, null=True)
     metadata = JSONField(default={}, blank=True, null=True)
+    engine_meta_iterations = models.SmallIntegerField(default=1)
 
     def __str__(self):
         return("[BN: {0}]".format(self.name))
@@ -168,15 +170,24 @@ class BayesianNetwork(models.Model):
         and propagates the results to the Nodes.
         """
         if not self.engine_object or recalculate:
-            Q = self.get_engine_object(reconstruct=True)
-            # Run the inference
-            Q.update(repeat=iters)
+            # Run the inference 'e_m_i' times
+            for i in range(self.engine_meta_iterations):
+                Q = self.get_engine_object(reconstruct=True)
+                # Run the inference
+                Q.update(repeat=iters)
+                # Save the result in the internal variable
+                self._eo_meta_iterations[i] = {"eo": Q, "L": max(Q.L)}
+            # Use the eo with the highest likelihood
+            hl_eo = max(self._eo_meta_iterations,
+                        key=lambda x: self._eo_meta_iterations[x]["L"])
+            self.engine_object = self._eo_meta_iterations[hl_eo]["eo"]
             if save:
                 self.engine_object_timestamp = timezone.now()
                 self.save()
                 # Propagate results to the network
                 for node in self.nodes.all():
-                    node.engine_inferred_object = Q[node.name]
+                    node.engine_inferred_object = \
+                        self.engine_object[node.name]
                     node.engine_object_timestamp = timezone.now()
                     node.update_image()
                     node.save()
