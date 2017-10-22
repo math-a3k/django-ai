@@ -225,6 +225,9 @@ The main are:
 ``Reset inference on the network``
     This will reset (set to `None`) all the engine- and inference-related fields in the network.
 
+``Re-initialize the random number generator``
+    This will reinitialize Python's random number generator. For unknown reasons yet, sometimes the Inference Engine gets stuck, re-initializing the RNG and reseting the inference may solve the issue without restarting the server.
+
 
 API
 ===

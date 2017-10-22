@@ -38,6 +38,7 @@
     <ul>
       <li><a href="{% url 'bn_run_inference' original.pk %}">{% trans "Run inference on the network" %}</a></li>
       <li><a href="{% url 'bn_reset_inference' original.pk %}">{% trans "Reset inference on the network" %}</a></li>
+      <li><a href="{% url 'bn_reinitialize_rng' %}">{% trans "Re-initialize the random number generator" %}</a></li>
   </p>  
   {% endif %}
 {% endblock %}
