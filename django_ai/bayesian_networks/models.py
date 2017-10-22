@@ -57,6 +57,7 @@ class BayesianNetwork(models.Model):
                                             blank=True, null=True)
     metadata = JSONField(default={}, blank=True, null=True)
     engine_meta_iterations = models.SmallIntegerField(default=1)
+    engine_iterations = models.SmallIntegerField(default=100)
 
     def __str__(self):
         return("[BN: {0}]".format(self.name))
@@ -164,12 +165,15 @@ class BayesianNetwork(models.Model):
 
         return(self.engine_object)
 
-    def perform_inference(self, iters=100, recalculate=False, save=True):
+    def perform_inference(self, iters=None, recalculate=False, save=True):
         """
         Retrieves the Engine Object of the Network, performs the inference
         and propagates the results to the Nodes.
         """
         if not self.engine_object or recalculate:
+            # If iters is not set, use the model's which defaults to 100
+            if not iters:
+                iters = self.engine_iterations
             # Run the inference 'e_m_i' times
             for i in range(self.engine_meta_iterations):
                 Q = self.get_engine_object(reconstruct=True)

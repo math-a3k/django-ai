@@ -217,6 +217,18 @@ class TestDjango_ai(TestCase):
                 "-630.42"
             )
 
+    def test_bn_engine_iterations(self):
+        self.setUp()
+        self.bn1.engine_iterations = 2
+        self.bn1.perform_inference(recalculate=True)
+        # There must be a dict of size 1, as engine_meta_iterations defaults to 1
+        self.assertTrue(len(self.bn1._eo_meta_iterations) == 1)
+        # containing the likelihood of the second iteration
+        self.assertEqual(
+            str(self.bn1._eo_meta_iterations[0]["L"])[:7],
+            "-630.42"
+        )
+
     def test_node_args_parsing(self):
         # Test "general" parsing
         args_string = ('True, :ifr, numpy.ones(2), [[1,2], [3,4]], '
