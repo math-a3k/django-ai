@@ -71,8 +71,11 @@ class BayesianNetworkAdmin(NestedModelAdmin):
         }),
         ("Miscellanous", {
             'classes': ('collapse',),
-            'fields': ('metadata', 'engine_meta_iterations',
-                      ('engine_object_timestamp', 'image'), ),
+            'fields': (
+                        'metadata',
+                        ('engine_meta_iterations', 'engine_iterations'),
+                        ('engine_object_timestamp', 'image'),
+                      ),
         }),
     )
     inlines = [
