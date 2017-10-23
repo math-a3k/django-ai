@@ -40,7 +40,7 @@ The following fields are shown:
     Runs the Inference Engine (BayesPy's VB) *N* times and picks the result with the highest likelihood. This is only useful when a Node in the Network requires random initialization (see :ref:`custom_keywords`), as the algorithm may converge to a local optimum. Otherwise, it will repeat the result *N* times. It defaults to 1. 
 
 ``Engine Iterations``
-    The maximum number of iterations of the Inference Engine (`BayesPy's VB update method <http://bayespy.org/user_api/generated/generated/generated/bayespy.inference.VB.update.html#bayespy.inference.VB.update>`_). It defaults to 100. 
+    The maximum number of iterations of the Inference Engine (`BayesPy's VB update method's repeat <http://bayespy.org/user_api/generated/generated/generated/bayespy.inference.VB.update.html#bayespy.inference.VB.update>`_). It defaults to 1000. 
 
 Bayesian Network Node
 ---------------------
