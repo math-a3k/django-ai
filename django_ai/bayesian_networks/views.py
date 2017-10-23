@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+
 import inspect
 import random
+import numpy as np
 
 from django.shortcuts import (redirect, get_object_or_404)
 from django.contrib.auth.decorators import user_passes_test
@@ -37,5 +39,6 @@ def bn_reset_inference(request, bn_id):
 @user_passes_test(lambda u: u.is_superuser)
 def bn_reinitialize_rng(request):
     random.seed()
+    np.random.seed()
 
     return redirect(request.META.get('HTTP_REFERER', '/'))
