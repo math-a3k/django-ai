@@ -104,7 +104,7 @@ for local development.
    tests, including testing other Python versions with tox::
 
         $ flake8 django_ai tests
-        $ python runtests.py
+        $ PYTHONHASHSEED=0 python runtests.py
         $ tox
 
 6. Commit your changes and push your branch to GitHub::
@@ -133,4 +133,4 @@ Tips
 
 To run a subset of tests::
 
-    $ python -m unittest tests.test_django_ai
+    $ PYTHONHASHSEED=0 python -m unittest tests.test_django_ai
