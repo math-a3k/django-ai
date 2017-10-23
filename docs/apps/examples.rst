@@ -74,9 +74,17 @@ This is an adaptation of the `BayesPy Gaussian Mixture Model Example <http://bay
 ``Y``
     The mixture of itself.
 
-After the inference is performed, the model should identify the 4 real clusters from the 10 initial ones. Note that due to the random initialization of the BayesPy VB engine the algorithm may converge to local optimums which are not the global optima. You can watch this effect by running the inference several times from the admin's interface. A way of solving this is by running the algorithm several times and comparing the results for the "best" (i.e. likelihood, "stability"). This is out of the scope of this example.
+After the inference is performed, the model should identify the 4 real clusters from the 10 initial ones. Note that due to the random initialization of the BayesPy VB engine (due to the Categorical ``Z`` node), the algorithm may converge to local optimums which are not the global optima.
 
-Also note that his model (Gaussians Mixture) can't "discern" when the clusters are overlapped - like the "central" ones. Those users will be highly likely assigned to the wrong ones. 
+For avoiding this, the ``Engine Meta Iterations`` in the Bayesian Network object (see :ref:`bayesian_network`) is set to 10. This will repeat the inference 10 times from different states of the random number generator and choose the one with the highest likelihood.
+
+You can watch this effect by running the inference several times from the admin's interface and tweaking the parameter.
+
+By design, ``django-ai`` tries to take as much calculations outside Django's request cycle as possible. This means all the heavy stuff like model estimation is done once and inside the request cycle - i.e. in a view or a template - it is just regular queries to the database or operations that are "pretty straight-forward", like cluster assignment.
+
+So, performance-wise, it doesn't matter if you choose 1000 meta iterations and takes an hour to complete them.  
+
+Also note that this model (Gaussians Mixture) can't "discern" when the clusters are overlapped - like the "central" ones. Those users will be highly likely assigned to the wrong ones. 
 
 Once you are confident with the results, the next step is assigning the users to their clusters:
 

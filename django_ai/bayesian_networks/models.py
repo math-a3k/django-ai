@@ -20,12 +20,13 @@ from django.core.exceptions import ValidationError
 
 from django_dag.models import node_factory, edge_factory
 from picklefield.fields import PickledObjectField
+from jsonfield import JSONField
 
-from .bayespy_constants import (DISTRIBUTION_CHOICES,
-                                DETERMINISTIC_CHOICES,
-                                DIST_GAUSSIAN_ARD,
-                                DIST_MIXTURE)
-from .utils import (is_float, parse_node_args)
+from .utils import (parse_node_args, )
+if 'DJANGO_TEST' in os.environ:
+    from django_ai.bayesian_networks import bayespy_constants as bp_consts
+else:
+    from bayesian_networks import bayespy_constants as bp_consts
 
 
 class BayesianNetwork(models.Model):
@@ -33,22 +34,43 @@ class BayesianNetwork(models.Model):
     Main object of a Bayesian Network.
 
     It gathers all Nodes and Edges of the DAG that defines the Network and
-    provides an interface for performing and resetting the inference and 
+    provides an interface for performing and resetting the inference and
     related objects.
     """
-    _Q = None
+    _alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    _eo_meta_iterations = {}
+
+    TYPE_GENERAL = 0
+    TYPE_CLUSTERING = 1
+
+    NETWORK_TYPE_CHOICES = (
+        (TYPE_GENERAL, "General"),
+        (TYPE_CLUSTERING, "Clustering"),
+    )
 
     name = models.CharField("Name", max_length=100)
     image = models.ImageField("Image", blank=True, null=True)
     engine_object = PickledObjectField(blank=True, null=True)
     engine_object_timestamp = models.DateTimeField(blank=True, null=True)
+    network_type = models.SmallIntegerField(choices=NETWORK_TYPE_CHOICES,
+                                            default=TYPE_GENERAL,
+                                            blank=True, null=True)
+    metadata = JSONField(default={}, blank=True, null=True)
+    engine_meta_iterations = models.SmallIntegerField(default=1)
+    engine_iterations = models.SmallIntegerField(default=1000)
 
     def __str__(self):
         return("[BN: {0}]".format(self.name))
 
     def save(self, *args, **kwargs):
-        """
-        """
+        # Initialize metadata field if corresponds
+        if self.metadata == {}:
+            if self.network_type == self.TYPE_CLUSTERING:
+                self.metadata["clusters_labels"] = {}
+                self.metadata["prev_clusters_labels"] = {}
+                self.metadata["clusters_means"] = {}
+                self.metadata["prev_clusters_means"] = {}
+                self.metadata["columns"] = []
         super(BayesianNetwork, self).save(*args, **kwargs)
 
     def get_graph(self):
@@ -87,7 +109,7 @@ class BayesianNetwork(models.Model):
         initializing the Inference Engine of the Network.
 
         This is the method that should be called for initializing the EOs of
-        the Nodes, as it handle the dependencies correctly and then propagate 
+        the Nodes, as it handle the dependencies correctly and then propagate
         them to the Nodes' objects.
 
         CAVEAT: You might have to call 'node.refresh_from_db()' if for some
@@ -143,32 +165,49 @@ class BayesianNetwork(models.Model):
 
         return(self.engine_object)
 
-    def perform_inference(self, iters=100, recalculate=False, save=True):
+    def perform_inference(self, iters=None, recalculate=False, save=True):
         """
         Retrieves the Engine Object of the Network, performs the inference
         and propagates the results to the Nodes.
         """
         if not self.engine_object or recalculate:
-            Q = self.get_engine_object(reconstruct=True)
-            # Run the inference
-            Q.update(repeat=iters)
+            # If iters is not set, use the model's which defaults to 100
+            if not iters:
+                iters = self.engine_iterations
+            # Run the inference 'e_m_i' times
+            for i in range(self.engine_meta_iterations):
+                Q = self.get_engine_object(reconstruct=True)
+                # Run the inference
+                Q.update(repeat=iters)
+                # Save the result in the internal variable
+                self._eo_meta_iterations[i] = {"eo": Q, "L": max(Q.L)}
+            # Use the eo with the highest likelihood
+            hl_eo = max(self._eo_meta_iterations,
+                        key=lambda x: self._eo_meta_iterations[x]["L"])
+            self.engine_object = self._eo_meta_iterations[hl_eo]["eo"]
             if save:
                 self.engine_object_timestamp = timezone.now()
                 self.save()
                 # Propagate results to the network
                 for node in self.nodes.all():
-                    node.engine_inferred_object = Q[node.name]
+                    node.engine_inferred_object = \
+                        self.engine_object[node.name]
                     node.engine_object_timestamp = timezone.now()
                     node.update_image()
                     node.save()
-        return(self.engine_object)
-
-    def get_inf_object(self):
+            # Update metadata
+            if self.network_type == self.TYPE_CLUSTERING:
+                self.assign_clusters_labels(save=save)
+                self.columns_names_to_metadata(save=save)
         return(self.engine_object)
 
     def reset_engine_object(self, save=True):
+        """
+        Resets the Engine Object and timestamp
+        """
         self.engine_object = None
         self.engine_object_timestamp = None
+        self.metadata = {}
         if save:
             self.save()
         return(True)
@@ -182,6 +221,88 @@ class BayesianNetwork(models.Model):
         for node in self.nodes.all():
             node.reset_inference(save=save)
         return(True)
+
+    def assign_cluster(self, observation):
+        """
+        If the Network is for Clustering, returns the cluster label for a
+        new observation given the current state of the inference.
+        Assumptions:
+            - The network has a topology of a Gaussian Mixture Model with
+              one Categorical Node for cluster assigments with prior Dirichlet
+              probabilities
+        """
+        if self.network_type == self.TYPE_CLUSTERING:
+            if not self.is_inferred:
+                return(False)
+            # if not self._clusters_labels:
+            #     self.assign_clusters_labels()
+            eo = self.engine_object
+            prior_clusters_probs = self.nodes.get(
+                distribution=bp_consts.DIST_DIRICHLET).engine_inferred_object
+            clusters_means = self.nodes.get(
+                distribution=bp_consts.DIST_GAUSSIAN).engine_inferred_object
+            clusters_cov_matrices = self.nodes.get(
+                distribution=bp_consts.DIST_WISHART).engine_inferred_object
+            #
+            Z_new = bp.nodes.Categorical(prior_clusters_probs)
+            Z_new.initialize_from_random()
+            Y_new = bp.nodes.Mixture(Z_new, bp.nodes.Gaussian,
+                                     clusters_means, clusters_cov_matrices)
+            Y_new.observe(observation)
+            Q_0 = bp.inference.VB(Z_new, Y_new, *eo.model)
+            Q_0.update(Z_new)
+            cluster_label = self.metadata["clusters_labels"][
+                np.argmax(Z_new.get_moments()[0])]
+            return(cluster_label)
+        else:
+            return(False)
+
+    def assign_clusters_labels(self, save=True):
+        """
+        Filters the clusters and constructs a dict for labelling
+        Assumptions:
+            - The network as a topology of a Gaussian Mixture Model
+            - There are no clusters in the origin (should be repeated instead)
+        """
+        clusters_means_node_eo = self.nodes.get(
+            distribution=bp_consts.DIST_GAUSSIAN).engine_inferred_object
+        clusters_means = clusters_means_node_eo.get_moments()[0]
+        cmean_dim = len(clusters_means[0])
+        origin = np.zeros(cmean_dim)
+        filtered_means = [mu for mu in clusters_means
+                          if not all(mu == origin)]
+        # Sort cluster means by norm
+        filtered_means.sort(key=np.linalg.norm)
+        if not self.metadata["clusters_labels"] == {}:
+            self.metadata["prev_clusters_labels"] = self.metadata[
+                "clusters_labels"]
+            self.metadata["clusters_labels"] = {}
+        if not self.metadata["clusters_means"] == {}:
+            self.metadata["prev_clusters_means"] = self.metadata[
+                "clusters_means"]
+            self.metadata["clusters_means"] = {}
+        for index, cm in enumerate(clusters_means):
+            if not all(cm == origin):
+                fm_index = np.argwhere(filtered_means == cm)[0][0]
+                cluster_label = self._alphabet[fm_index]
+                self.metadata["clusters_labels"][index] = cluster_label
+                self.metadata["clusters_means"][cluster_label] = cm
+        if save:
+            self.save()
+
+    def columns_names_to_metadata(self, save=True):
+        """
+        Gets the columns names and stores them in metadata
+        Assumptions:
+            - The network as a topology of a Gaussian Mixture Model
+        """
+        observations_node = self.nodes.get(
+            distribution=bp_consts.DIST_MIXTURE)
+        columns = observations_node.columns.order_by("position")
+        columns_names = columns.values_list("ref_column", flat=True)
+        self.metadata["columns"] = list(columns_names)
+        if save:
+            self.save()
 
     @staticmethod
     def update_eos_struct(eos_struct, node):
@@ -199,7 +320,8 @@ class BayesianNetwork(models.Model):
         # recursively (until there )
         for parent in parents:
             if not eos_struct[parent]["eo"]:
-                update_eos_struct(eos_struct, eos_struct[parent]["dm"])
+                BayesianNetwork.update_eos_struct(
+                    eos_struct, eos_struct[parent]["dm"])
         # Initialize the Node EO and store it in the matrix
         eos_struct[node.name]["eo"] = \
             node.get_engine_object(parents=eos_struct, reconstruct=True)
@@ -293,13 +415,13 @@ class BayesianNetworkNode(
                                          default=NODE_TYPE_STOCHASTIC)
     is_observable = models.BooleanField("Is Observable?", default=False)
     distribution = models.CharField("Distribution", max_length=50,
-                                    choices=DISTRIBUTION_CHOICES,
+                                    choices=bp_consts.DISTRIBUTION_CHOICES,
                                     blank=True, null=True)
     distribution_params = models.CharField("Distribution Parameters",
                                            max_length=200,
                                            blank=True, null=True)
     deterministic = models.CharField("Deterministic", max_length=50,
-                                     choices=DETERMINISTIC_CHOICES,
+                                     choices=bp_consts.DETERMINISTIC_CHOICES,
                                      blank=True, null=True)
     deterministic_params = models.CharField("Deterministic Parameters",
                                             max_length=200,
@@ -327,7 +449,7 @@ class BayesianNetworkNode(
             for field in self.FIELDS_STOCHASTIC:
                 field_value = getattr(self, field)
                 # For avoiding the use of NullBooleanField in 'is_observable'
-                if field_value == False:
+                if field_value is False:
                     field_value = None
                 if field_value is not None:
                     error_dict[field] = _(
@@ -377,7 +499,7 @@ class BayesianNetworkNode(
 
         if not any([isinstance(p, str) for p in params]):
             try:
-                eo = self.get_engine_object(reconstruct=True, save=False)
+                self.get_engine_object(reconstruct=True, save=False)
             except Exception as e:
                 msg = e.args[0]
                 raise ValidationError({
@@ -454,8 +576,8 @@ class BayesianNetworkNode(
                     # Strings can be only Node names
                     raise ValueError(error_str)
         for kwparam in kwparams:
-            if (isinstance(kwparams[kwparam], str)
-                    and not kwparams[kwparam].startswith(":")):
+            if (isinstance(kwparams[kwparam], str) and
+                    not kwparams[kwparam].startswith(":")):
                 if kwparams[kwparam] in parents:
                     kwparams[kwparam] = parents[kwparam]["eo"]
                 else:
@@ -479,7 +601,6 @@ class BayesianNetworkNode(
             return self.engine_object
 
         # Parse Params
-        nodes_in_bn = self.network.get_nodes_names()
         parsed_params = parse_node_args(self.get_params())
         params, kwparams = self.resolve_eos_in_params(parsed_params['args'],
                                                       parsed_params['kwargs'],
@@ -498,7 +619,7 @@ class BayesianNetworkNode(
             # Only assign if plates are not provided on observables
             if self.is_observable:
                 self._data = self.get_data()
-                if not 'plates' in kwparams:
+                if 'plates' not in kwparams:
                     kwparams['plates'] = np.shape(self._data)
             else:
                 if 'plates' in kwparams:
@@ -571,19 +692,20 @@ class BayesianNetworkNode(
             self.network.name + "_" + self.name + ".png")
 
         save = False
-        if self.distribution == DIST_GAUSSIAN_ARD:
+        if self.distribution == bp_consts.DIST_GAUSSIAN_ARD:
             if not self.graph_interval:
                 return(False)
             a, b = self.graph_interval.split(", ")
             bp.plot.pdf(self.engine_inferred_object,
-                        np.linspace(float(a), float(b), num=100), name=self.name)
+                        np.linspace(float(a), float(b), num=100),
+                        name=self.name)
             bp.plot.pyplot.savefig(settings.MEDIA_ROOT + '/' + image_name)
             bp.plot.pyplot.close()
             save = True
-        elif self.distribution == DIST_MIXTURE:
+        elif self.distribution == bp_consts.DIST_MIXTURE:
             if self.columns.count() == 2:
-                y = self.get_data()
-                bp.plot.gaussian_mixture_2d(self.engine_inferred_object, scale=2)
+                bp.plot.gaussian_mixture_2d(
+                    self.engine_inferred_object, scale=2)
                 bp.plot.pyplot.savefig(settings.MEDIA_ROOT + '/' + image_name)
                 bp.plot.pyplot.close()
                 save = True
@@ -601,6 +723,7 @@ class BayesianNetworkNode(
 
 def update_bn_image(sender, **kwargs):
     kwargs['instance'].network.update_image()
+
 
 post_save.connect(update_bn_image, sender=BayesianNetworkNode)
 post_save.connect(update_bn_image, sender=BayesianNetworkEdge)

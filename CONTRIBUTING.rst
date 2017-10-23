@@ -52,6 +52,13 @@ If you are proposing a feature:
 * Keep the scope as narrow as possible, to make it easier to implement.
 * Remember that this is a volunteer-driven project, and that contributions are welcome :)
 
+
+Artwork
+~~~~~~~
+
+Artwork - logos, banners, themes, etc. - is highly appreciated and always welcomed. If you don't feel confortable with GitHub, use the mailing list for submitting: django-ai@googlegroups.com
+
+
 Monetary
 ~~~~~~~~
 
@@ -97,10 +104,8 @@ for local development.
    tests, including testing other Python versions with tox::
 
         $ flake8 django_ai tests
-        $ python setup.py test
+        $ PYTHONHASHSEED=0 python runtests.py
         $ tox
-
-   To get flake8 and tox, just pip install them into your virtualenv. 
 
 6. Commit your changes and push your branch to GitHub::
 
@@ -108,7 +113,7 @@ for local development.
     $ git commit -m "Your detailed description of your changes."
     $ git push origin name-of-your-bugfix-or-feature
 
-7. Submit a pull request through the GitHub website.
+7. Submit a pull request through the GitHub website to the ``development`` branch. Once your changes are reviewed, you may be assigned to review another pull request with improvements on your code if deemed neccesary. Once we agree on a final result, it will be merged to ``master``.
 
 Pull Request Guidelines
 -----------------------
@@ -128,4 +133,4 @@ Tips
 
 To run a subset of tests::
 
-    $ python -m unittest tests.test_django_ai
+    $ PYTHONHASHSEED=0 python -m unittest tests.test_django_ai

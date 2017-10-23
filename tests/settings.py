@@ -3,7 +3,7 @@ from __future__ import unicode_literals, absolute_import
 
 import os
 import django
-import django_ai
+
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -29,11 +29,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    'django_dag', # Dependency
-    'nested_admin', # Dependency
+
+    'django_dag',  # Dependency
+    'nested_admin',  # Dependency
+
     'django_ai.bayesian_networks.apps.BayesianNetworksConfig',
-    # 'django_ai.examples',
     'tests.test_models'
 ]
 

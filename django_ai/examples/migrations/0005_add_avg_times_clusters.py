@@ -46,14 +46,16 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='userinfo',
             name='avg_time_pages_a',
-            field=models.FloatField(blank=True, null=True,
-                            verbose_name='Average Time spent on Pages A'),
+            field=models.FloatField(
+                blank=True, null=True,
+                verbose_name='Average Time spent on Pages A'),
         ),
         migrations.AddField(
             model_name='userinfo',
             name='avg_time_logged',
-            field=models.FloatField(blank=True, null=True,
-                            verbose_name='Average Weekly Time Logged In'),
+            field=models.FloatField(
+                blank=True, null=True,
+                verbose_name='Average Weekly Time Logged In'),
         ),
         migrations.RunPython(populate_avg_times, unpopulate_avg_times),
     ]

@@ -12,6 +12,7 @@ from django.contrib.contenttypes.management import create_contenttypes
 from bayesian_networks.bayespy_constants import (
     DIST_DIRICHLET, DIST_CATEGORICAL, DIST_GAUSSIAN, DIST_WISHART,
     DIST_MIXTURE)
+from bayesian_networks.models import BayesianNetwork as BN
 from bayesian_networks.models import BayesianNetworkNode as BNN
 
 
@@ -26,14 +27,13 @@ def generate_bn_image(bn):
         dot.node(name=node.name, label=node.name)
     edges = bn.edges.all()
     for edge in edges:
-         dot.edge(str(edge.parent.name),
+        dot.edge(str(edge.parent.name),
                  str(edge.child.name))
     dot.format = "png"
     contentfile = ContentFile(dot.pipe())
     image_name = "{0}/{1}".format(
-            os.path.join("django_ai",
-                         "bayesian_networks"),
-            bn.name + ".png")
+        os.path.join("django_ai", "bayesian_networks"),
+        bn.name + ".png")
     bn.image.save(image_name, contentfile)
     bn.save()
 
@@ -48,19 +48,23 @@ def create_clustering_bn_example(apps, schema_editor):
     create_contenttypes(app_config)
     ##
 
-    BayesianNetwork = apps.get_model("bayesian_networks",
-                                     "BayesianNetwork")
-    BayesianNetworkEdge = apps.get_model("bayesian_networks",
-                                         "BayesianNetworkEdge")
-    BayesianNetworkNode = apps.get_model("bayesian_networks",
-                                         "BayesianNetworkNode")
-    BayesianNetworkNodeColumn = apps.get_model("bayesian_networks",
-                                     "BayesianNetworkNodeColumn")
+    BayesianNetwork = apps.get_model(
+        "bayesian_networks", "BayesianNetwork")
+    BayesianNetworkEdge = apps.get_model(
+        "bayesian_networks", "BayesianNetworkEdge")
+    BayesianNetworkNode = apps.get_model(
+        "bayesian_networks", "BayesianNetworkNode")
+    BayesianNetworkNodeColumn = apps.get_model(
+        "bayesian_networks", "BayesianNetworkNodeColumn")
 
-    ContentType = apps.get_model("contenttypes",
-                                "ContentType")
-    
-    bn = BayesianNetwork(name="Clustering (Example)")
+    ContentType = apps.get_model(
+        "contenttypes", "ContentType")
+
+    bn = BayesianNetwork(
+        name="Clustering (Example)",
+        network_type=BN.TYPE_CLUSTERING,
+        engine_meta_iterations=10
+    )
     bn.save()
     alpha = BayesianNetworkNode(
         network=bn,
@@ -111,16 +115,16 @@ def create_clustering_bn_example(apps, schema_editor):
     Y.save()
     #
     Y_col_avg_logged = BayesianNetworkNodeColumn(
-            node=Y,
-            ref_model=ContentType.objects.get(model="userinfo",
-                                              app_label="examples"),
-            ref_column="avg_time_logged"
+        node=Y,
+        ref_model=ContentType.objects.get(
+            model="userinfo", app_label="examples"),
+        ref_column="avg_time_logged"
     )
     Y_col_avg_pages_a = BayesianNetworkNodeColumn(
-            node=Y,
-            ref_model=ContentType.objects.get(model="userinfo",
-                                              app_label="examples"),
-            ref_column="avg_time_pages_a"
+        node=Y,
+        ref_model=ContentType.objects.get(
+            model="userinfo", app_label="examples"),
+        ref_column="avg_time_pages_a"
     )
     Y_col_avg_logged.save()
     Y_col_avg_pages_a.save()
@@ -161,7 +165,7 @@ def delete_clustering_bn_example(apps, schema_editor):
     BayesianNetwork = apps.get_model("bayesian_networks",
                                      "BayesianNetwork")
 
-    BayesianNetwork.objects.get(name="Clustering BN (Example)").delete()
+    BayesianNetwork.objects.get(name="Clustering (Example)").delete()
 
 
 class Migration(migrations.Migration):

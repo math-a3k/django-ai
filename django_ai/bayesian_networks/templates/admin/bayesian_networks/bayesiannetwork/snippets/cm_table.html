@@ -1,0 +1,18 @@
+<table class="djn-table">
+	<thead class="djn-thead">
+		<tr>
+			<th class="djn-th">Cluster</th>
+			{% for col in original.metadata.columns %}
+			<th class="djn-th">{{ col }}</th>
+			{% endfor %}
+		</tr>
+	</thead>
+	{% for label, mean in clusters_means.items|dictsort:0 %}
+		<tr>
+			<td>{{ label }}</td>
+			{% for col_val in mean %}
+				<td>{{ col_val|stringformat:".3f" }}</td>
+			{% endfor %}
+		</tr>
+	{% endfor %}
+</table>

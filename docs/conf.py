@@ -26,8 +26,6 @@ import django_ai as dai
 sys.path.insert(0, os.path.join(parent, 'django_ai'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'django_ai.django_ai.settings'
 
-# import ipdb; ipdb.set_trace()
-
 import django
 django.setup()
 
