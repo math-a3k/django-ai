@@ -57,7 +57,7 @@ class BayesianNetwork(models.Model):
                                             blank=True, null=True)
     metadata = JSONField(default={}, blank=True, null=True)
     engine_meta_iterations = models.SmallIntegerField(default=1)
-    engine_iterations = models.SmallIntegerField(default=100)
+    engine_iterations = models.SmallIntegerField(default=1000)
 
     def __str__(self):
         return("[BN: {0}]".format(self.name))
