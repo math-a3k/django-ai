@@ -7,6 +7,7 @@ from nested_admin import (NestedModelAdmin, NestedStackedInline,
 from .models import (BayesianNetwork, BayesianNetworkNode,
                      BayesianNetworkNodeColumn, BayesianNetworkEdge)
 
+
 class BayesianNetworkNodeColumnInline(NestedTabularInline):
     model = BayesianNetworkNodeColumn
     sortable_field_name = "position"
@@ -24,7 +25,7 @@ class BayesianNetworkNodeInline(NestedStackedInline):
         }),
         ("Stochastic Type", {
             'fields': (('distribution', 'distribution_params'),
-                        'is_observable', ),
+                       'is_observable', ),
         }),
         ("Deterministic Type", {
             'fields': (('deterministic', 'deterministic_params'), ),
@@ -46,7 +47,6 @@ class BayesianNetworkNodeInline(NestedStackedInline):
         }
 
 
-
 class BayesianNetworkEdgeInline(NestedTabularInline):
     model = BayesianNetworkEdge
     extra = 1
@@ -65,7 +65,19 @@ class BayesianNetworkEdgeInline(NestedTabularInline):
 
 @admin.register(BayesianNetwork)
 class BayesianNetworkAdmin(NestedModelAdmin):
-    readonly_fields = ['image', ]
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'network_type',)
+        }),
+        ("Miscellanous", {
+            'classes': ('collapse',),
+            'fields': (
+                        'metadata',
+                        ('engine_meta_iterations', 'engine_iterations'),
+                        ('engine_object_timestamp', 'image'),
+                      ),
+        }),
+    )
     inlines = [
         BayesianNetworkNodeInline,
         BayesianNetworkEdgeInline,
@@ -74,7 +86,8 @@ class BayesianNetworkAdmin(NestedModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
         # Save obj reference in the request for future processing in Inline
         request._obj_ = obj
-        return super(BayesianNetworkAdmin, self).get_form(request, obj, **kwargs)
+        return super(BayesianNetworkAdmin, self).get_form(request, obj,
+                                                          **kwargs)
 
 
 # @admin.register(BayesianNetworkNode)

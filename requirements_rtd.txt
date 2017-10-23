@@ -17,6 +17,7 @@ idna==2.6
 imagesize==0.7.1
 jedi==0.10.2
 Jinja2==2.9.6
+jsonfield==2.0.2
 MarkupSafe==1.0
 matplotlib==2.0.2
 mccabe==0.6.1

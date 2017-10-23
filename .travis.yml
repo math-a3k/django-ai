@@ -6,7 +6,7 @@ python:
   - "3.5"
 
 env: 
-  - TOX_ENV=py35-django-111
+  - TOX_ENV=py35-django-111 PYTHONHASHSEED=0
 
 matrix:
   fast_finish: true

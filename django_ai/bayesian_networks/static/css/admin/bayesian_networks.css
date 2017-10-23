@@ -3,3 +3,13 @@
 	background-color: #DA6666;
 	color: #FFFFFF;
 }
+
+.cm_tables {
+	display: table;
+}
+
+.cm_tables li {
+	float: left;
+	margin-left: 15px;
+	margin-right: 10px;
+}
