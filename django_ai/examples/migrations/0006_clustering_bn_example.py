@@ -12,6 +12,7 @@ from django.contrib.contenttypes.management import create_contenttypes
 from bayesian_networks.bayespy_constants import (
     DIST_DIRICHLET, DIST_CATEGORICAL, DIST_GAUSSIAN, DIST_WISHART,
     DIST_MIXTURE)
+from bayesian_networks.models import BayesianNetwork as BN
 from bayesian_networks.models import BayesianNetworkNode as BNN
 
 
@@ -59,7 +60,11 @@ def create_clustering_bn_example(apps, schema_editor):
     ContentType = apps.get_model(
         "contenttypes", "ContentType")
 
-    bn = BayesianNetwork(name="Clustering (Example)")
+    bn = BayesianNetwork(
+        name="Clustering (Example)",
+        network_type=BN.TYPE_CLUSTERING,
+        engine_meta_iterations=10
+    )
     bn.save()
     alpha = BayesianNetworkNode(
         network=bn,
@@ -160,7 +165,7 @@ def delete_clustering_bn_example(apps, schema_editor):
     BayesianNetwork = apps.get_model("bayesian_networks",
                                      "BayesianNetwork")
 
-    BayesianNetwork.objects.get(name="Clustering BN (Example)").delete()
+    BayesianNetwork.objects.get(name="Clustering (Example)").delete()
 
 
 class Migration(migrations.Migration):
