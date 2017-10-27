@@ -349,7 +349,7 @@ class TestDjango_ai(TestCase):
                 'C': np.array([20.,  20.]),
                 'D': np.array([25.,  25.]),
             },
-            'clusters_labels': {0: 'B', 2: 'A', 4: 'D', 6: 'C'},
+            'clusters_labels': {'0': 'B', '2': 'A', '4': 'D', '6': 'C'},
             'columns': ['avg_time_logged', 'avg_time_pages_a']
         }
         output_metadata = self.bn3.metadata
