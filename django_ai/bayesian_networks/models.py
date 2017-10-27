@@ -252,7 +252,7 @@ class BayesianNetwork(models.Model):
             Q_0 = bp.inference.VB(Z_new, Y_new, *eo.model)
             Q_0.update(Z_new)
             cluster_label = self.metadata["clusters_labels"][
-                np.argmax(Z_new.get_moments()[0])]
+                str(np.argmax(Z_new.get_moments()[0]))]
             return(cluster_label)
         else:
             return(False)
@@ -285,7 +285,7 @@ class BayesianNetwork(models.Model):
             if not all(cm == origin):
                 fm_index = np.argwhere(filtered_means == cm)[0][0]
                 cluster_label = self._alphabet[fm_index]
-                self.metadata["clusters_labels"][index] = cluster_label
+                self.metadata["clusters_labels"][str(index)] = cluster_label
                 self.metadata["clusters_means"][cluster_label] = cm
         if save:
             self.save()
