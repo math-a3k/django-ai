@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+from importlib import import_module
 
 import matplotlib
 matplotlib.use('Agg')
@@ -58,6 +59,8 @@ class BayesianNetwork(models.Model):
     metadata = JSONField(default={}, blank=True, null=True)
     engine_meta_iterations = models.SmallIntegerField(default=1)
     engine_iterations = models.SmallIntegerField(default=1000)
+    results_storage = models.CharField("Results Storage", max_length=100,
+                                       blank=True, null=True)
 
     def __str__(self):
         return("[BN: {0}]".format(self.name))
@@ -72,6 +75,53 @@ class BayesianNetwork(models.Model):
                 self.metadata["prev_clusters_means"] = {}
                 self.metadata["columns"] = []
         super(BayesianNetwork, self).save(*args, **kwargs)
+
+    def clean(self):
+        # Check the validity of results_storage field
+        try:
+            rs = self.parse_results_storage()
+        except Exception as e:
+            msg = e.args[0]
+            raise ValidationError({'results_storage': _(
+                'Invalid format or storage engine: {}'.format(msg)
+            )})
+        if rs["storage"] == "dmf":
+            try:
+                model_class = ContentType.objects.get(
+                    app_label=rs["attrs"]["app"],
+                    model=rs["attrs"]["model"].lower()
+                ).model_class()
+            except Exception as e:
+                msg = e.args[0]
+                raise ValidationError({'results_storage': _(
+                    'Error getting the model: {}'.format(msg)
+                )})
+            try:
+                getattr(model_class, rs["attrs"]["field"])
+            except Exception as e:
+                msg = e.args[0]
+                raise ValidationError({'results_storage': _(
+                    'Error accessing the field: {}'.format(msg)
+                )})
+
+    def parse_results_storage(self):
+        storage, attrs = self.results_storage.split(":", 1)
+        if storage == "dmf":
+            app, model, field = attrs.split(".")
+            return(
+                {
+                    "storage": storage,
+                    "attrs": {
+                        "app": app,
+                        "model": model,
+                        "field": field
+                        }
+                }
+            )
+        else:
+            raise ValueError(_(
+                '"{}" engine is not implemented.'.format(storage)
+            ))
 
     def get_graph(self):
         dot = Digraph(comment=self.name)
@@ -199,6 +249,7 @@ class BayesianNetwork(models.Model):
             if self.network_type == self.TYPE_CLUSTERING:
                 self.assign_clusters_labels(save=save)
                 self.columns_names_to_metadata(save=save)
+                self.store_results()
         return(self.engine_object)
 
     def reset_engine_object(self, save=True):
@@ -220,6 +271,8 @@ class BayesianNetwork(models.Model):
         self.reset_engine_object(save=save)
         for node in self.nodes.all():
             node.reset_inference(save=save)
+        if self.network_type == self.TYPE_CLUSTERING:
+            self.store_results(reset=True)
         return(True)
 
     def assign_cluster(self, observation):
@@ -303,6 +356,58 @@ class BayesianNetwork(models.Model):
         self.metadata["columns"] = list(columns_names)
         if save:
             self.save()
+
+    def get_results(self):
+        """
+        Returns a list with the clustering assignation for each observations.
+        Assumptions:
+                - The network as a topology of a Gaussian Mixture Model
+        """
+        if self.network_type == self.TYPE_CLUSTERING:
+            if not self.is_inferred:
+                return(False)
+            clusters_assig_eo = self.nodes.get(
+                distribution=bp_consts.DIST_CATEGORICAL).engine_inferred_object
+            assignations = []
+            for assig in clusters_assig_eo.get_moments()[0]:
+                label = self.metadata["clusters_labels"][str(np.argmax(assig))]
+                assignations.append(label)
+            return(assignations)
+        else:
+            return(None)
+
+    def store_results(self, reset=False):
+        """
+        Stores the results of the inference of a network in a Model's field
+        (to be generalized for other storage options).
+
+        Note that it will update the results using the default ordering of the
+        Model in which will be stored.
+        """
+        if self.results_storage:
+            results = self.get_results()
+            # results_storage already validated
+            rs = self.parse_results_storage()
+            if rs["storage"] == "dmf":
+                app, model, field = (rs["attrs"]["app"], rs["attrs"]["model"],
+                                     rs["attrs"]["field"])
+                model_class = ContentType.objects.get(
+                    app_label=app,
+                    model=model.lower()
+                ).model_class()
+                # Prevent from new records
+                model_objects = model_class.objects.all()[:len(results)]
+                # This could be done with django-bulk-update
+                # but for not adding another dependency:
+                for index, model_object in enumerate(model_objects):
+                    if not reset:
+                        setattr(model_object, field, results[index])
+                    else:
+                        setattr(model_object, field, None)
+                    model_object.save()
+            return(True)
+        else:
+            return(False)
 
     @staticmethod
     def update_eos_struct(eos_struct, node):

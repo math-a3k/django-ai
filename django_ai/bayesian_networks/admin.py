@@ -67,7 +67,7 @@ class BayesianNetworkEdgeInline(NestedTabularInline):
 class BayesianNetworkAdmin(NestedModelAdmin):
     fieldsets = (
         (None, {
-            'fields': ('name', 'network_type',)
+            'fields': ('name', 'network_type', 'results_storage')
         }),
         ("Miscellanous", {
             'classes': ('collapse',),

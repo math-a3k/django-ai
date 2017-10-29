@@ -33,6 +33,16 @@ The following fields are shown:
 ``Engine Object Timestamp``
     This is an auto-generated field, timestamping the last inference done or `None` if not available.
 
+``Results Storage``
+    In the case of networks which have a labelling output - such as Clustering or Classification - this sets where to store the results for convenience. It must have the following syntax: ``<storage>:params``.
+
+    The following storages are available:
+
+    ``dmf``
+        *Django Model Field*: Saves the results to a field of a Django model. The model should be accesible by Django's Content Types framework and - **IMPORTANT**: it uses its default order provided by the model manager for storing. That ordering should be the same as the data retrieved by :ref:`bayesian_networks_node_column`, otherwise "manual" storing should be done for your situation.
+
+        Its parameters are a dotted path: ``<app_label>.<model>.<field>``,  i.e. ``dmf:examples.UserInfo.cluster_1`` will store the results to the ``cluster_1`` field of the ``UserInfo`` model.
+
 ``Image``
     This is an auto-generated field, shown at the bottom of the page. It will be updated each time a Node or an Edge is added or modified to the Network.
 
