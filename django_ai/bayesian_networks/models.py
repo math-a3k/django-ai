@@ -395,16 +395,16 @@ class BayesianNetwork(models.Model):
                     app_label=app,
                     model=model.lower()
                 ).model_class()
+                if reset:
+                    model_class.objects.all().update(**{field: None})
                 # Prevent from new records
-                model_objects = model_class.objects.all()[:len(results)]
-                # This could be done with django-bulk-update
-                # but for not adding another dependency:
-                for index, model_object in enumerate(model_objects):
-                    if not reset:
+                else:
+                    model_objects = model_class.objects.all()[:len(results)]
+                    # This could be done with django-bulk-update
+                    # but for not adding another dependency:
+                    for index, model_object in enumerate(model_objects):
                         setattr(model_object, field, results[index])
-                    else:
-                        setattr(model_object, field, None)
-                    model_object.save()
+                        model_object.save()
             return(True)
         else:
             return(False)
