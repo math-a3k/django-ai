@@ -6,14 +6,6 @@ from importlib import import_module
 from django.conf import settings
 
 
-def is_float(value):
-    try:
-        float(value)
-        return(True)
-    except Exception as e:
-        return(False)
-
-
 # Load all the modules
 if hasattr(settings, "DJANGO_AI_WHITELISTED_MODULES"):
     allowed_modules = settings.DJANGO_AI_WHITELISTED_MODULES
