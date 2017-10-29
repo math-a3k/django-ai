@@ -16,6 +16,8 @@ class UserInfo(models.Model):
                                         blank=True, null=True)
     avg_time_pages_a = models.FloatField("Average Time spent on Pages A",
                                          blank=True, null=True)
+    cluster_1 = models.CharField("Cluster 1", max_length=1,
+                                 blank=True, null=True)
 
     def __unicode__(self):
         return(self)

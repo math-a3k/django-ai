@@ -1,5 +1,19 @@
 (function($) {
 
+    network_type_select = $("select[name='network_type']");
+    storage_results_row = $("div[class='form-row field-results_storage']");
+    network_type_select.change(function() {
+        select = $(this);
+
+        if (select.val() == '1') {
+            // Clustering Type
+            storage_results_row.show();
+        } else {
+            storage_results_row.hide();
+        }
+    });
+    network_type_select.change();
+
     node_type_selects = $("select[name$='node_type']");
     node_type_selects.change(function() {
         select = $(this);
