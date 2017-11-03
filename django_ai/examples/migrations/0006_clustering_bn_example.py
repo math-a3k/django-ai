@@ -63,7 +63,6 @@ def create_clustering_bn_example(apps, schema_editor):
     bn = BayesianNetwork(
         name="Clustering (Example)",
         network_type=BN.TYPE_CLUSTERING,
-        results_storage="dmf:examples.UserInfo.cluster_1",
         engine_meta_iterations=10
     )
     bn.save()
