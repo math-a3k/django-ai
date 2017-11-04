@@ -49,6 +49,8 @@ class BayesianNetwork(models.Model):
         (TYPE_CLUSTERING, "Clustering"),
     )
 
+    ACTIONS_KEYWORDS = [":recalculate", ]
+
     name = models.CharField("Name", max_length=100)
     image = models.ImageField("Image", blank=True, null=True)
     engine_object = PickledObjectField(blank=True, null=True)
@@ -61,6 +63,10 @@ class BayesianNetwork(models.Model):
     engine_iterations = models.SmallIntegerField(default=1000)
     results_storage = models.CharField("Results Storage", max_length=100,
                                        blank=True, null=True)
+    counter = models.IntegerField(default=0, blank=True, null=True)
+    counter_threshold = models.IntegerField(blank=True, null=True)
+    threshold_actions = models.CharField(max_length=200,
+                                         blank=True, null=True)
 
     def __str__(self):
         return("[BN: {0}]".format(self.name))
@@ -74,6 +80,9 @@ class BayesianNetwork(models.Model):
                 self.metadata["clusters_means"] = {}
                 self.metadata["prev_clusters_means"] = {}
                 self.metadata["columns"] = []
+        # Runs threshold actions if corresponds
+        self.parse_and_run_threshold_actions()
+
         super(BayesianNetwork, self).save(*args, **kwargs)
 
     def clean(self):
@@ -103,6 +112,24 @@ class BayesianNetwork(models.Model):
                 raise ValidationError({'results_storage': _(
                     'Error accessing the field: {}'.format(msg)
                 )})
+        # Check threshold_actions keywords are valid
+        for action in self.threshold_actions.split(" "):
+            if not action in self.ACTIONS_KEYWORDS:
+                raise ValidationError({'threshold_actions': _(
+                    'Unrecognized action: {}'.format(action)
+                )})
+
+    def parse_and_run_threshold_actions(self):
+        if self.counter_threshold:
+            if self.counter_threshold <= self.counter:
+                self.counter = 0
+                actions = self.threshold_actions.split(" ")
+                for action in actions:
+                    if action == ":recalculate":
+                        self.perform_inference(recalculate=True)
+                return(True)
+        else:
+            return(False)
 
     def parse_results_storage(self):
         storage, attrs = self.results_storage.split(":", 1)

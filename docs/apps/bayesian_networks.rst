@@ -43,6 +43,20 @@ The following fields are shown:
 
         Its parameters are a dotted path: ``<app_label>.<model>.<field>``,  i.e. ``dmf:examples.UserInfo.cluster_1`` will store the results to the ``cluster_1`` field of the ``UserInfo`` model.
 
+``Counter``
+    Internal Counter of the Bayesian Networks meant to be used in automation. Is up to the user to increment the counter when deemed neccesary. If the field ``Counter Threshold`` is set, when this counter reaches that Threshold, the actions in ``Threshold Actions`` will be run on the object's ``save()}`` method or the evaluation can be triggered with the following method:
+
+    .. automethod:: bayesian_networks.models.BayesianNetwork.parse_and_run_threshold_actions
+
+``Counter Threshold``
+    Threshold of the Internal Counter, meant to be used in automation. If this field is not set, the ``Threshold Actions`` will not be triggered.
+
+``Threshold Actions``
+    Actions to be ran when the Internal Counter reaches or surpasses the Counter Threshold. The actions must be specified by keywords separated by spaces. Currently, the supported keywords are:
+
+    ``:recalculate``
+        Recalculates (performs again) the inference on the Network.
+
 ``Image``
     This is an auto-generated field, shown at the bottom of the page. It will be updated each time a Node or an Edge is added or modified to the Network.
 

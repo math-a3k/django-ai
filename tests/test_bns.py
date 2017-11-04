@@ -123,6 +123,8 @@ class TestDjango_ai(TestCase):
             network_type=models.BayesianNetwork.TYPE_CLUSTERING,
             engine_meta_iterations=10,
             results_storage="dmf:test_models.userinfo.clustering_1",
+            counter_threshold=2,
+            threshold_actions=":recalculate",
         )
         self.alpha = models.BayesianNetworkNode.objects.create(
             network=self.bn3,
@@ -311,6 +313,7 @@ class TestDjango_ai(TestCase):
             self.ui_avg1_col.ref_column = "non-existant-field"
             self.ui_avg1_col.full_clean()
 
+
     def test_node_get_data(self):
         # Test no columns assigned
         self.setUp()
@@ -429,6 +432,20 @@ class TestDjango_ai(TestCase):
         # ^^^ I don't know why store_results() does not update the test
         # database despite of returning True. The method works in a
         # regular environment. Postponing.
+        ## Test BN.threshold_actions validations
+        self.threshold_actions = ":recalculate :not-allowed-action"
+        with self.assertRaises(ValidationError):
+            self.bn3.full_clean()
+        ## Test BN.counter, BN.counter_threshold and BN.threshold_actions
+        # Test Triggering an inference
+        self.threshold_actions = ":recalculate"
+        prev_timestamp = self.bn3.engine_object_timestamp
+        self.bn3.counter = 2
+        self.bn3.save()
+        # Test the inference has been run by the timestamp
+        self.assertTrue(self.bn3.engine_object_timestamp > prev_timestamp)
+        # Test the counter was reset
+        self.assertEqual(self.bn3.counter, 0)
 
     def test_node_args_parsing(self):
         # Test "general" parsing
