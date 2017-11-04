@@ -74,6 +74,7 @@ class BayesianNetworkAdmin(NestedModelAdmin):
             'fields': (
                         'metadata',
                         ('engine_meta_iterations', 'engine_iterations'),
+                        ('counter', 'counter_threshold', 'threshold_actions'),
                         ('engine_object_timestamp', 'image'),
                       ),
         }),
