@@ -172,7 +172,7 @@ class TestDjango_ai(TestCase):
                 node=self.Y,
                 ref_model=ContentType.objects.get(
                     model="userinfo", app_label="test_models"),
-                ref_column="avg_time_logged"
+                ref_column="avg_time_pages"
             )
         self.Y_col_avg_pages_a = \
             models.BayesianNetworkNodeColumn.objects.create(
@@ -378,7 +378,7 @@ class TestDjango_ai(TestCase):
                 'D': np.array([25.,  25.]),
             },
             'clusters_labels': {'0': 'B', '2': 'A', '4': 'D', '6': 'C'},
-            'columns': ['avg_time_logged', 'avg_time_pages_a']
+            'columns': ['avg_time_pages', 'avg_time_pages_a']
         }
         output_metadata = self.bn3.metadata
         self.assertEqual(
