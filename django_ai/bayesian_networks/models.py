@@ -86,38 +86,40 @@ class BayesianNetwork(models.Model):
         super(BayesianNetwork, self).save(*args, **kwargs)
 
     def clean(self):
-        # Check the validity of results_storage field
-        try:
-            rs = self.parse_results_storage()
-        except Exception as e:
-            msg = e.args[0]
-            raise ValidationError({'results_storage': _(
-                'Invalid format or storage engine: {}'.format(msg)
-            )})
-        if rs["storage"] == "dmf":
+        if self.results_storage:
+            # Check the validity of results_storage field
             try:
-                model_class = ContentType.objects.get(
-                    app_label=rs["attrs"]["app"],
-                    model=rs["attrs"]["model"].lower()
-                ).model_class()
+                rs = self.parse_results_storage()
             except Exception as e:
                 msg = e.args[0]
                 raise ValidationError({'results_storage': _(
-                    'Error getting the model: {}'.format(msg)
+                    'Invalid format or storage engine: {}'.format(msg)
                 )})
-            try:
-                getattr(model_class, rs["attrs"]["field"])
-            except Exception as e:
-                msg = e.args[0]
-                raise ValidationError({'results_storage': _(
-                    'Error accessing the field: {}'.format(msg)
-                )})
+            if rs["storage"] == "dmf":
+                try:
+                    model_class = ContentType.objects.get(
+                        app_label=rs["attrs"]["app"],
+                        model=rs["attrs"]["model"].lower()
+                    ).model_class()
+                except Exception as e:
+                    msg = e.args[0]
+                    raise ValidationError({'results_storage': _(
+                        'Error getting the model: {}'.format(msg)
+                    )})
+                try:
+                    getattr(model_class, rs["attrs"]["field"])
+                except Exception as e:
+                    msg = e.args[0]
+                    raise ValidationError({'results_storage': _(
+                        'Error accessing the field: {}'.format(msg)
+                    )})
         # Check threshold_actions keywords are valid
-        for action in self.threshold_actions.split(" "):
-            if not action in self.ACTIONS_KEYWORDS:
-                raise ValidationError({'threshold_actions': _(
-                    'Unrecognized action: {}'.format(action)
-                )})
+        if self.threshold_actions:
+            for action in self.threshold_actions.split(" "):
+                if not action in self.ACTIONS_KEYWORDS:
+                    raise ValidationError({'threshold_actions': _(
+                        'Unrecognized action: {}'.format(action)
+                    )})
 
     def parse_and_run_threshold_actions(self):
         if self.counter_threshold:
