@@ -366,6 +366,8 @@ class TestDjango_ai(TestCase):
             "prev_clusters_labels": {},
             "clusters_means": {},
             "prev_clusters_means": {},
+            "clusters_sizes": {},
+            "prev_clusters_sizes": {},
             "columns": [],
         }
         self.assertEqual(self.bn3.metadata, expected_initial_metadata)
@@ -384,6 +386,7 @@ class TestDjango_ai(TestCase):
             'clusters_labels': {'4': 'E', '1': 'A', '5': 'A', '3': 'A',
                                 '2': 'B', '8': 'A', '7': 'A', '0': 'C',
                                 '6': 'D', '9': 'A'},
+            'clusters_sizes': {'A': 0, 'B': 50, 'C': 51, 'D': 49, 'E': 50},
             'columns': ['avg_time_pages', 'avg_time_pages_a']
         }
         output_metadata = self.bn3.metadata
@@ -394,6 +397,11 @@ class TestDjango_ai(TestCase):
         self.assertEqual(
             output_metadata["prev_clusters_means"],
             expected_metadata["prev_clusters_means"]
+        )
+        # Test BN.metadata_update_clusters_sizes()
+        self.assertEqual(
+            output_metadata["clusters_sizes"],
+            expected_metadata["clusters_sizes"]
         )
         # Test BN.assign_clusters_labels()
         for cluster in expected_metadata["clusters_means"]:
