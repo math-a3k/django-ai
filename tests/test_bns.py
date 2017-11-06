@@ -375,12 +375,15 @@ class TestDjango_ai(TestCase):
             'prev_clusters_labels': {},
             'prev_clusters_means': {},
             'clusters_means': {
-                'A': np.array([16.,  16.]),
-                'B': np.array([20.,  20.]),
+                'A': np.array([0.,  0.]),
+                'B': np.array([16.,  16.]),
                 'C': np.array([20.,  20.]),
-                'D': np.array([25.,  25.]),
+                'D': np.array([20.,  20.]),
+                'E': np.array([25.,  25.]),
             },
-            'clusters_labels': {'0': 'B', '2': 'A', '4': 'D', '6': 'C'},
+            'clusters_labels': {'4': 'E', '1': 'A', '5': 'A', '3': 'A',
+                                '2': 'B', '8': 'A', '7': 'A', '0': 'C',
+                                '6': 'D', '9': 'A'},
             'columns': ['avg_time_pages', 'avg_time_pages_a']
         }
         output_metadata = self.bn3.metadata
@@ -393,13 +396,13 @@ class TestDjango_ai(TestCase):
             expected_metadata["prev_clusters_means"]
         )
         # Test BN.assign_clusters_labels()
-        for key in expected_metadata["clusters_means"]:
-            o_cm = output_metadata["clusters_means"][key]
-            e_cm = expected_metadata["clusters_means"][key]
+        for cluster in expected_metadata["clusters_means"]:
+            o_cm = output_metadata["clusters_means"][cluster]
+            e_cm = expected_metadata["clusters_means"][cluster]
             # Check that the cluster means are 'reasonably close' to
             # the original ones
             self.assertTrue(np.linalg.norm(e_cm - o_cm) ** 2 < 1)
-            del(output_metadata["clusters_means"][key])
+            del(output_metadata["clusters_means"][cluster])
         self.assertEqual(
             output_metadata["clusters_means"],
             {}
@@ -416,7 +419,7 @@ class TestDjango_ai(TestCase):
         # Test BN.assign_cluster()
         self.assertEqual(
             self.bn3.assign_cluster([10, 10]),
-            "A"
+            "B"
         )
         # Test Results Storage
         # BN.store_results()
@@ -426,7 +429,7 @@ class TestDjango_ai(TestCase):
             'cluster_1', flat=True)
         # Test resullts are OK (omitting the rest for avoiding pasting a
         # list of size 200)
-        self.assertEqual(results[150:], ["A" for x in range(50)])
+        self.assertEqual(results[150:], ["B" for x in range(50)])
         # Test results are stored OK
         # self.assertEqual(results, stored_results)
         # ^^^ I don't know why store_results() does not update the test

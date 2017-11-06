@@ -344,15 +344,13 @@ class BayesianNetwork(models.Model):
         Filters the clusters and constructs a dict for labelling
         Assumptions:
             - The network as a topology of a Gaussian Mixture Model
-            - There are no clusters in the origin (should be repeated instead)
         """
         clusters_means_node_eo = self.nodes.get(
             distribution=bp_consts.DIST_GAUSSIAN).engine_inferred_object
         clusters_means = clusters_means_node_eo.get_moments()[0]
         cmean_dim = len(clusters_means[0])
         origin = np.zeros(cmean_dim)
-        filtered_means = [mu for mu in clusters_means
-                          if not all(mu == origin)]
+        filtered_means = list(np.unique(clusters_means, axis=0))
         # Sort cluster means by norm
         filtered_means.sort(key=np.linalg.norm)
         if not self.metadata["clusters_labels"] == {}:
@@ -364,11 +362,10 @@ class BayesianNetwork(models.Model):
                 "clusters_means"]
             self.metadata["clusters_means"] = {}
         for index, cm in enumerate(clusters_means):
-            if not all(cm == origin):
-                fm_index = np.argwhere(filtered_means == cm)[0][0]
-                cluster_label = self._alphabet[fm_index]
-                self.metadata["clusters_labels"][str(index)] = cluster_label
-                self.metadata["clusters_means"][cluster_label] = cm
+            fm_index = np.argwhere(filtered_means == cm)[0][0]
+            cluster_label = self._alphabet[fm_index]
+            self.metadata["clusters_labels"][str(index)] = cluster_label
+            self.metadata["clusters_means"][cluster_label] = cm
         if save:
             self.save()
 
