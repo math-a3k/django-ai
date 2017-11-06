@@ -22,12 +22,12 @@
       <ul class="cm_tables">
         <li>
           <h3>Clusters Means (Current)</h3>
-          {% include "./snippets/cm_table.html" with clusters_means=original.metadata.clusters_means %}
+          {% include "./snippets/cm_table.html" with clusters_means=original.metadata.clusters_means clusters_sizes=original.metadata.clusters_sizes %}
         </li>
         {% if original.metadata.prev_clusters_means %}
         <li>
           <h3>Clusters Means (Previous Inference)</h3>
-          {% include "./snippets/cm_table.html" with clusters_means=original.metadata.prev_clusters_means %}
+          {% include "./snippets/cm_table.html" with clusters_means=original.metadata.prev_clusters_means clusters_sizes=original.metadata.prev_clusters_sizes %}
         </li>
         {% endif %}
       </ul>

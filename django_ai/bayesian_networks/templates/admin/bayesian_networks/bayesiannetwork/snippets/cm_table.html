@@ -1,7 +1,10 @@
+{% load utils %}
+
 <table class="djn-table">
 	<thead class="djn-thead">
 		<tr>
 			<th class="djn-th">Cluster</th>
+			<th class="djn-th">Size</th>
 			{% for col in original.metadata.columns %}
 			<th class="djn-th">{{ col }}</th>
 			{% endfor %}
@@ -10,6 +13,7 @@
 	{% for label, mean in clusters_means.items|dictsort:0 %}
 		<tr>
 			<td>{{ label }}</td>
+			<td>{{ clusters_sizes|get_item:label }}</td>
 			{% for col_val in mean %}
 				<td>{{ col_val|stringformat:".3f" }}</td>
 			{% endfor %}

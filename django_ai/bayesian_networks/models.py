@@ -2,6 +2,7 @@
 
 import os
 from importlib import import_module
+from collections import Counter
 
 import matplotlib
 matplotlib.use('Agg')
@@ -79,6 +80,8 @@ class BayesianNetwork(models.Model):
                 self.metadata["prev_clusters_labels"] = {}
                 self.metadata["clusters_means"] = {}
                 self.metadata["prev_clusters_means"] = {}
+                self.metadata["clusters_sizes"] = {}
+                self.metadata["prev_clusters_sizes"] = {}
                 self.metadata["columns"] = []
         # Runs threshold actions if corresponds
         self.parse_and_run_threshold_actions()
@@ -278,6 +281,7 @@ class BayesianNetwork(models.Model):
             if self.network_type == self.TYPE_CLUSTERING:
                 self.assign_clusters_labels(save=save)
                 self.columns_names_to_metadata(save=save)
+                self.metadata_update_cluster_sizes(save=save)
                 self.store_results()
         return(self.engine_object)
 
@@ -383,6 +387,21 @@ class BayesianNetwork(models.Model):
         if save:
             self.save()
 
+    def metadata_update_cluster_sizes(self, save=True):
+        results = self.get_results()
+        # Move cluster_sizes to prev_c_s if it already existed
+        if not self.metadata["clusters_sizes"] == {}:
+            self.metadata["prev_clusters_sizes"] = self.metadata[
+                "clusters_sizes"]
+        sizes = dict(Counter(results))
+        # Add empty clusters
+        for label in self.metadata["clusters_labels"].values():
+            if not label in sizes:
+                sizes[label] = 0
+        self.metadata["clusters_sizes"] = sizes 
+        if save:
+            self.save()
+
     def get_results(self):
         """
         Returns a list with the clustering assignation for each observations.
@@ -423,8 +442,8 @@ class BayesianNetwork(models.Model):
                 ).model_class()
                 if reset:
                     model_class.objects.all().update(**{field: None})
-                # Prevent from new records
                 else:
+                    # Prevent from new records
                     model_objects = model_class.objects.all()[:len(results)]
                     # This could be done with django-bulk-update
                     # but for not adding another dependency:
