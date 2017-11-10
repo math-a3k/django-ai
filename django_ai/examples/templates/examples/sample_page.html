@@ -1,0 +1,215 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+  <head>
+
+    <title>SmartDjango - A Page of Type {{ page_type }}</title>
+
+    <!-- Import Google Icon Font -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Import materialize.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
+
+    <!-- Let browser know website is optimized for mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <!-- Polyfill for sendBeacon: https://github.com/miguelmota/Navigator.sendBeacon -->
+    <script type="text/javascript" src="https://cdn.rawgit.com/miguelmota/Navigator.sendBeacon/9c26b3cf/sendbeacon.js"></script>
+
+    <style type="text/css">
+      #logo-container {
+        font-weight: bold;
+        font-size: italic;
+      } 
+    </style>
+  </head>
+
+  {% if is_inferred %}
+  <body onload="timer()">
+
+    <nav class="green darken-4" role="navigation">
+      <div class="nav-wrapper container"><a id="logo-container" href="#" class="brand-logo">SmartDjango</a>
+        <ul class="right hide-on-med-and-down">
+          <li><a href="{% url 'new-user' %}">New User</a></li>
+          <li> <!--
+          <div class="row right">-->
+            <div class="input-field inline col s9" style="width:65% !important;"> 
+              <select id="user-select" class="center-align center" style="width:200% !important;">
+                {% for user_id in users_ids %}
+                <option value="{% url 'page' page_type user_id %}"{% if user_id == current_user %} selected{% endif %}>User n° {{ user_id }}</option>
+                {% endfor %}
+              </select> 
+            </div><!--
+          </div>-->
+          </li>
+          <li class="green darken-3"><a href="{% url 'page' "A" current_user %}">A page of type A</a></li>
+        </ul>
+              
+
+        <ul id="nav-mobile" class="side-nav">
+          <li><a href="{% url 'page' "A" current_user %}">A page of type A</a></li>
+        </ul>
+        <a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>
+      </div>
+    </nav>
+    <div class="section no-pad-bot" id="index-banner">
+      <div class="container">
+        <br><br>
+        <h1 class="header center {{ page_color }}-text">Page of type {{ page_type }}</h1>
+        <div class="row center">
+          <h5 class="header col s12 light">From many of the pages of the application, this is one of type {{ page_type }}</h5>
+        </div>
+        <div class="row center">
+          <a href="{% url 'page' other_page current_user %}" id="another-page-button" class="btn-large waves-effect waves-light orange">Go to Another Page</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="section">
+
+        <!--   Icon Section   -->
+        <div class="row">
+
+          <div class="col s12 m4">
+            <div class="icon-block">
+              <h2 class="center light-blue-text"><i class="large material-icons">flash_on</i></h2>
+              <h5 class="center">AI</h5>
+
+              <p class="light flow-text">You (User n° {{ current_user }}) are assigned to Group {{ cluster }}.</p>
+              <p class="light">Your mean time on pages of type {{ page_type }} is {{ user_avg_time_pages_of_this_type|floatformat:2 }} seconds, while your group mean is {{ cluster_avg_time_pages_of_this_type|floatformat:2 }}.</p>
+              <p class="light">Your mean time on pages in the site is {{ user_avg_time_pages|floatformat:2 }} seconds, while your group mean is {{ cluster_avg_time_pages|floatformat:2 }}.</p>
+
+            </div>
+          </div>
+
+          <div class="col s12 m4">
+            <div class="icon-block">
+              <h2 class="center red-text text-darken-2"><i class="large material-icons">access_alarm</i></h2>
+              <h5 class="center">Time on Page</h5>
+
+              <p id="time-on-page" class="light flow-text center"></p>
+
+            </div>
+          </div>
+          
+          <div class="col s12 m4">
+            <div class="icon-block">
+              <h2 class="center light-blue-text"><i class="large material-icons">group</i></h2>
+              <h5 class="center">Try it with different Users</h5>
+
+              <p class="light">To avoid login in and out, the User ID is at the end of the URL. You can also select it at the right of the Navigation Bar.</p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+      <br><br>
+    </div>
+
+  <footer class="page-footer green darken-3">
+    <div class="container">
+      <div class="row">
+        <div class="col l6 s12">
+          <h5 class="white-text">Company Bio</h5>
+          <p class="grey-text text-lighten-4">At SmartDjango we leverage our Django web applications using Artificial Intelligence to take them to the next level.</p>
+
+        </div>
+        <div class="col l3 s12">
+          <h5 class="white-text">Settings</h5>
+          <ul>
+            <li><a class="white-text" href="{% url 'page' "B" current_user %}">A page of type B</a></li>
+            <li><a class="white-text" href="{% url 'page' "B" current_user %}">A page of type B</a></li>
+          </ul>
+        </div>
+        <div class="col l3 s12">
+          <h5 class="white-text">Miscellaneous</h5>
+          <ul>
+            <li><a class="white-text" href="{% url 'page' "C" current_user %}">A page of type C</a></li>
+            <li><a class="white-text" href="{% url 'page' "D" current_user %}">A page of type D</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer-copyright">
+      <div class="container">
+      Made with <a class="orange-text text-lighten-3" href="http://materializecss.com">Materialize</a>,<br>
+      Powered by Django and django-ai.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modal Structure -->
+  <div id="modal1" class="modal bottom-sheet">
+    <div class="modal-content">
+      <h4>Event Triggered</h4>
+      <p id="modal1-message"></p>
+    </div>
+    <div class="modal-footer">
+      <a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat">Got it!</a>
+    </div>
+  </div>
+
+  <!--Import jQuery before materialize.js-->
+  <script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
+  <script type="text/javascript">
+      $(document).ready(function() {
+        $(".button-collapse").sideNav();
+        $('.modal').modal();
+        $('select').material_select();
+        $('#user-select').change(function () {
+          window.location = $(this).val(), true;
+        });
+      });
+
+    // Based on https://codepen.io/Stanssongs/pen/ebgix and http://www.metamorphosite.com/time-site-javascript-send-synchronous-request-php
+
+    var startTime = new Date();
+    var seconds = 0;
+    function timer() {
+      seconds++;
+      $("#time-on-page").html(seconds + " seconds");
+      if (seconds == {{ cluster_avg_time_pages|floatformat:0 }}) {
+        $("#modal1-message").html("You have reached the mean average time on pages of your group.");
+        $("#modal1").modal('open');
+      }
+      t = setTimeout(function () { timer() }, 1000);
+    };
+
+    // When the user leaves the page(closes the window/tab, clicks a link)...
+    window.addEventListener("beforeunload", function (e) {
+
+      var endTime = new Date(); // Get the current time.
+      var timeSpent = (endTime - startTime); // Find out how long it's been.
+      // And POST it to the server seamlessly (https://w3c.github.io/beacon/)
+      navigator.sendBeacon(
+        "{% url 'process-metrics' %}",
+        JSON.stringify({
+              'metric': "time_spent",
+              'user_id': {{ current_user }},
+              'page_type': "{{ page_type }}",
+              'time_spent': timeSpent / 1000
+            })
+      );
+      clearTimeout(t);
+
+      return undefined;
+    });
+  </script>
+  </body>
+  {% else %}
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col s12">
+          <h4 class="center-align">AI NOT INITIALIZED<br></h4>
+          <p class="center-align">There is no inference performed on the Bayesian Network.<br>
+                                  You can run it from the admin's change_form of the object.</p>
+        </div>
+      </div>
+    </div>
+  </body>
+  {% endif %}
+</html>
