@@ -4,21 +4,24 @@ from __future__ import unicode_literals
 import numpy as np
 
 from django.db import migrations, models
+from django.conf import settings
 
 
 def populate_avg_times(apps, schema_editor):
     UserInfo = apps.get_model("examples", "UserInfo")
     # Use a fixed seed for generate content
     np.random.seed(123456)
-    # Generate the clusters (from previous migrations total_size is 200)
+    table_size = getattr(settings, "DJANGO_AI_EXAMPLES_USERINFO_SIZE", 200)
+    group_size = int(table_size / 4)  # Equal sizes for all groups
+    # Generate the clusters
     y0 = np.random.multivariate_normal([20, 20], [[2, 0], [0, 0.1]],
-                                       size=50)
+                                       size=group_size)
     y1 = np.random.multivariate_normal([20, 20], [[0.1, 0], [0, 2]],
-                                       size=50)
+                                       size=group_size)
     y2 = np.random.multivariate_normal([25, 25], [[2, -1.5], [-1.5, 2]],
-                                       size=50)
+                                       size=group_size)
     y3 = np.random.multivariate_normal([16, 16], [[0.5, 0], [0, 0.5]],
-                                       size=50)
+                                       size=group_size)
     y = np.vstack([y0, y1, y2, y3])
     uis = UserInfo.objects.all()
     # Update the objects in the Model
