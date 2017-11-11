@@ -16,7 +16,6 @@ It is populated in the following way:
 .. autofunction:: examples.migrations.0003_populate_userinfo.populate_userinfos
 
 
-
 Bayesian Network Example 1
 ==========================
 
@@ -163,6 +162,8 @@ This way, they will be efficiently available in all your views and templates, so
         products = Products.objects.filter_for_group(
                                 request.user.user_info.cluster_1)
         ...
+
+.. _examples_clustering_automation:
 
 Automation
 ----------
