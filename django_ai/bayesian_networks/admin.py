@@ -72,11 +72,11 @@ class BayesianNetworkAdmin(NestedModelAdmin):
         ("Miscellanous", {
             'classes': ('collapse',),
             'fields': (
-                        'metadata',
-                        ('engine_meta_iterations', 'engine_iterations'),
-                        ('counter', 'counter_threshold', 'threshold_actions'),
-                        ('engine_object_timestamp', 'image'),
-                      ),
+                ('engine_meta_iterations', 'engine_iterations'),
+                ('counter', 'counter_threshold', 'threshold_actions'),
+                ('engine_object_timestamp', 'image'),
+                'metadata',
+            ),
         }),
     )
     inlines = [
@@ -87,9 +87,10 @@ class BayesianNetworkAdmin(NestedModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
         # Save obj reference in the request for future processing in Inline
         request._obj_ = obj
-        return super(BayesianNetworkAdmin, self).get_form(request, obj,
+        form = super(BayesianNetworkAdmin, self).get_form(request, obj,
                                                           **kwargs)
-
+        form.base_fields["metadata"].widget.attrs["disabled"] = "disabled"
+        return(form)
 
 # @admin.register(BayesianNetworkNode)
 # class BayesianNetworkNodeAdmin(admin.ModelAdmin):
