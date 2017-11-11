@@ -47,7 +47,7 @@ The easiest way of trying `django-ai` is inside its package:
 
 4. Create the migrations for the dependencies and apply them::
     
-    python manage.py makemigrations django_dag
+    python manage.py makemigrations
     python manage.py migrate
 
 5. Create a superuser::

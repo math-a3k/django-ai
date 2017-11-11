@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # Dependencies
-    'django_dag',
     'nested_admin',
 
     # django-ai

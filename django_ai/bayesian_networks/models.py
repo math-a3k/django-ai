@@ -20,7 +20,6 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
 
-from django_dag.models import node_factory, edge_factory
 from picklefield.fields import PickledObjectField
 from jsonfield import JSONField
 
@@ -482,22 +481,6 @@ class BayesianNetwork(models.Model):
         return(self.engine_object is not None)
 
 
-class BayesianNetworkEdge(
-        edge_factory('bayesian_networks.BayesianNetworkNode')):
-    """
-    An Edge between Bayesian Network Nodes
-    """
-    network = models.ForeignKey(BayesianNetwork, related_name="edges")
-    description = models.CharField("Description", max_length=50)
-
-    def __str__(self):
-        return(self.description)
-
-    def save(self, *args, **kwargs):
-        self.network = self.parent.network
-
-        super(BayesianNetworkEdge, self).save(*args, **kwargs)
-
 
 class BayesianNetworkNodeColumn(models.Model):
     """
@@ -536,8 +519,7 @@ class BayesianNetworkNodeColumn(models.Model):
             )})
 
 
-class BayesianNetworkNode(
-        node_factory('bayesian_networks.BayesianNetworkEdge')):
+class BayesianNetworkNode(models.Model):
     """
     A Node in a Bayesian Network
     """
@@ -584,6 +566,20 @@ class BayesianNetworkNode(
     graph_interval = models.CharField("Graph Interval", max_length=20,
                                       blank=True, null=True)
     image = models.ImageField("Image", blank=True, null=True)
+
+    def parents(self):
+        """
+        Returns the Parents of the Node as a QuerySet
+        """
+        parents_ids = self.child_edges.values_list("parent", flat=True)
+        return(BayesianNetworkNode.objects.filter(id__in=parents_ids))
+
+    def children(self):
+        """
+        Returns the Children of the Node as a QuerySet
+        """
+        children_ids = self.parent_edges.values_list("child", flat=True)
+        return(BayesianNetworkNode.objects.filter(id__in=children_ids))
 
     def clean(self):
         error_dict = {}
@@ -869,6 +865,28 @@ class BayesianNetworkNode(
 
     class Meta:
         unique_together = ["network", "name", ]
+
+
+class BayesianNetworkEdge(models.Model):
+    """
+    An Edge between Bayesian Network Nodes
+    """
+    parent = models.ForeignKey(BayesianNetworkNode,
+                               related_name="parent_edges",
+                               on_delete=models.CASCADE)
+    child = models.ForeignKey(BayesianNetworkNode,
+                              related_name="child_edges",
+                              on_delete=models.CASCADE)
+    network = models.ForeignKey(BayesianNetwork, related_name="edges")
+    description = models.CharField("Description", max_length=50)
+
+    def __str__(self):
+        return(self.description)
+
+    def save(self, *args, **kwargs):
+        self.network = self.parent.network
+
+        super(BayesianNetworkEdge, self).save(*args, **kwargs)
 
 
 def update_bn_image(sender, **kwargs):
