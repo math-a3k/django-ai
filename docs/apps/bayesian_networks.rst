@@ -19,19 +19,32 @@ All the configuration should be done through the admin of Bayesian Networks - or
 Bayesian Network
 ----------------
 
-This is the main object for a Bayesian Network.
+This is the main object for a Bayesian Network (BN).
 
 It gathers all Nodes and Edges of the DAG that defines the Network.
 
 All the results of the inference will be available here and this object is what you will be using inside the code.
 
-The following fields are shown:
+The following fields are available for configuration:
 
 ``Name``
-    The name of the Bayesian Network. This must be an unique identifier, meant to be used for retrieving the object (i.e. ``BayesianNetwork.objects.get(name='BN 3 - Final'``)
+    The name of the Bayesian Network. This must be an unique identifier, meant to be used for retrieving the object (i.e. ``BayesianNetwork.objects.get(name='BN 3 - Final')``)
 
-``Engine Object Timestamp``
-    This is an auto-generated field, timestamping the last inference done or `None` if not available.
+``Network Type``
+    The type of the Network. Based on this field, the internal methods of the Bayesian Network object perform different actions. Currently, there are 2 Types:
+
+    ``General``
+        Performs the inference with the BayesPy engine on the Bayesian Network and set the resulting object in the ``engine_object`` field.
+
+    ``Clustering``
+        Besides performing the inference with the BayesPy engine (and setting the result in the ``engine_object`` field), it performs tasks like cluster re-labelling, process the results and stores useful information in the ``metadata`` field.
+
+        It assumes that the Network topology is from a Gaussian Mixture Model with:
+            - One Categorical Node for clusters assigments depending on a Dirichlet Node for prior probabilities;
+            - One Gaussian Node for clusters means and a Wishart Node for clusters covariance matrices;
+            - One Observable Mixture Node for the observations.
+
+        Other topologies are not supported at the moment, instead use the ``General`` type and implement the tasks accordingly.
 
 ``Results Storage``
     In the case of networks which have a labelling output - such as Clustering or Classification - this sets where to store the results for convenience. It must have the following syntax: ``<storage>:params``.
@@ -43,28 +56,39 @@ The following fields are shown:
 
         Its parameters are a dotted path: ``<app_label>.<model>.<field>``,  i.e. ``dmf:examples.UserInfo.cluster_1`` will store the results to the ``cluster_1`` field of the ``UserInfo`` model.
 
-``Counter``
-    Internal Counter of the Bayesian Networks meant to be used in automation. Is up to the user to increment the counter when deemed neccesary. If the field ``Counter Threshold`` is set, when this counter reaches that Threshold, the actions in ``Threshold Actions`` will be run on the object's ``save()}`` method or the evaluation can be triggered with the following method:
-
-    .. automethod:: bayesian_networks.models.BayesianNetwork.parse_and_run_threshold_actions
-
-``Counter Threshold``
-    Threshold of the Internal Counter, meant to be used in automation. If this field is not set, the ``Threshold Actions`` will not be triggered.
-
-``Threshold Actions``
-    Actions to be ran when the Internal Counter reaches or surpasses the Counter Threshold. The actions must be specified by keywords separated by spaces. Currently, the supported keywords are:
-
-    ``:recalculate``
-        Recalculates (performs again) the inference on the Network.
-
-``Image``
-    This is an auto-generated field, shown at the bottom of the page. It will be updated each time a Node or an Edge is added or modified to the Network.
+Miscellaneous Fields
+^^^^^^^^^^^^^^^^^^^^
 
 ``Engine Meta Iterations``
     Runs the Inference Engine (BayesPy's VB) *N* times and picks the result with the highest likelihood. This is only useful when a Node in the Network requires random initialization (see :ref:`custom_keywords`), as the algorithm may converge to a local optimum. Otherwise, it will repeat the result *N* times. It defaults to 1. 
 
 ``Engine Iterations``
     The maximum number of iterations of the Inference Engine (`BayesPy's VB update method's repeat <http://bayespy.org/user_api/generated/generated/generated/bayespy.inference.VB.update.html#bayespy.inference.VB.update>`_). It defaults to 1000. 
+
+``Counter``
+    Internal Counter of the Bayesian Networks meant to be used in automation. Is up to the user to increment the counter when deemed neccesary. If the field ``Counter Threshold`` is set, when this counter reaches that Threshold, the actions in ``Threshold Actions`` will be run on the object's ``save()`` method or the evaluation can be triggered with the following method:
+
+    .. automethod:: bayesian_networks.models.BayesianNetwork.parse_and_run_threshold_actions
+
+    **IMPORTANT**: As it is up to the user when, where and how the counter is incremented, the user should take care also to avoid triggering ``Threshold Actions`` inside of the user's "navigation" request cycle, which may lead to hurt the user experience. For a concrete example, see :ref:`here <examples_clustering_automation>`.
+
+``Counter Threshold``
+    Threshold of the Internal Counter, meant to be used in automation. If this field is not set, the ``Threshold Actions`` will not be triggered on the object's ``save()`` method.
+
+``Threshold Actions``
+    Actions to be ran when the Internal Counter reaches or surpasses the Counter Threshold, evaluated on model's ``save()``. The actions must be specified by keywords separated by spaces. Currently, the supported keywords are:
+
+    ``:recalculate``
+        Recalculates (performs again) the inference on the Network.
+
+``Engine Object Timestamp``
+    This is an auto-generated field, timestamping the last inference done or `None` if not available.
+
+``Image``
+    This is an auto-generated field, shown at the bottom of the page. It will be updated each time a Node or an Edge is added or modified to the Network.
+
+``Metadata``
+    This is an internal field for storing results and information related to internal tasks (pre-processing, visualization, etc.). It is shown here for convenience as its content may be used for integrating the Bayesian Network into the application's code.
 
 Bayesian Network Node
 ---------------------
