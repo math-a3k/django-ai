@@ -36,7 +36,7 @@ docs/_build
 # SQLite
 *.sqlite*
 
-# For resolving migrations problems with django_dag
+# Ignore migrations in Bayesian Networks
 django_ai/bayesian_networks/migrations/*
 
 # Ignore generated images
