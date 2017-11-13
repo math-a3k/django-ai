@@ -20,14 +20,23 @@ The integration is done through Django models - where most of the data is genera
 
 The rationale of ``django-ai`` is to provide for each statistical model or technique bundled a front-end for configuration and an API for integrating it into your code.
 
-Excited? See the :ref:`overview` and :ref:`examples` :) 
+Excited?
 
-You are welcome to join the community of users and developers.
+- :ref:`overview`
+- :ref:`quickstart`
+- :ref:`examples` 
+
+You are welcome to join the community of users and developers :)
 
 Features
 ~~~~~~~~
 
 * Bayesian Networks: Integrate Bayesian Networks through your models using the `BayesPy framework <http://bayespy.org/>`_.
+
+Known Issues
+~~~~~~~~~~~~
+
+* In development mode (``DEBUG = True``) the BayesPy Inference Engine may stall during model estimation on certain states of the Pseudo Random Number Generator. You may need to reset the PRNG or deactivate and activate again your Python virtualenv. This does not affect other operations like cluster assigment.
 
 0.0.1a0 (2017-08-31)
 ++++++++++++++++++++
