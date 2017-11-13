@@ -73,7 +73,7 @@ setup(
         'Framework :: Django :: 1.11',
         'Intended Audience :: Developers',
         ('License :: OSI Approved :: '
-         'Lesser GNU General Public License v3 or later (GPLv3+)'),
+         'GNU Lesser General Public License v3 or later (LGPLv3+)'),
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
