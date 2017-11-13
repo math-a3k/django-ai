@@ -44,6 +44,9 @@ Comunication Channels
 * Stack-Overflow: https://stackoverflow.com/questions/tagged/django-ai
 * AI Stack Exchange: https://ai.stackexchange.com/questions/tagged/django-ai
 
+
+.. _quickstart:
+
 Quickstart
 ----------
 
@@ -54,8 +57,9 @@ The easiest way of trying `django-ai` is inside its package:
     python3 -m venv django-ai_env
     source django-ai_env/bin/activate
 
-2. Install django-ai::
+2. Upgrade ``pip`` and install ``django-ai``::
     
+    (django-ai_env) pip install --upgrade pip
     (django-ai_env) pip install django-ai
 
 3. Change into the `django-ai` directory::
