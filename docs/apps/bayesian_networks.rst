@@ -44,7 +44,7 @@ The following fields are available for configuration:
             - One Gaussian Node for clusters means and a Wishart Node for clusters covariance matrices;
             - One Observable Mixture Node for the observations.
 
-        Other topologies are not supported at the moment, instead use the ``General`` type and implement the tasks accordingly.
+        Other topologies are not supported at the moment.
 
 ``Results Storage``
     In the case of networks which have a labelling output - such as Clustering or Classification - this sets where to store the results for convenience. It must have the following syntax: ``<storage>:params``.
@@ -52,7 +52,7 @@ The following fields are available for configuration:
     The following storages are available:
 
     ``dmf``
-        *Django Model Field*: Saves the results to a field of a Django model. The model should be accesible by Django's Content Types framework and - **IMPORTANT**: it uses its default order provided by the model manager for storing. That ordering should be the same as the data retrieved by :ref:`bayesian_networks_node_column`, otherwise "manual" storing should be done for your situation.
+        *Django Model Field*: Saves the results to a field of a Django model. The model should be accessible by Django's Content Types framework and - **IMPORTANT**: it uses its default order provided by the model manager for storing. That ordering should be the same as the data retrieved by :ref:`bayesian_networks_node_column`, otherwise "manual" storing should be done for your situation.
 
         Its parameters are a dotted path: ``<app_label>.<model>.<field>``,  i.e. ``dmf:examples.UserInfo.cluster_1`` will store the results to the ``cluster_1`` field of the ``UserInfo`` model.
 
@@ -60,13 +60,13 @@ Miscellaneous Fields
 ^^^^^^^^^^^^^^^^^^^^
 
 ``Engine Meta Iterations``
-    Runs the Inference Engine (BayesPy's VB) *N* times and picks the result with the highest likelihood. This is only useful when a Node in the Network requires random initialization (see :ref:`custom_keywords`), as the algorithm may converge to a local optimum. Otherwise, it will repeat the result *N* times. It defaults to 1. 
+    Runs the Inference Engine (BayesPy's VB) *N* times and picks the result with the highest likelihood. This is only useful when a Node in the Network requires random initialization (see :ref:`custom_keywords`), as the algorithm may converge to a local optimum. Otherwise, it will repeat the result *N* times. It defaults to 1.
 
 ``Engine Iterations``
-    The maximum number of iterations of the Inference Engine (`BayesPy's VB update method's repeat <http://bayespy.org/user_api/generated/generated/generated/bayespy.inference.VB.update.html#bayespy.inference.VB.update>`_). It defaults to 1000. 
+    The maximum number of iterations of the Inference Engine (`BayesPy's VB update method's repeat <http://bayespy.org/user_api/generated/generated/generated/bayespy.inference.VB.update.html#bayespy.inference.VB.update>`_). It defaults to 1000.
 
 ``Counter``
-    Internal Counter of the Bayesian Networks meant to be used in automation. Is up to the user to increment the counter when deemed neccesary. If the field ``Counter Threshold`` is set, when this counter reaches that Threshold, the actions in ``Threshold Actions`` will be run on the object's ``save()`` method or the evaluation can be triggered with the following method:
+    Internal Counter of the Bayesian Networks meant to be used in automation. Is up to the user to increment the counter when deemed necessary. If the field ``Counter Threshold`` is set, when this counter reaches that Threshold, the actions in ``Threshold Actions`` will be run on the object's ``save()`` method or the evaluation can be triggered with the following method:
 
     .. automethod:: bayesian_networks.models.BayesianNetwork.parse_and_run_threshold_actions
 
@@ -97,7 +97,7 @@ Each BayesPy Node in the Network is represented here.
 
 Nodes can be either `Stochastic` or `Deterministic`.
 
-`Stochastic` reffers to representing a Random Variable, `Deterministic` reffers to representing a transformation or function on other Nodes. 
+`Stochastic` refers to representing a Random Variable, `Deterministic` refers to representing a transformation or function on other Nodes.
 
 Each type of Nodes have a fields associated with it, which will need to be filled accordingly.
 
@@ -143,7 +143,7 @@ Node Parameters
 
 The string set in the ``Distribution Params`` and ``Deterministic Params`` fields is parsed and used for initialization of BayesPy Nodes.
 
-It is designed to be a just like the ``*args`` and ``**kwargs`` you pass to a function or method programatically with some restrictions, described below:
+It is designed to be a just like the ``*args`` and ``**kwargs`` you pass to a function or method programmatically with some restrictions, described below:
 
 ``Booleans and Keywords``
     ``True``, ``False``, ``None``.
@@ -158,7 +158,7 @@ It is designed to be a just like the ``*args`` and ``**kwargs`` you pass to a fu
 ``Functions``
     Functions *must be namespaced* and their arguments can be anything of the above.
 
-    In some ocassions, there must be a reference to a function instead of the result of it, this is done by preceding the function with an ``@``, i.e. ``@bayespy.nodes.Gaussian()`` will return the function object (in this case the whole class) instead of the result of it.
+    In some occasions, there must be a reference to a function instead of the result of it, this is done by preceding the function with an ``@``, i.e. ``@bayespy.nodes.Gaussian()`` will return the function object (in this case the whole class) instead of the result of it.
 
     Due to security reasons, the allowed namespaces must be specified in a list named ``DJANGO_AI_WHITELISTED_MODULES`` in your settings, i.e.::
 
@@ -167,11 +167,11 @@ It is designed to be a just like the ``*args`` and ``**kwargs`` you pass to a fu
     By default, only ``numpy`` and ``bayespy.nodes`` are enabled.
 
 For example, the string::
-  
+ 
   True, 2, 1e-6, mu, numpy.ones(2), [[1,2], [3,4]], type=rect, sizes=[3, 4,], coords = ([1,2],[3,4]), func=numpy.zeros(2)
 
-will be equivalent to doing programatically::
-  
+will be equivalent to doing programmatically::
+ 
   MyNode(True, 2, 1e-6, mu, numpy.array([ 1.,  1.], [[1,2], [3,4]], type=rect, sizes=[3, 4,], coords = ([1,2],[3,4]), func=numpy.array([ 0.,  0.])
 
 With this, a ``GaussianARD`` Node can be initialized with::
@@ -179,7 +179,7 @@ With this, a ``GaussianARD`` Node can be initialized with::
   mu, tau
 
 where ``mu`` and ``tau`` are parents Nodes, or for a 2D ``Gaussian`` Node::
-  
+ 
   numpy.ones(2), numpy.zeros(2)
 
 
@@ -191,13 +191,13 @@ Custom Keywords
 Node parameters' strings starting with ``:`` are considered *Custom Keywords*, they should be used at an ``*arg`` level and their meaning or behaviour triggered is described below:
 
 ``:noplates``
-    Triggers the deletion of a keyword argument. Use this when you do not want a keyword argument to be set automatically. Currently, only ``plates`` is set automatically for Stochastic Observable Nodes when it is not specified and it is set to the "shape" of the data being observed. In some types of networks this can interfere with `BayesPy` plates propagation. To avoid this, use ``:noplates`` in the Node's parameters.
+    Triggers the deletion of the ``plates`` keyword argument. Use this when you do not want a keyword argument to be set automatically. Currently, ``plates`` is only set automatically for Stochastic Observable Nodes when it is not specified and it is set to the "shape" of the data being observed. In some types of networks this can interfere with `BayesPy` plates propagation. To avoid this, use ``:noplates`` in the Node's parameters.
 
 ``:ifr``
-    Triggers Initializate from Random in the Node's engine object.
+    Triggers `Initialize from Random` in the Node's engine object.
 
 ``:dl|<NODE_NAME>``
-    Uses the Data Length of of Node ``NODE_NAME``. Meant to be used in plates, i.e. ``plates=(:dl|Y, )`` 
+    Uses the Data Length of of Node ``NODE_NAME``. Meant to be used in plates, i.e. ``plates=(:dl|Y, )``
 
 
 Visualization
@@ -247,7 +247,7 @@ Bayesian Network Edge
 
 Each Edge between Nodes in the Direct Acyclic Graph of the Bayesian Network is represented here.
 
-Edges are neccesary for resolving dependencies between nodes, i.e. if Node takes another Node as a parameter, there must be an Edge between the Nodes so the Child is able to access its Parents.
+Edges are necessary for resolving dependencies between nodes, i.e. if Node takes another Node as a parameter, there must be an Edge between the Nodes so the Child is able to access its Parents.
 
 The following fields are shown:
 
@@ -268,19 +268,19 @@ The main are:
 ``Run inference on the network``
     This will run the Inference on the current state of the network.
 
-    It will initialize or create all the BayesPy Nodes, initialize the Inference Engine of BayesPy and perform the inference with it. Once is run, it will save all the results in the Bayesian Network object and the corresponding in each Node, generating the Node image where corresponds and updating the timestamps. See the API section for accesing the results. 
+    It will initialize or create all the BayesPy Nodes, initialize the Inference Engine of BayesPy, perform the inference with it and the appropriate tasks corresponding to the `Network Type`. Once is run, it will save all the results in the Bayesian Network object and the corresponding in each Node, generating the Node image where corresponds and updating the timestamps. See the API section for accesing the results.
 
 ``Reset inference on the network``
     This will reset (set to `None`) all the engine- and inference-related fields in the network.
 
 ``Re-initialize the random number generator``
-    This will reinitialize Python's random number generator. For unknown reasons yet, sometimes the Inference Engine gets stuck, re-initializing the RNG and reseting the inference may solve the issue without restarting the server.
+    This will reinitialize Python's random number generator. For unknown reasons yet, sometimes the Inference Engine gets stuck, re-initializing the RNG and resetting the inference may solve the issue without restarting the server.
 
 
 API
 ===
 
-For integrating the objects into your code, you simply have to import the Django model whenever deemed neccesary and get the network you want to use:
+For integrating the objects into your code, you simply have to import the Django model whenever deemed necessary and get the network you want to use:
 
 .. code-block:: python
 
@@ -305,9 +305,10 @@ You can perform all the Actions on the Network with the following methods of the
 .. autoclass:: bayesian_networks.models.BayesianNetwork
    :members: get_engine_object, perform_inference, reset_inference
 
-If you want to do things programatically, you should see this migration of the ``examples`` app:
+If you want to do things programmatically, you should see the migrations of the ``examples`` app:
 
 .. autofunction:: examples.migrations.0004_bn_example.create_bn1_example
+.. autofunction:: examples.migrations.0006_clustering_bn_example.create_clustering_bn_example
 
 and take a look at the :download:`tests <../../tests/test_bns.py>`.
 

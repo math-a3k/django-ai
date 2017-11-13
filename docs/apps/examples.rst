@@ -9,9 +9,9 @@ This app contains sample data and example objects of the apps of ``django-ai``.
 UserInfo Model
 ==============
 
-This is a generated Model that mimics information about the users of a Django project. It is a common pattern for many web applications, to record metrics about the usage of the application to identify patterns besides the information of the user available. It will provide data for the statistical modelling.
+This is a generated Model that mimics information about the users of a Django project. It is common for many web applications to record metrics about the usage of the application to identify patterns besides the information of the user available. It will provide data for the statistical modelling.
 
-It is populated in the following way:
+It is mainly populated in the following way:
 
 .. autofunction:: examples.migrations.0003_populate_userinfo.populate_userinfos
 
@@ -53,7 +53,7 @@ It can also be thought as a piece of a recommendation system, where the recommen
 Recording the metrics
 ---------------------
 
-Recording metrics is application-specific, depends on your case: how your data is already "organized" or modelled, what you are trying to measure, your goals and the tools availablity.
+Recording metrics is application-specific, depends on your case: how your data is already "organized" or modelled, what you are trying to measure, your goals and the tools availability.
 
 In this case, the SmartDjango company knows - from their experience building and running the site over the time - that there are different groups of users which consume the application in different ways: among all the pages of the site, there are intrested pages (main content) which are not equally appealing to all the users.
 
@@ -63,9 +63,9 @@ As an initial approach, starting from the scratch, the measuring of usage patter
 
 The SmartDjango site is small and has about 2 hundreds of different pages (different urls for items), so they would have 400 metrics recorded for each user.
 
-Each metric represents a dimension in the data that will feed the model, so each user usage pattern would be represented as an *R^400* point or observation. This is unsuitable for the models or techinques that `django-ai` currently support because they are affected by the `Curse of Dimensionality <https://en.wikipedia.org/wiki/Curse_of_dimensionality>`_ (you should read this `explanation for Machine Learning <https://stats.stackexchange.com/a/169351>`_).
+Each metric represents a dimension in the data that will feed the model, so each user usage pattern would be represented as an *R^400* point or observation. This is unsuitable for the models or techinques that `django-ai` currently supports because they are affected by the `Curse of Dimensionality <https://en.wikipedia.org/wiki/Curse_of_dimensionality>`_ (you should read this `explanation for Machine Learning <https://stats.stackexchange.com/a/169351>`_).
 
-A solution for this is recording the metrics at a higher level of agreggation, instead of a metric for each page, collect for different groups / categories / types of pages. This way, the dimensionality of the input is reduced to a "useful space" for the model.
+A solution for this is recording the metrics at a higher level of aggregation, instead of a metric for each page, collect for different groups / categories / types of pages. This way, the dimensionality of the input is reduced to a "useful space" for the model.
 
 If the SmartDjango company was a concrete news or blogging site, their interested pages would be the news or posts, which are usually already categorized with sections like "Sports" (A), "Tech" (B), "Art" (C), "Culture" (D), etc. or the "main" tag of the post.
 
@@ -88,7 +88,7 @@ In this case, SmartDjango has categorized their intrested pages according to the
 
 For implementing the recording, SmartDjango had to update both front-end and back-end parts of the application.
 
-In the front-end, the base template of the interested pages was updated to include the neccesary Javascript to measure the time spent on the page and then unobtrusively POST it to the back-end, where the implemented Metrics Pipeline executes all the code that calculates and store the metrics away from the user's "navigation" request cycle:
+In the front-end, the base template of the interested pages was updated to include the necessary Javascript to measure the time spent on the page and then unobtrusively POST it to the back-end, where the implemented Metrics Pipeline executes all the code that calculates and store the metrics away from the user's "navigation" request cycle:
 
 .. _examples_process_metrics:
 
@@ -115,7 +115,7 @@ This is an adaptation of the `BayesPy Gaussian Mixture Model Example <http://bay
 
 - A first group that stays briefly on the site, and does not care about pages of type A, they stay short independently of the page type.
 - Two "opposite" "central" groups: one will stay almost the same time on pages of type A while their interest vary on other pages whereas the other has a fixed interest on other pages and a varying degree on A-types.
-- A fourth group which stays longer in the site with a negative correlation: the higher they stay on pages of type A, the shorter they stay on other pages - and vice-versa. 
+- A fourth group which stays longer in the site with a negative correlation: the higher they stay on pages of type A, the shorter they stay on other pages - and vice-versa.
 
 (if interest is well measured by time spent on it :).
 
@@ -214,7 +214,7 @@ Updating the counter may be just a query to the database and may be not worthy o
 
 (You may also want to use `django-celery-beat <https://pypi.python.org/pypi/django_celery_beat>`_).
 
-You can opt for no automation at all and "manually" recalculate all the model through the admin when deemed neccesary. This may be suitable for the beginning, but with the adequate tunning, you can build and incorporate an autonomous system that constantly learns from the data into your application. 
+You can opt for no automation at all and "manually" recalculate all the model through the admin when deemed necessary. This may be suitable for the beginning, but with the adequate tunning, you can build and incorporate an autonomous system that constantly learns from the data into your application.
 
 Other Considerations
 --------------------
@@ -223,13 +223,13 @@ Each time a model recalculation is done, you may take a look at the bottom of th
 
 You might find that the technique - Bayesian Gaussian Mixture Model for Clustering implemented via the BayesPy's engine - is "unstable": it produces different results when the data changes a bit - and even when it doesn't change.
 
-This posses a problem for automation and for an AI system, as decisions are taken based on labels it produces. If the labels change dramatically, those decisions (routing, filtering, content, etc.) may end up being meaningless.
+This poses a problem for automation and for an AI system, as decisions are taken based on labels it produces. If the labels change dramatically, those decisions (routing, filtering, content, etc.) may end up being meaningless.
 
 There are a variety of reasons of why this happens on two different levels - the model and the implementation - from which we will review three of them.
 
 First, the model itself features automatic selection of the number of clusters in the data.
 
-Selecting or determining the number of clusters is a key problem in Unsupervised Learning and not an easy one. This technique "selects automatically" that number by starting from a maximum number - set in the nodes parameters of the priors and hyper-parameters - and after fitting the model, the ones that have "changed" from its "initial state" are the number of clusters in the data. This comes with a cost, it adds complexity and many chances for the optimization to "stall" in local optimums if there isn't enough data for the estimation.
+Selecting or determining the number of clusters is a key problem in Unsupervised Learning and not an easy one. This technique "selects automatically" that number by starting from a maximum number - set in the nodes parameters of the priors and hyperparameters - and after fitting the model, the ones that have "changed" from its "initial state" are the number of clusters in the data. This comes with a cost, it adds complexity and many chances for the optimization to "stall" in local optimums if there isn't enough data for the estimation.
 
 If you reduce the maximum number of possible clusters, you will see an increase of the stability of the results.
 
@@ -241,7 +241,7 @@ For seeing how more data makes the algorithm converge you can set the settings v
 
 Second, the Gaussian Mixture Model is not robust in the presence of outliers.
 
-Outliers, sometimes refered as "contamination" or "noise", are atypical observations in the data that lead to incorrect model estimation (see `here <https://en.wikipedia.org/wiki/Robust_statistics>`_ for a more detailed introduction to the problem).
+Outliers, sometimes referred as "contamination" or "noise", are atypical observations in the data that lead to incorrect model estimation (see `here <https://en.wikipedia.org/wiki/Robust_statistics>`_ for a more detailed introduction to the problem).
 
 One solution to this is using heavy-tailed elliptical distributions in the mixture - such as Student's ´t´ - instead of Gaussians for the clusters, but supporting this would require extending the BayesPy framework and it is out of the scope of this example.
 
@@ -251,13 +251,11 @@ To mitigate this, add an extra cluster to number of clusters you expect. If the 
 
 Third, optimization "stalls" in local optimums in the VB engine.
 
-For dealing with this, do not skimp on the ``Meta Iterations`` parameter of the BN discussed previously. 
+For dealing with this, do not skimp on the ``Meta Iterations`` parameter of the BN discussed previously.
 
-Finally - and not related to the causes - you can also improve the stability and the speed of the results by using informative priors with what you have been observing - besides low-level tunning of the engine (which is out of the scope of this example).
+Finally - and not related to the causes - you can also improve the stability and the speed of the results by using informative priors with what you have been observing - besides low-level tuning of the engine (which is out of the scope of this example).
 
 Seeing is Believing
 --------------------
 
 Last but not least, run the development server and you can see all of this in action by going to http://localhost:8000/examples/pages and monitor it through the admin and the console log.
-
-At this point, you should be able to understand the workings of the tool and start making your Django application smarter :)

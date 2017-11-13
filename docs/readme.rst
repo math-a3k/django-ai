@@ -1,6 +1,6 @@
-=============================
+=========
 django-ai
-=============================
+=========
 
 .. image:: https://badge.fury.io/py/django-ai.svg
     :target: https://badge.fury.io/py/django-ai
@@ -21,11 +21,28 @@ It integrates several libraries and engines providing your Django app with a set
 tools so you can leverage the data generated in your project. 
 
 .. image:: ../django_ai.jpg
+    :target: https://django-ai.readthedocs.io/en/latest/overview.html
 
 Documentation
 -------------
 
 The full documentation is at https://django-ai.readthedocs.io or the `/docs` directory for offline reading.
+
+Features
+--------
+
+* Bayesian Networks: Integrate Bayesian Networks through your models using the `BayesPy framework <http://bayespy.org/>`_.
+
+See the `Overview <https://django-ai.readthedocs.io/en/latest/overview.html>`_ section in the documentation for more information.
+
+Comunication Channels
+---------------------
+
+* Mailing List: django-ai@googlegroups.com
+* Chat: https://gitter.im/django-ai/django-ai
+* GitHub: https://github.com/math-a3k/django-ai/issues
+* Stack-Overflow: https://stackoverflow.com/questions/tagged/django-ai
+* AI Stack Exchange: https://ai.stackexchange.com/questions/tagged/django-ai>
 
 Quickstart
 ----------
@@ -62,18 +79,10 @@ Or you can clone it from the repository and install the requirements in a virtua
 
     git clone git@github.com:math-a3k/django-ai.git
 
-and do the same steps, installing the requirements in a virtual
-environment from ``requirements.txt``
+and do the same steps, installing the requirements in a virtual environment from ``requirements.txt``
 
-For installing it in your project, please refer :ref:`here <installation>`.
+For installing it in your project, please refer `here <https://django-ai.readthedocs.io/en/latest/installation.html>`_.
 
-
-Features
---------
-
-* Bayesian Networks: Integrate Bayesian Networks through your models using the BayesPy framework.
-
-See the :ref:`overview` section in the documentation for more inforation.
 
 Running Tests
 -------------
@@ -83,16 +92,5 @@ Does the code actually work?
 ::
 
     source <YOURVIRTUALENV>/bin/activate
-    (myenv) $ pip install tox
-    (myenv) $ tox
-
-Credits
--------
-
-Tools used in rendering this package:
-
-*  Cookiecutter_
-*  `cookiecutter-djangopackage`_
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`cookiecutter-djangopackage`: https://github.com/pydanny/cookiecutter-djangopackage
+    (myenv) $ pip install -r requirements_test.txt
+    (myenv) $ PYTHONHASHSEED=0 python runtests.py
