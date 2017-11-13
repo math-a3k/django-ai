@@ -42,13 +42,12 @@ if sys.argv[-1] == 'tag':
     sys.exit()
 
 readme = open('README.rst').read()
-history = open('HISTORY.rst').read().replace('.. :changelog:', '')
 
 setup(
     name='django-ai',
     version=version,
     description="""Artificial Intelligence for Django""",
-    long_description=readme + '\n\n' + history,
+    long_description=readme,
     author='Rodrigo Gadea',
     author_email='matematica.a3k@gmail.com',
     url='https://github.com/math-a3k/django-ai',
@@ -69,11 +68,12 @@ setup(
     zip_safe=False,
     keywords='django-ai',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Framework :: Django',
         'Framework :: Django :: 1.11',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: Lesser GNU General Public License v3 or later (GPLv3+)',
+        ('License :: OSI Approved :: '
+         'Lesser GNU General Public License v3 or later (GPLv3+)'),
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
