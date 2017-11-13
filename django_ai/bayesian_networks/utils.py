@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import numpy as np
 import pyparsing as pp
 from importlib import import_module
 
@@ -132,3 +133,14 @@ def parse_node_args(args_string, flat=False):
         return f_args + list(f_kwargs.values())
     else:
         return({"args": f_args, "kwargs": f_kwargs})
+
+
+def mahalanobis_distance(x, y, S):
+    """
+    Returns the Mahalanobis distance between x and y, given the covariance
+    matrix S.
+    """
+    S_inv = np.linalg.inv(S)
+    dxy = np.array(x) - np.array(y)
+    dist = np.sqrt(np.dot(np.dot(dxy.T, S_inv), dxy))
+    return(dist)
