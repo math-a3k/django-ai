@@ -72,8 +72,6 @@ Sponsoring
 Hiring, Contracting and Consultancy
   Hire the developers to work for you (implementing code, models, etc.) in its different modalities. Even if it is not `django-ai` related, as long as the devs have enough for a living, the project will keep evolving.
 
-Do you need to evade taxes? Lessen your profit margins by giving to `django-ai`!! Do you run an international drug cartel? Avoid money stash overflow by donating to `django-ai`!! =P
-
 
 Non-Monetary
 ~~~~~~~~~~~~
