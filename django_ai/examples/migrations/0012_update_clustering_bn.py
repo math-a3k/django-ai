@@ -16,6 +16,7 @@ def update_bn_forward(apps, schema_editor):
     bn.engine_meta_iterations = 15
     bn.counter_threshold = 10
     bn.threshold_actions = ":recalculate"
+    bn.save()
 
 
 def update_bn_backwards(apps, schema_editor):
@@ -26,6 +27,7 @@ def update_bn_backwards(apps, schema_editor):
     bn.engine_meta_iterations = None
     bn.counter_threshold = None
     bn.threshold_actions = None
+    bn.save()
 
 
 class Migration(migrations.Migration):
