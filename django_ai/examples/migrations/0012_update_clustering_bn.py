@@ -12,7 +12,7 @@ def update_bn_forward(apps, schema_editor):
     BayesianNetwork = apps.get_model("bayesian_networks",
                                      "BayesianNetwork")
     bn = BayesianNetwork.objects.get(name="Clustering (Example)")
-    bn.results_storage = "dmf:examples.UserInfo.cluster_1",
+    bn.results_storage = "dmf:examples.UserInfo.cluster_1"
     bn.engine_meta_iterations = 15
     bn.counter_threshold = 10
     bn.threshold_actions = ":recalculate"
