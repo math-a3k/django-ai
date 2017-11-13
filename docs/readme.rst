@@ -42,7 +42,7 @@ Comunication Channels
 * Chat: https://gitter.im/django-ai/django-ai
 * GitHub: https://github.com/math-a3k/django-ai/issues
 * Stack-Overflow: https://stackoverflow.com/questions/tagged/django-ai
-* AI Stack Exchange: https://ai.stackexchange.com/questions/tagged/django-ai>
+* AI Stack Exchange: https://ai.stackexchange.com/questions/tagged/django-ai
 
 Quickstart
 ----------
