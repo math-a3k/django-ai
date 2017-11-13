@@ -24,7 +24,7 @@ def update_bn_backwards(apps, schema_editor):
                                      "BayesianNetwork")
     bn = BayesianNetwork.objects.get(name="Clustering (Example)")
     bn.results_storage = None,
-    bn.engine_meta_iterations = None
+    bn.engine_meta_iterations = 1
     bn.counter_threshold = None
     bn.threshold_actions = None
     bn.save()
