@@ -32,6 +32,11 @@ Non-Monetary Contributors
 
 None yet. Why not be the first?
 
+Promotion Contributors
+----------------------
+
+None yet. Why not be the first?
+
 Others
 ------
 

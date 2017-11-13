@@ -55,7 +55,7 @@ Although conversely you may use any of the communications channels - such as the
 Artwork
 ~~~~~~~
 
-If you don't feel comfortable with git, use the GitHub wiki - https://github.com/math-a3k/django-ai/wiki - and the mailing list for submitting - django-ai@googlegroups.com.
+Artwork - logos, banners, themes, etc. - is highly appreciated and always welcomed.
 
 
 Monetary
@@ -81,6 +81,12 @@ Non-Monetary
 You can support and ensure the `django-ai` development by making any good or service arrive to the project.
 
 Anything that you consider that is helpful in the Software Development Process - as a whole - and the Proyect Sustainability is highly appreciated and encourages a lot to keep going :)
+
+
+Promotion
+~~~~~~~~~
+
+Blog posts, articles, talks, etc. Anything that improves the difussion of the project is also a Contribution and helps spreading it (in a wide sense). 
 
 Get Started!
 ------------
@@ -123,7 +129,7 @@ Here's how to set up `django-ai` for local development.
 7. Submit a pull request through the GitHub website to the ``development`` branch. Once your changes are reviewed, you may be assigned to review another pull request with improvements on your code if deemed necessary. Once we agree on a final result, it will be merged to ``master``.
 
 Pull Request Guidelines
------------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Before you submit a pull request, check that it meets these guidelines:
 
@@ -132,7 +138,7 @@ Before you submit a pull request, check that it meets these guidelines:
 3. The pull request should work for the building matrix of CI. Check https://travis-ci.org/math-a3k/django-ai/pull_requests and make sure that the tests pass for all supported environments.
 
 Tips
-----
+~~~~
 
 To run a particular of test::
 
@@ -147,3 +153,13 @@ Ready to make a non-monetary contribution?
 ------------------------------------------
 
 Contact the lead developer or use any of the communication channels and - no matter how micro it is - we will find a way of making it happen :)
+
+Ready to make a promotion contribution?
+---------------------------------------
+
+Contact the lead developer or use any of the communication channels and it will be listed :)
+
+Ready to make an artwork contribution?
+--------------------------------------
+
+If you don't feel comfortable with `git`, use the GitHub wiki - https://github.com/math-a3k/django-ai/wiki - and the mailing list for submitting - django-ai@googlegroups.com.
