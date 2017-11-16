@@ -3,6 +3,7 @@
 import os
 from importlib import import_module
 from collections import Counter
+from pickle import HIGHEST_PROTOCOL as pickle_HIGHEST_PROTOCOL
 
 import matplotlib
 matplotlib.use('Agg')
@@ -53,7 +54,8 @@ class BayesianNetwork(models.Model):
 
     name = models.CharField("Name", max_length=100)
     image = models.ImageField("Image", blank=True, null=True)
-    engine_object = PickledObjectField(blank=True, null=True)
+    engine_object = PickledObjectField(protocol=pickle_HIGHEST_PROTOCOL,
+                                       blank=True, null=True)
     engine_object_timestamp = models.DateTimeField(blank=True, null=True)
     network_type = models.SmallIntegerField(choices=NETWORK_TYPE_CHOICES,
                                             default=TYPE_GENERAL,
@@ -558,7 +560,8 @@ class BayesianNetworkNode(models.Model):
     deterministic_params = models.CharField("Deterministic Parameters",
                                             max_length=200,
                                             blank=True, null=True)
-    engine_object = PickledObjectField(blank=True, null=True)
+    engine_object = PickledObjectField(protocol=pickle_HIGHEST_PROTOCOL,
+                                       blank=True, null=True)
     engine_object_timestamp = models.DateTimeField(blank=True, null=True)
     engine_inferred_object = PickledObjectField(blank=True, null=True)
     engine_inferred_object_timestamp = models.DateTimeField(
