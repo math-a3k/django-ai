@@ -82,6 +82,9 @@ class BayesianNetwork(StatisticalModel):
                 self.metadata["clusters_sizes"] = {}
                 self.metadata["prev_clusters_sizes"] = {}
                 self.metadata["columns"] = []
+        # Defaults the engine iterations if corresponds
+        if not self.engine_iterations:
+            self.engine_iterations = 1000
         # Runs threshold actions if corresponds
         self.parse_and_run_threshold_actions()
 
