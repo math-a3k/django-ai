@@ -120,7 +120,7 @@ class TestDjango_ai(TestCase):
         # BN 3 (Clustering)
         self.bn3 = models.BayesianNetwork.objects.create(
             name="Clustering (testing)",
-            network_type=models.BayesianNetwork.TYPE_CLUSTERING,
+            network_type=models.BayesianNetwork.BN_TYPE_CLUSTERING,
             engine_meta_iterations=10,
             results_storage="dmf:test_models.userinfo.clustering_1",
             counter_threshold=2,
