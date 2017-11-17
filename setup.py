@@ -63,6 +63,7 @@ setup(
         'graphviz==0.6',
         'jsonfield==2.0.2',
         'Pillow==4.2.1',
+        'scikit-learn>=0.19.1',
     ],
     license="LGPLv3",
     zip_safe=False,
