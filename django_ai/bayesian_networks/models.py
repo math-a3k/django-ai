@@ -26,49 +26,47 @@ from jsonfield import JSONField
 
 from .utils import (parse_node_args, )
 if 'DJANGO_TEST' in os.environ:
+    from django_ai.base.models import StatisticalModel
     from django_ai.bayesian_networks import bayespy_constants as bp_consts
 else:
+    from base.models import StatisticalModel
     from bayesian_networks import bayespy_constants as bp_consts
 
 
-class BayesianNetwork(models.Model):
+class BayesianNetwork(StatisticalModel):
     """
     Main object of a Bayesian Network.
 
     It gathers all Nodes and Edges of the DAG that defines the Network and
     provides an interface for performing and resetting the inference and
     related objects.
+
+    See base.StatisticalTechnique for the fields and methods already included.
     """
     _alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     _eo_meta_iterations = {}
 
-    TYPE_GENERAL = 0
-    TYPE_CLUSTERING = 1
+    BN_TYPE_GENERAL = 0
+    BN_TYPE_CLUSTERING = 1
+    # Legacy support of constants
+    TYPE_CLUSTERING = BN_TYPE_CLUSTERING
+    TYPE_GENERAL = BN_TYPE_GENERAL
 
     NETWORK_TYPE_CHOICES = (
-        (TYPE_GENERAL, "General"),
-        (TYPE_CLUSTERING, "Clustering"),
+        (BN_TYPE_GENERAL, "General"),
+        (BN_TYPE_CLUSTERING, "Clustering"),
     )
 
     ACTIONS_KEYWORDS = [":recalculate", ]
 
-    name = models.CharField("Name", max_length=100)
-    image = models.ImageField("Image", blank=True, null=True)
-    engine_object = PickledObjectField(protocol=pickle_HIGHEST_PROTOCOL,
-                                       blank=True, null=True)
-    engine_object_timestamp = models.DateTimeField(blank=True, null=True)
     network_type = models.SmallIntegerField(choices=NETWORK_TYPE_CHOICES,
-                                            default=TYPE_GENERAL,
+                                            default=BN_TYPE_GENERAL,
                                             blank=True, null=True)
-    metadata = JSONField(default={}, blank=True, null=True)
-    engine_meta_iterations = models.SmallIntegerField(default=1)
-    engine_iterations = models.SmallIntegerField(default=1000)
-    results_storage = models.CharField("Results Storage", max_length=100,
-                                       blank=True, null=True)
-    counter = models.IntegerField(default=0, blank=True, null=True)
-    counter_threshold = models.IntegerField(blank=True, null=True)
-    threshold_actions = models.CharField(max_length=200,
-                                         blank=True, null=True)
+    image = models.ImageField("Image", blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Bayesian Network"
+        verbose_name_plural = "Bayesian Networks"
 
     def __str__(self):
         return("[BN: {0}]".format(self.name))
@@ -76,7 +74,7 @@ class BayesianNetwork(models.Model):
     def save(self, *args, **kwargs):
         # Initialize metadata field if corresponds
         if self.metadata == {}:
-            if self.network_type == self.TYPE_CLUSTERING:
+            if self.network_type == self.BN_TYPE_CLUSTERING:
                 self.metadata["clusters_labels"] = {}
                 self.metadata["prev_clusters_labels"] = {}
                 self.metadata["clusters_means"] = {}
@@ -89,42 +87,6 @@ class BayesianNetwork(models.Model):
 
         super(BayesianNetwork, self).save(*args, **kwargs)
 
-    def clean(self):
-        if self.results_storage:
-            # Check the validity of results_storage field
-            try:
-                rs = self.parse_results_storage()
-            except Exception as e:
-                msg = e.args[0]
-                raise ValidationError({'results_storage': _(
-                    'Invalid format or storage engine: {}'.format(msg)
-                )})
-            if rs["storage"] == "dmf":
-                try:
-                    model_class = ContentType.objects.get(
-                        app_label=rs["attrs"]["app"],
-                        model=rs["attrs"]["model"].lower()
-                    ).model_class()
-                except Exception as e:
-                    msg = e.args[0]
-                    raise ValidationError({'results_storage': _(
-                        'Error getting the model: {}'.format(msg)
-                    )})
-                try:
-                    getattr(model_class, rs["attrs"]["field"])
-                except Exception as e:
-                    msg = e.args[0]
-                    raise ValidationError({'results_storage': _(
-                        'Error accessing the field: {}'.format(msg)
-                    )})
-        # Check threshold_actions keywords are valid
-        if self.threshold_actions:
-            for action in self.threshold_actions.split(" "):
-                if not action in self.ACTIONS_KEYWORDS:
-                    raise ValidationError({'threshold_actions': _(
-                        'Unrecognized action: {}'.format(action)
-                    )})
-
     def parse_and_run_threshold_actions(self):
         if self.counter_threshold:
             if self.counter_threshold <= self.counter:
@@ -136,25 +98,6 @@ class BayesianNetwork(models.Model):
                 return(True)
         else:
             return(False)
-
-    def parse_results_storage(self):
-        storage, attrs = self.results_storage.split(":", 1)
-        if storage == "dmf":
-            app, model, field = attrs.split(".")
-            return(
-                {
-                    "storage": storage,
-                    "attrs": {
-                        "app": app,
-                        "model": model,
-                        "field": field
-                        }
-                }
-            )
-        else:
-            raise ValueError(_(
-                '"{}" engine is not implemented.'.format(storage)
-            ))
 
     def get_graph(self):
         dot = Digraph(comment=self.name)
@@ -279,7 +222,7 @@ class BayesianNetwork(models.Model):
                     node.update_image()
                     node.save()
             # Update metadata
-            if self.network_type == self.TYPE_CLUSTERING:
+            if self.network_type == self.BN_TYPE_CLUSTERING:
                 self.assign_clusters_labels(save=save)
                 self.columns_names_to_metadata(save=save)
                 self.metadata_update_cluster_sizes(save=save)
@@ -305,7 +248,7 @@ class BayesianNetwork(models.Model):
         self.reset_engine_object(save=save)
         for node in self.nodes.all():
             node.reset_inference(save=save)
-        if self.network_type == self.TYPE_CLUSTERING:
+        if self.network_type == self.BN_TYPE_CLUSTERING:
             self.store_results(reset=True)
         return(True)
 
@@ -318,7 +261,7 @@ class BayesianNetwork(models.Model):
               one Categorical Node for cluster assigments with prior Dirichlet
               probabilities
         """
-        if self.network_type == self.TYPE_CLUSTERING:
+        if self.network_type == self.BN_TYPE_CLUSTERING:
             if not self.is_inferred:
                 return(False)
             # if not self._clusters_labels:
@@ -409,7 +352,7 @@ class BayesianNetwork(models.Model):
         Assumptions:
                 - The network as a topology of a Gaussian Mixture Model
         """
-        if self.network_type == self.TYPE_CLUSTERING:
+        if self.network_type == self.BN_TYPE_CLUSTERING:
             if not self.is_inferred:
                 return(False)
             clusters_assig_eo = self.nodes.get(
@@ -421,39 +364,6 @@ class BayesianNetwork(models.Model):
             return(assignations)
         else:
             return(None)
-
-    def store_results(self, reset=False):
-        """
-        Stores the results of the inference of a network in a Model's field
-        (to be generalized for other storage options).
-
-        Note that it will update the results using the default ordering of the
-        Model in which will be stored.
-        """
-        if self.results_storage:
-            results = self.get_results()
-            # results_storage already validated
-            rs = self.parse_results_storage()
-            if rs["storage"] == "dmf":
-                app, model, field = (rs["attrs"]["app"], rs["attrs"]["model"],
-                                     rs["attrs"]["field"])
-                model_class = ContentType.objects.get(
-                    app_label=app,
-                    model=model.lower()
-                ).model_class()
-                if reset:
-                    model_class.objects.all().update(**{field: None})
-                else:
-                    # Prevent from new records
-                    model_objects = model_class.objects.all()[:len(results)]
-                    # This could be done with django-bulk-update
-                    # but for not adding another dependency:
-                    for index, model_object in enumerate(model_objects):
-                        setattr(model_object, field, results[index])
-                        model_object.save()
-            return(True)
-        else:
-            return(False)
 
     @staticmethod
     def update_eos_struct(eos_struct, node):
@@ -481,7 +391,6 @@ class BayesianNetwork(models.Model):
     @property
     def is_inferred(self):
         return(self.engine_object is not None)
-
 
 
 class BayesianNetworkNodeColumn(models.Model):
