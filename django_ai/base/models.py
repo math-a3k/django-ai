@@ -39,7 +39,7 @@ class StatisticalModel(models.Model):
                                        blank=True, null=True)
     metadata = JSONField(default={}, blank=True, null=True)
     engine_meta_iterations = models.SmallIntegerField(default=1)
-    engine_iterations = models.SmallIntegerField(default=1000)
+    engine_iterations = models.SmallIntegerField(blank=True, null=True)
     results_storage = models.CharField("Results Storage", max_length=100,
                                        blank=True, null=True)
     counter = models.IntegerField(default=0, blank=True, null=True)
