@@ -2,7 +2,7 @@
 
 from django.contrib import admin
 
-from .models import UserInfo
+from .models import (UserInfo, CommentOfMySite, )
 
 UserInfo.get_sex_display.short_description = "Sex"
 @admin.register(UserInfo)
@@ -37,3 +37,7 @@ class UserInfoAdmin(admin.ModelAdmin):
                       ),
         }),
     )
+
+@admin.register(CommentOfMySite)
+class CommentsOfMySiteAdmin(admin.ModelAdmin):
+    pass

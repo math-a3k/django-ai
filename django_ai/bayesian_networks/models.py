@@ -299,8 +299,8 @@ class BayesianNetwork(StatisticalModel):
         clusters_means_node_eo = self.nodes.get(
             distribution=bp_consts.DIST_GAUSSIAN).engine_inferred_object
         clusters_means = clusters_means_node_eo.get_moments()[0]
-        cmean_dim = len(clusters_means[0])
-        origin = np.zeros(cmean_dim)
+        # cmean_dim = len(clusters_means[0])
+        # origin = np.zeros(cmean_dim)
         filtered_means = list(np.unique(clusters_means, axis=0))
         # Sort cluster means by norm
         filtered_means.sort(key=np.linalg.norm)
@@ -328,7 +328,7 @@ class BayesianNetwork(StatisticalModel):
         """
         observations_node = self.nodes.get(
             distribution=bp_consts.DIST_MIXTURE)
-        columns = observations_node.columns.order_by("position")
+        columns = observations_node.data_columns.order_by("position")
         columns_names = columns.values_list("ref_column", flat=True)
         self.metadata["columns"] = list(columns_names)
         if save:
@@ -343,9 +343,9 @@ class BayesianNetwork(StatisticalModel):
         sizes = dict(Counter(results))
         # Add empty clusters
         for label in self.metadata["clusters_labels"].values():
-            if not label in sizes:
+            if label not in sizes:
                 sizes[label] = 0
-        self.metadata["clusters_sizes"] = sizes 
+        self.metadata["clusters_sizes"] = sizes
         if save:
             self.save()
 
@@ -371,17 +371,18 @@ class BayesianNetwork(StatisticalModel):
     @staticmethod
     def update_eos_struct(eos_struct, node):
         """
-        Auxiliary recursive function to "populate" a "branch" (all the ancestors
-        of the node) of the "EOs Struct" of the Network DAG.
+        Auxiliary recursive function to "populate" a "branch" (all the
+        ancestors of the node) of the "EOs Struct" of the Network DAG.
 
         By how BayesPy is implemented, this is needed to hold the same objects
         in order to correctly initialize the BP inference engine ("simple
-        recursion" via Django models does not work, different "branches" may point
-        to different instances of objects, as they are initialized independently)
+        recursion" via Django models does not work, different "branches" may
+        point to different instances of objects, as they are initialized
+        independently)
         """
         parents = [p.name for p in node.parents()]
-        # Check if the parents' eos are already present, otherwise initialize them
-        # recursively (until there )
+        # Check if the parents' eos are already present, otherwise initialize
+        # them recursively
         for parent in parents:
             if not eos_struct[parent]["eo"]:
                 BayesianNetwork.update_eos_struct(
@@ -401,7 +402,8 @@ class BayesianNetworkNodeColumn(models.Model):
     A dimension / axis / column of an Observable Bayesian Network Node.
     """
     node = models.ForeignKey("BayesianNetworkNode",
-                             on_delete=models.CASCADE, related_name="columns")
+                             on_delete=models.CASCADE,
+                             related_name="data_columns")
     ref_model = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     ref_column = models.CharField("Reference Column", max_length=100)
     position = models.SmallIntegerField(blank=True, null=True)
@@ -420,13 +422,13 @@ class BayesianNetworkNodeColumn(models.Model):
         # Check the validity of the Reference Column
         try:
             mc = self.ref_model.model_class()
-        except Exception as e:
+        except Exception:
             raise ValidationError({'ref_model': _(
                 'The Reference Model must be a valid Django Model'
             )})
         try:
             getattr(mc, self.ref_column)
-        except Exception as e:
+        except Exception:
             raise ValidationError({'ref_column': _(
                 'The column must be a valid attribute of '
                 'the ' + self.ref_model.name + ' model'
@@ -574,7 +576,7 @@ class BayesianNetworkNode(models.Model):
         if not self.is_observable:
             return(False)
         data = {}
-        columns = self.columns.all().order_by("position")
+        columns = self.data_columns.all().order_by("position")
         if len(columns) == 0:
             raise ValueError(_("No columns defined for an Observable Node"))
         # As they may not be from the same model, the can't be retrieved
@@ -764,7 +766,7 @@ class BayesianNetworkNode(models.Model):
             bp.plot.pyplot.close()
             save = True
         elif self.distribution == bp_consts.DIST_MIXTURE:
-            if self.columns.count() == 2:
+            if self.data_columns.count() == 2:
                 bp.plot.gaussian_mixture_2d(
                     self.engine_inferred_object, scale=2)
                 bp.plot.pyplot.savefig(settings.MEDIA_ROOT + '/' + image_name)

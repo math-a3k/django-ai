@@ -4,6 +4,29 @@
 History
 =======
 
+0.0.2 (2017-12-04)
+++++++++++++++++++
+
+django-ai 0.0.2 Release Notes
+-----------------------------
+
+I'm very happy of announcing the second release of ``django-ai``: Artificial Intelligence for Django.
+
+The main exciting features of this version are Spam Filtering systems and Classification with Support Vector Machines ready to be plugged into any Django application.
+
+Spam Filtering
+^^^^^^^^^^^^^^
+
+This *system* allows you to incorporate to any Django Model susceptible to spamming a self-updating filter capable of learning from labelled history to discern spam content so you can act accordingly. The classifier can be chosen and all the parameters in the process can be fine-tunned conveniently via the admin front-end. See the example and the documentation for more.
+
+Classification
+^^^^^^^^^^^^^^
+
+A new app is introduced: *Supervised Learning*, which provides Classification and Regression models ready to be plugged into ``django-ai`` systems or to be used stand-alone in your application where deemed necessary.
+
+Support Vector Machines (SVM), one of the most understood and best performing classifier for high-dimensional data is featured in this app.
+
+
 0.0.1 (2017-11-13)
 ++++++++++++++++++
 
