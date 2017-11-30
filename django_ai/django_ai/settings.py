@@ -15,6 +15,8 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Insert to the system path the directory of django-ai's systems apps
+os.sys.path.insert(0, os.path.join(BASE_DIR, 'systems'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -42,7 +44,10 @@ INSTALLED_APPS = [
     'nested_admin',
 
     # django-ai
+    'base',
     'bayesian_networks',
+    'supervised_learning',
+    'systems.spam_filtering',
     'examples',
 ]
 

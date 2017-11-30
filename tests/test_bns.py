@@ -21,6 +21,7 @@ from django_ai.bayesian_networks.bayespy_constants import (
     DIST_GAUSSIAN_ARD, DIST_GAMMA, DIST_GAUSSIAN, DET_ADD,
     DIST_DIRICHLET, DIST_WISHART, DIST_CATEGORICAL, DIST_MIXTURE, )
 from django_ai.bayesian_networks.utils import parse_node_args
+from django_ai.supervised_learning.models import svm
 
 from tests.test_models import models as test_models
 
@@ -208,6 +209,10 @@ class TestDjango_ai(TestCase):
             parent=self.Lambda,
             child=self.Y
         )
+        # SVM 1
+        self.svm1 = svm.SVC.objects.create(
+            name="svm1"
+        )
 
     def test_bn_inference(self):
         self.bn1.perform_inference(recalculate=True)
@@ -313,12 +318,11 @@ class TestDjango_ai(TestCase):
             self.ui_avg1_col.ref_column = "non-existant-field"
             self.ui_avg1_col.full_clean()
 
-
     def test_node_get_data(self):
         # Test no columns assigned
         self.setUp()
         with self.assertRaises(ValueError):
-            self.ui_avg1.columns.all().delete()
+            self.ui_avg1.data_columns.all().delete()
             self.ui_avg1.get_data()
         # TODO:
         # Test not-matching column lengths
@@ -377,11 +381,11 @@ class TestDjango_ai(TestCase):
             'prev_clusters_labels': {},
             'prev_clusters_means': {},
             'clusters_means': {
-                'A': np.array([0.,  0.]),
-                'B': np.array([16.,  16.]),
-                'C': np.array([20.,  20.]),
-                'D': np.array([20.,  20.]),
-                'E': np.array([25.,  25.]),
+                'A': np.array([0., 0.]),
+                'B': np.array([16., 16.]),
+                'C': np.array([20., 20.]),
+                'D': np.array([20., 20.]),
+                'E': np.array([25., 25.]),
             },
             'clusters_labels': {'4': 'E', '1': 'A', '5': 'A', '3': 'A',
                                 '2': 'B', '8': 'A', '7': 'A', '0': 'C',
@@ -443,11 +447,11 @@ class TestDjango_ai(TestCase):
         # ^^^ I don't know why store_results() does not update the test
         # database despite of returning True. The method works in a
         # regular environment. Postponing.
-        ## Test BN.threshold_actions validations
+        # -> Test BN.threshold_actions validations
         self.threshold_actions = ":recalculate :not-allowed-action"
         with self.assertRaises(ValidationError):
             self.bn3.full_clean()
-        ## Test BN.counter, BN.counter_threshold and BN.threshold_actions
+        # -> Test BN.counter, BN.counter_threshold and BN.threshold_actions
         # Test Triggering an inference
         self.threshold_actions = ":recalculate"
         prev_timestamp = self.bn3.engine_object_timestamp
@@ -539,6 +543,14 @@ class TestDjango_ai(TestCase):
         }
         output = parse_node_args(args_string)
         self.assertEqual(output, expected_output)
+
+    def test_svm_engine_object(self):
+        X = np.array([[-1, -1], [-2, -1], [1, 1], [2, 1]])
+        y = np.array([1, 1, 2, 2])
+        classifier = self.svm1.get_engine_object()
+        # import ipdb; ipdb.set_trace()
+        classifier.fit(X, y)
+        self.assertEqual(classifier.predict([[-0.8, -1]]), [1])
 
     def tearDown(self):
         self.bn1.image.delete()

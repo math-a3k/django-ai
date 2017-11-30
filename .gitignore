@@ -36,8 +36,17 @@ docs/_build
 # SQLite
 *.sqlite*
 
-# Ignore migrations in Bayesian Networks
+# Ignore migrations in Techniques / Stat Models
 django_ai/bayesian_networks/migrations/*
+django_ai/base/migrations/*
+django_ai/supervised_learning/migrations/*
+django_ai/systems/spam_filtering/migrations/*
+
+# Ignore scratchpad
+scratchpad.*
+
+# Ignore tar.gz files
+*.tar.gz
 
 # Ignore generated images
 django_ai/media/django_ai/bayesian_networks/*

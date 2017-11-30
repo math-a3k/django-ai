@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from django.db import models
+from systems.spam_filtering.models import IsSpammable
 
 
 class UserInfo(models.Model):
@@ -62,5 +63,26 @@ class UserInfo(models.Model):
     cluster_1 = models.CharField("Cluster 1", max_length=1,
                                  blank=True, null=True)
 
-    def __unicode__(self):
-        return(self)
+    class Meta:
+        verbose_name = "User Info"
+        verbose_name_plural = "Users Infos"
+
+    def __str__(self):
+        return("{} - S: {}, A:{} - Group: {}".format(
+            self.id, self.get_sex_display(), self.age, self.cluster_1)
+        )
+
+
+class CommentOfMySite(IsSpammable):
+    SPAM_FILTER = "Comment Spam Filter"
+    SPAMMABLE_FIELD = "comment"
+
+    comment = models.TextField("Comment")
+    user_id = models.SmallIntegerField("User ID")
+
+    class Meta:
+        verbose_name = "Comment of my Site"
+        verbose_name_plural = "Comments of my Site"
+
+    def __str__(self):
+        return("[U: {}] {}...".format(self.user_id, self.comment[:20]))
