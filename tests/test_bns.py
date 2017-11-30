@@ -33,9 +33,9 @@ class TestDjango_ai(TestCase):
         random.seed(123456)
         np.random.seed(123456)
         # BN 1
-        self.bn1 = models.BayesianNetwork.objects.create(
+        self.bn1, _ = models.BayesianNetwork.objects.get_or_create(
             name="BN for tests - 1")
-        self.mu = models.BayesianNetworkNode.objects.create(
+        self.mu, _ = models.BayesianNetworkNode.objects.get_or_create(
             network=self.bn1,
             name="mu",
             node_type=models.BayesianNetworkNode.NODE_TYPE_STOCHASTIC,
@@ -44,7 +44,7 @@ class TestDjango_ai(TestCase):
             distribution_params="0, 1e-6",
             graph_interval="-10, 20"
         )
-        self.tau = models.BayesianNetworkNode.objects.create(
+        self.tau, _ = models.BayesianNetworkNode.objects.get_or_create(
             network=self.bn1,
             name="tau",
             node_type=models.BayesianNetworkNode.NODE_TYPE_STOCHASTIC,
@@ -53,7 +53,7 @@ class TestDjango_ai(TestCase):
             distribution_params="1e-6, 1e-6",
             graph_interval="1e-6, 0.1"
         )
-        self.ui_avg1 = models.BayesianNetworkNode.objects.create(
+        self.ui_avg1, _ = models.BayesianNetworkNode.objects.get_or_create(
             network=self.bn1,
             name="userinfo.avg1",
             node_type=models.BayesianNetworkNode.NODE_TYPE_STOCHASTIC,
@@ -61,28 +61,28 @@ class TestDjango_ai(TestCase):
             distribution=DIST_GAUSSIAN_ARD,
             distribution_params="mu, tau",
         )
-        self.ui_avg1_col = models.BayesianNetworkNodeColumn.objects.create(
+        self.ui_avg1_col, _ = models.BayesianNetworkNodeColumn.objects.get_or_create(
             node=self.ui_avg1,
             ref_model=ContentType.objects.get(model="userinfo",
                                               app_label="test_models"),
             ref_column="avg1",
         )
-        self.e1 = models.BayesianNetworkEdge.objects.create(
+        self.e1, _ = models.BayesianNetworkEdge.objects.get_or_create(
             network=self.bn1,
             description="mu -> userinfo.avg1",
             parent=self.mu,
             child=self.ui_avg1
         )
-        self.e2 = models.BayesianNetworkEdge.objects.create(
+        self.e2, _ = models.BayesianNetworkEdge.objects.get_or_create(
             network=self.bn1,
             description="tau -> userinfo.avg1",
             parent=self.tau,
             child=self.ui_avg1
         )
         # BN 2
-        self.bn2 = models.BayesianNetwork.objects.create(
+        self.bn2, _ = models.BayesianNetwork.objects.get_or_create(
             name="BN for tests - 2")
-        self.x1 = models.BayesianNetworkNode.objects.create(
+        self.x1, _ = models.BayesianNetworkNode.objects.get_or_create(
             network=self.bn2,
             name="x1",
             node_type=models.BayesianNetworkNode.NODE_TYPE_STOCHASTIC,
@@ -90,7 +90,7 @@ class TestDjango_ai(TestCase):
             distribution=DIST_GAUSSIAN,
             distribution_params="[0, 0], [[1, 0], [0,1]]",
         )
-        self.x2 = models.BayesianNetworkNode.objects.create(
+        self.x2, _ = models.BayesianNetworkNode.objects.get_or_create(
             network=self.bn2,
             name="x2",
             node_type=models.BayesianNetworkNode.NODE_TYPE_STOCHASTIC,
@@ -98,7 +98,7 @@ class TestDjango_ai(TestCase):
             distribution=DIST_GAUSSIAN,
             distribution_params="[1, 1], [[1, 0], [0,1]]",
         )
-        self.z = models.BayesianNetworkNode.objects.create(
+        self.z, _ = models.BayesianNetworkNode.objects.get_or_create(
             network=self.bn2,
             name="z",
             node_type=models.BayesianNetworkNode.NODE_TYPE_DETERMINISTIC,
@@ -106,20 +106,20 @@ class TestDjango_ai(TestCase):
             deterministic=DET_ADD,
             deterministic_params="x1, x2",
         )
-        self.bn2e1 = models.BayesianNetworkEdge.objects.create(
+        self.bn2e1, _ = models.BayesianNetworkEdge.objects.get_or_create(
             network=self.bn2,
             description="x1 -> z",
             parent=self.x1,
             child=self.z
         )
-        self.bn2e2 = models.BayesianNetworkEdge.objects.create(
+        self.bn2e2, _ = models.BayesianNetworkEdge.objects.get_or_create(
             network=self.bn2,
             description="x2 -> z",
             parent=self.x2,
             child=self.z
         )
         # BN 3 (Clustering)
-        self.bn3 = models.BayesianNetwork.objects.create(
+        self.bn3, _ = models.BayesianNetwork.objects.get_or_create(
             name="Clustering (testing)",
             network_type=models.BayesianNetwork.BN_TYPE_CLUSTERING,
             engine_meta_iterations=10,
@@ -127,7 +127,7 @@ class TestDjango_ai(TestCase):
             counter_threshold=2,
             threshold_actions=":recalculate",
         )
-        self.alpha = models.BayesianNetworkNode.objects.create(
+        self.alpha, _ = models.BayesianNetworkNode.objects.get_or_create(
             network=self.bn3,
             name="alpha",
             node_type=models.BayesianNetworkNode.NODE_TYPE_STOCHASTIC,
@@ -135,7 +135,7 @@ class TestDjango_ai(TestCase):
             distribution=DIST_DIRICHLET,
             distribution_params="numpy.full(10, 1e-05)",
         )
-        self.Z = models.BayesianNetworkNode.objects.create(
+        self.Z, _ = models.BayesianNetworkNode.objects.get_or_create(
             network=self.bn3,
             name="Z",
             node_type=models.BayesianNetworkNode.NODE_TYPE_STOCHASTIC,
@@ -143,7 +143,7 @@ class TestDjango_ai(TestCase):
             distribution=DIST_CATEGORICAL,
             distribution_params="alpha, plates=(:dl_Y, ), :ifr",
         )
-        self.mu_c = models.BayesianNetworkNode.objects.create(
+        self.mu_c, _ = models.BayesianNetworkNode.objects.get_or_create(
             network=self.bn3,
             name="mu",
             node_type=models.BayesianNetworkNode.NODE_TYPE_STOCHASTIC,
@@ -152,7 +152,7 @@ class TestDjango_ai(TestCase):
             distribution_params=("numpy.zeros(2), [[1e-5,0], [0, 1e-5]], "
                                  "plates=(10, )"),
         )
-        self.Lambda = models.BayesianNetworkNode.objects.create(
+        self.Lambda, _ = models.BayesianNetworkNode.objects.get_or_create(
             network=self.bn3,
             name="Lambda",
             node_type=models.BayesianNetworkNode.NODE_TYPE_STOCHASTIC,
@@ -160,7 +160,7 @@ class TestDjango_ai(TestCase):
             distribution=DIST_WISHART,
             distribution_params="2, [[1e-5,0], [0, 1e-5]], plates=(10, )",
         )
-        self.Y = models.BayesianNetworkNode.objects.create(
+        self.Y, _ = models.BayesianNetworkNode.objects.get_or_create(
             network=self.bn3,
             name="Y",
             node_type=models.BayesianNetworkNode.NODE_TYPE_STOCHASTIC,
@@ -170,47 +170,47 @@ class TestDjango_ai(TestCase):
                                  "mu, Lambda, :noplates"),
         )
         #
-        self.Y_col_avg_logged = \
-            models.BayesianNetworkNodeColumn.objects.create(
+        self.Y_col_avg_logged, _ = \
+            models.BayesianNetworkNodeColumn.objects.get_or_create(
                 node=self.Y,
                 ref_model=ContentType.objects.get(
                     model="userinfo", app_label="test_models"),
                 ref_column="avg_time_pages"
             )
-        self.Y_col_avg_pages_a = \
-            models.BayesianNetworkNodeColumn.objects.create(
+        self.Y_col_avg_pages_a, _ = \
+            models.BayesianNetworkNodeColumn.objects.get_or_create(
                 node=self.Y,
                 ref_model=ContentType.objects.get(
                     model="userinfo", app_label="test_models"),
                 ref_column="avg_time_pages_a"
             )
         #
-        self.alpha_to_Z = models.BayesianNetworkEdge.objects.create(
+        self.alpha_to_Z, _ = models.BayesianNetworkEdge.objects.get_or_create(
             network=self.bn3,
             description="alpha -> Z",
             parent=self.alpha,
             child=self.Z
         )
-        self.Z_to_Y = models.BayesianNetworkEdge.objects.create(
+        self.Z_to_Y, _ = models.BayesianNetworkEdge.objects.get_or_create(
             network=self.bn3,
             description="Z -> Y",
             parent=self.Z,
             child=self.Y
         )
-        self.mu_to_Y = models.BayesianNetworkEdge.objects.create(
+        self.mu_to_Y, _ = models.BayesianNetworkEdge.objects.get_or_create(
             network=self.bn3,
             description="mu -> Y",
             parent=self.mu_c,
             child=self.Y
         )
-        self.Lambda_to_Y = models.BayesianNetworkEdge.objects.create(
+        self.Lambda_to_Y, _ = models.BayesianNetworkEdge.objects.get_or_create(
             network=self.bn3,
             description="Lambda -> Y",
             parent=self.Lambda,
             child=self.Y
         )
         # SVM 1
-        self.svm1 = svm.SVC.objects.create(
+        self.svm1, _ = svm.SVC.objects.get_or_create(
             name="svm1"
         )
 
