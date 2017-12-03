@@ -6,6 +6,17 @@ omit =
     *site-packages*
     *tests*
     *.tox*
+    *settings*
+    *apps.py
+    *scratchpad.py
+    *wsgi.py
+    *__init__.py
+    */migrations/*
+    */examples/*
+    *manage.py
+
 show_missing = True
 exclude_lines =
+	pragma: no cover
+	def __str__
     raise NotImplementedError
