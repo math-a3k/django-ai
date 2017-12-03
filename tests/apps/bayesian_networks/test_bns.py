@@ -61,12 +61,13 @@ class TestDjango_ai(TestCase):
             distribution=DIST_GAUSSIAN_ARD,
             distribution_params="mu, tau",
         )
-        self.ui_avg1_col, _ = models.BayesianNetworkNodeColumn.objects.get_or_create(
-            node=self.ui_avg1,
-            ref_model=ContentType.objects.get(model="userinfo",
-                                              app_label="test_models"),
-            ref_column="avg1",
-        )
+        self.ui_avg1_col, _ = \
+            models.BayesianNetworkNodeColumn.objects.get_or_create(
+                node=self.ui_avg1,
+                ref_model=ContentType.objects.get(model="userinfo",
+                                                  app_label="test_models"),
+                ref_column="avg1",
+            )
         self.e1, _ = models.BayesianNetworkEdge.objects.get_or_create(
             network=self.bn1,
             description="mu -> userinfo.avg1",
@@ -208,10 +209,6 @@ class TestDjango_ai(TestCase):
             description="Lambda -> Y",
             parent=self.Lambda,
             child=self.Y
-        )
-        # SVM 1
-        self.svm1, _ = svm.SVC.objects.get_or_create(
-            name="svm1"
         )
 
     def test_bn_inference(self):
@@ -543,14 +540,6 @@ class TestDjango_ai(TestCase):
         }
         output = parse_node_args(args_string)
         self.assertEqual(output, expected_output)
-
-    def test_svm_engine_object(self):
-        X = np.array([[-1, -1], [-2, -1], [1, 1], [2, 1]])
-        y = np.array([1, 1, 2, 2])
-        classifier = self.svm1.get_engine_object()
-        # import ipdb; ipdb.set_trace()
-        classifier.fit(X, y)
-        self.assertEqual(classifier.predict([[-0.8, -1]]), [1])
 
     def tearDown(self):
         self.bn1.image.delete()
