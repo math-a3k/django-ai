@@ -31,7 +31,7 @@ class StatisticalModel(models.Model):
         (SM_TYPE_UNSUPERVISED, "Regression"),
     )
 
-    ACTIONS_KEYWORDS = []
+    ACTIONS_KEYWORDS = [":recalculate", ]
 
     name = models.CharField(
         "Name",
@@ -63,6 +63,10 @@ class StatisticalModel(models.Model):
     engine_iterations = models.SmallIntegerField(
         "Engine Iterations (Max)",
         blank=True, null=True
+    )
+    has_results = models.BooleanField(
+        "Has Results?",
+        default=True
     )
     results_storage = models.CharField(
         "Results Storage",
@@ -124,12 +128,15 @@ class StatisticalModel(models.Model):
         # and the len of the columns shouls be checked
         lengths = [len(col) for col in data]
         h = lengths[0]
-        if any([h == t for t in lengths[1:]]):
+        if any([h != t for t in lengths[1:]]):
             raise ValidationError(
                 {"ref_column": _("Columns lengths does not match.")})
         # Construct the list
         data_list = np.stack([data[col] for col in data], axis=-1)
         return(data_list)
+
+    def get_results(self):
+        raise NotImplementedError("A Technique should implement this method")
 
     def store_results(self, reset=False):
         """
@@ -139,7 +146,7 @@ class StatisticalModel(models.Model):
         Note that it will update the results using the default ordering of the
         Model in which will be stored.
         """
-        if self.sm_type != self.SM_TYPE_GENERAL and self.results_storage:
+        if self.has_results and self.results_storage:
             self._store_results(reset=reset)
             return(True)
         else:
@@ -268,13 +275,16 @@ class SupervisedLearningTechnique(StatisticalModel):
         raise NotImplementedError("A Technique should implement this method")
 
     def get_labels(self):
-        app, model, attribute = self.labels_column.split(".")
-        model_class = ContentType.objects.get(
-            app_label=app,
-            model=model.lower()
-        ).model_class()
-        labels = model_class.objects.values_list(attribute, flat=True)
-        return(labels)
+        if self.labels_column:
+            app, model, attribute = self.labels_column.split(".")
+            model_class = ContentType.objects.get(
+                app_label=app,
+                model=model.lower()
+            ).model_class()
+            labels = model_class.objects.values_list(attribute, flat=True)
+            return(labels)
+        else:
+            return(None)
 
     # -> Django Models API
     def clean(self):
@@ -338,8 +348,6 @@ class UnsupervisedLearningTechnique(StatisticalModel):
     def assign(self, sl_input):
         raise NotImplementedError("A Technique should implement this method")
 
-    def get_results(self):
-        raise NotImplementedError("A Technique should implement this method")
 
 
 class DataColumn(models.Model):
