@@ -32,6 +32,7 @@ INSTALLED_APPS = [
 
     'nested_admin',  # Dependency
 
+    'django_ai.base.apps.BaseConfig',
     'django_ai.bayesian_networks.apps.BayesianNetworksConfig',
     'django_ai.supervised_learning.apps.SupervisedLearningConfig',
     'tests.test_models'
