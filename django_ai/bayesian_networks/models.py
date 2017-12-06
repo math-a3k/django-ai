@@ -28,7 +28,7 @@ from .utils import (parse_node_args, )
 if 'DJANGO_TEST' in os.environ:
     from django_ai.base.models import StatisticalModel
     from django_ai.bayesian_networks import bayespy_constants as bp_consts
-else:
+else: # pragma: no cover
     from base.models import StatisticalModel
     from bayesian_networks import bayespy_constants as bp_consts
 
@@ -568,32 +568,8 @@ class BayesianNetworkNode(models.Model):
                 raise ValidationError({
                     "distribution_params": "[BayesPy] " + msg})
 
-    def get_data(self):
-        """
-        Returns a list of R^d points, represented as list of length d,
-        constructed from the Node's columns.
-        """
-        if not self.is_observable:
-            return(False)
-        data = {}
-        columns = self.data_columns.all().order_by("position")
-        if len(columns) == 0:
-            raise ValueError(_("No columns defined for an Observable Node"))
-        # As they may not be from the same model, the can't be retrieved
-        # straight from the ORM
-        for column in columns:
-            colname = "{0}.{1}".format(column.ref_model, column.ref_column)
-            data[colname] = column.ref_model.model_class().objects.values_list(
-                column.ref_column, flat=True)
-        # and the len of the columns shouls be checked
-        lengths = [len(col) for col in data]
-        h = lengths[0]
-        if any([h == t for t in lengths[1:]]):
-            raise ValidationError(
-                {"ref_column": _("Columns lengths does not match.")})
-        # Construct the list
-        data_list = np.stack([data[col] for col in data], axis=-1)
-        return(data_list)
+    # Use StatisticalModel's get_data() instead of defining one of its own
+    get_data = StatisticalModel.get_data
 
     def get_params(self):
         """
@@ -612,18 +588,6 @@ class BayesianNetworkNode(models.Model):
             return("distribution")
         else:
             return("deterministic")
-
-    def get_parents_names(self):
-        return(self.parents.objects.values_list("name", flat=True))
-
-    def parse_nodes_in_params(self, params_str):
-        """
-        Returns the nodes names passed as params to the node
-        """
-        nodes_in_bn = self.network.get_nodes_names()
-        p_params = parse_node_args(params_str, flat=True)
-        nodes_in_params = [n for n in p_params if n in nodes_in_bn]
-        return(nodes_in_params)
 
     def resolve_eos_in_params(self, params=[], kwparams={}, parents={}):
         """
@@ -811,4 +775,3 @@ def update_bn_image(sender, **kwargs):
 
 
 post_save.connect(update_bn_image, sender=BayesianNetworkNode)
-post_save.connect(update_bn_image, sender=BayesianNetworkEdge)
