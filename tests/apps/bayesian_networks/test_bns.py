@@ -26,7 +26,7 @@ from django_ai.supervised_learning.models import svm
 from tests.test_models import models as test_models
 
 
-class TestDjango_ai(TestCase):
+class TestBN(TestCase):
 
     def setUp(self):
         # Set the seeds
@@ -124,7 +124,7 @@ class TestDjango_ai(TestCase):
             name="Clustering (testing)",
             network_type=models.BayesianNetwork.BN_TYPE_CLUSTERING,
             engine_meta_iterations=10,
-            results_storage="dmf:test_models.userinfo.clustering_1",
+            results_storage="dmf:test_models.userinfo.cluster_1",
             counter_threshold=2,
             threshold_actions=":recalculate",
         )
@@ -220,6 +220,45 @@ class TestDjango_ai(TestCase):
         self.assertEqual(str(mu)[:5], '9.809')
         self.assertEqual(str(tau)[:5], '0.039')
 
+    def test_bn_cached_eo(self):
+        self.bn1.get_engine_object()
+        expected_output = self.bn1.engine_object
+        actual_output = self.bn1.get_engine_object()
+        self.assertEqual(expected_output, actual_output)
+
+    def test_ww_bn_reset_inference(self):
+        """
+        Django parallel test running has issues, the 'ww' in the test name
+        is to make it run it at the end where no problems arise
+        """
+        self.setUp()
+        expected_clean_metadata = {
+            "clusters_labels": {},
+            "prev_clusters_labels": {},
+            "clusters_means": {},
+            "prev_clusters_means": {},
+            "clusters_sizes": {},
+            "prev_clusters_sizes": {},
+            "columns": [],
+        }
+        # Avoid unneccesary calculation
+        self.bn3.engine_meta_iterations = 1
+        #
+        self.bn3.perform_inference()
+        self.assertTrue(self.bn3.engine_object is not None)
+        self.assertTrue(self.bn3.engine_object_timestamp is not None)
+        self.assertTrue(self.bn3.metadata != expected_clean_metadata)
+        results = test_models.UserInfo.objects.values_list(
+            "cluster_1", flat=True)
+        self.assertTrue(any(list(results)))
+        self.bn3.reset_inference()
+        self.assertTrue(self.bn3.engine_object is None)
+        self.assertTrue(self.bn3.engine_object_timestamp is None)
+        self.assertTrue(self.bn3.metadata == expected_clean_metadata)
+        results = test_models.UserInfo.objects.values_list(
+            "cluster_1", flat=True)
+        self.assertTrue(not any(list(results)))
+
     def test_bn_deterministic_nodes(self):
         # Initialize the EO
         self.bn2.get_engine_object(reconstruct=True, save=True)
@@ -292,6 +331,12 @@ class TestDjango_ai(TestCase):
             self.z.deterministic_params = None
             self.z.full_clean()
 
+        # Test Fourth Step: Arg parsing
+        self.setUp()
+        with self.assertRaises(ValidationError):
+            self.mu.distribution_params = '#my_param1, %my_param2'
+            self.mu.full_clean()
+
         # Test Final Step: BayesPy initialization
         self.setUp()
         with self.assertRaises(ValidationError):
@@ -315,20 +360,63 @@ class TestDjango_ai(TestCase):
             self.ui_avg1_col.ref_column = "non-existant-field"
             self.ui_avg1_col.full_clean()
 
+    def test_bn_get_nodes_names(self):
+        expected_output = ['mu', 'tau', 'userinfo.avg1']
+        actual_output = list(self.bn1.get_nodes_names())
+        self.assertEqual(expected_output, actual_output)
+
     def test_node_get_data(self):
         # Test no columns assigned
         self.setUp()
         with self.assertRaises(ValueError):
             self.ui_avg1.data_columns.all().delete()
             self.ui_avg1.get_data()
-        # TODO:
         # Test not-matching column lengths
-        # with self.assertRaises(ValidationError):
-            # - Create other model
-            # - Populate with 100 records
-            # - Add the column with the userinfo column
-            # - Call get_data()
+        self.setUp()
+        smaller_data_column, _ = \
+            models.BayesianNetworkNodeColumn.objects.get_or_create(
+                node=self.ui_avg1,
+                ref_model=ContentType.objects.get(
+                    model="userinfo2", app_label="test_models"),
+                ref_column="avg2"
+            )
+        with self.assertRaises(ValidationError):
+            self.ui_avg1.data_columns.add(smaller_data_column)
+            self.ui_avg1.get_data()
+        smaller_data_column.delete()
         # Test correct functioning
+        self.setUp()
+        expected_output = list(test_models.UserInfo.objects.values_list(
+            "avg1", flat=True))
+        actual_output = list(self.ui_avg1.get_data())
+        self.assertEqual(expected_output, actual_output)
+
+    def test_node_get_params_type(self):
+        self.assertEqual(self.mu.get_params_type(), "distribution")
+        self.assertEqual(self.z.get_params_type(), "deterministic")
+
+    def test_node_reset_engine_object(self):
+        self.bn1.perform_inference(recalculate=True)
+        self.ui_avg1 = self.bn1.nodes.last()
+        self.assertTrue(self.ui_avg1.engine_object is not None)
+        self.assertTrue(self.ui_avg1.engine_object_timestamp is not None)
+        self.ui_avg1.reset_engine_object()
+        self.assertTrue(self.ui_avg1.engine_object is None)
+        self.assertTrue(self.ui_avg1.engine_object_timestamp is None)
+
+    def test_node_get_engine_inferred_object(self):
+        self.bn1.perform_inference(recalculate=True)
+        expected_output = self.bn1.engine_object['userinfo.avg1']
+        actual_output = self.ui_avg1.get_engine_inferred_object()
+        self.assertEqual(expected_output, actual_output)
+
+    def test_node_resolve_eos_in_params(self):
+        self.z.deterministic_params = "x1, x2, x3"
+        with self.assertRaises(ValueError):
+            self.z.get_engine_object()
+        self.z.deterministic_params = "x1, x2, kp=x3"
+        with self.assertRaises(ValueError):
+            self.z.get_engine_object()
 
     def test_bn_meta_iterations(self):
         self.setUp()
@@ -358,6 +446,21 @@ class TestDjango_ai(TestCase):
             str(self.bn1._eo_meta_iterations[0]["eo"].L[1]),
             "nan"
         )
+
+    def test_bn_update_eos_struct(self):
+        bn1_eos_struct = {n.name: {"dm": n, "eo": None}
+                          for n in self.bn1.nodes.all()}
+        node = self.bn1.nodes.get(name="userinfo.avg1")
+        models.BayesianNetwork.update_eos_struct(bn1_eos_struct, node)
+        self.assertTrue('Gamma' in
+                        str(bn1_eos_struct['tau']['eo'].__class__))
+        self.assertTrue('GaussianARD' in
+                        str(bn1_eos_struct['mu']['eo'].__class__))
+
+    def test_node_children(self):
+        expected_output = [self.ui_avg1]
+        actual_output = list(self.mu.children())
+        self.assertEqual(expected_output, actual_output)
 
     def test_bn_whole_clustering(self):
         self.setUp()
@@ -425,27 +528,22 @@ class TestDjango_ai(TestCase):
             output_metadata["columns"],
             expected_metadata["columns"]
         )
-        # Test BN.assign_cluster()
-        self.assertEqual(
-            self.bn3.assign_cluster([10, 10]),
-            "B"
-        )
         # Test Results Storage
-        # BN.store_results()
-        self.bn3.store_results()
+        # BN.get_results()
         results = self.bn3.get_results()
-        stored_results = test_models.UserInfo.objects.all().values_list(
-            'cluster_1', flat=True)
         # Test resullts are OK (omitting the rest for avoiding pasting a
         # list of size 200)
         self.assertEqual(results[150:], ["B" for x in range(50)])
+        # Edge case
+        self.assertFalse(self.bn1.get_results())
+        # BN.store_results()
+        self.bn3.store_results()
+        stored_results = test_models.UserInfo.objects.all().values_list(
+            'cluster_1', flat=True)
         # Test results are stored OK
-        # self.assertEqual(results, stored_results)
-        # ^^^ I don't know why store_results() does not update the test
-        # database despite of returning True. The method works in a
-        # regular environment. Postponing.
+        self.assertEqual(list(results), list(stored_results))
         # -> Test BN.threshold_actions validations
-        self.threshold_actions = ":recalculate :not-allowed-action"
+        self.bn3.threshold_actions = ":recalculate :not-allowed-action"
         with self.assertRaises(ValidationError):
             self.bn3.full_clean()
         # -> Test BN.counter, BN.counter_threshold and BN.threshold_actions
@@ -458,6 +556,18 @@ class TestDjango_ai(TestCase):
         self.assertTrue(self.bn3.engine_object_timestamp > prev_timestamp)
         # Test the counter was reset
         self.assertEqual(self.bn3.counter, 0)
+        # Test BN.assign_cluster()
+        self.assertEqual(
+            self.bn3.assign_cluster([10, 10]),
+            "B"
+        )
+        self.bn3.reset_inference()
+        self.assertFalse(
+            self.bn3.assign_cluster([10, 10])
+        )
+        self.assertFalse(
+            self.bn1.assign_cluster([10, 10])
+        )
 
     def test_node_args_parsing(self):
         # Test "general" parsing

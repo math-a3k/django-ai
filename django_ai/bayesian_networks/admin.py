@@ -51,7 +51,8 @@ class BayesianNetworkEdgeInline(NestedTabularInline):
     model = BayesianNetworkEdge
     extra = 1
 
-    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+    def formfield_for_foreignkey(self, db_field,
+                                 request=None, **kwargs):  # pragma: no cover
         field = super(BayesianNetworkEdgeInline, self)\
             .formfield_for_foreignkey(db_field, request, **kwargs)
         # Display only Nodes from the Network or None
@@ -84,7 +85,7 @@ class BayesianNetworkAdmin(NestedModelAdmin):
         BayesianNetworkEdgeInline,
     ]
 
-    def get_form(self, request, obj=None, **kwargs):
+    def get_form(self, request, obj=None, **kwargs):  # pragma: no cover
         # Save obj reference in the request for future processing in Inline
         request._obj_ = obj
         form = super(BayesianNetworkAdmin, self).get_form(request, obj,
