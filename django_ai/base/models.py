@@ -126,7 +126,7 @@ class StatisticalModel(models.Model):
             data[colname] = column.ref_model.model_class().objects.values_list(
                 column.ref_column, flat=True)
         # and the len of the columns shouls be checked
-        lengths = [len(col) for col in data]
+        lengths = [len(data[col]) for col in data]
         h = lengths[0]
         if any([h != t for t in lengths[1:]]):
             raise ValidationError(
