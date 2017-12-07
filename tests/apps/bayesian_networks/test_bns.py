@@ -12,15 +12,19 @@ import random
 import numpy as np
 from bayespy.nodes import Gaussian
 
-from django.test import TestCase
+from django.test import (TestCase, Client, )
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.urls import reverse
+from django.contrib.auth.models import User
 
 from django_ai.bayesian_networks import models
 from django_ai.bayesian_networks.bayespy_constants import (
     DIST_GAUSSIAN_ARD, DIST_GAMMA, DIST_GAUSSIAN, DET_ADD,
     DIST_DIRICHLET, DIST_WISHART, DIST_CATEGORICAL, DIST_MIXTURE, )
-from django_ai.bayesian_networks.utils import parse_node_args
+from django_ai.bayesian_networks.utils import (
+    parse_node_args, mahalanobis_distance, )
+from django_ai.bayesian_networks import views
 
 from tests.test_models import models as test_models
 
@@ -31,6 +35,14 @@ class TestBN(TestCase):
         # Set the seeds
         random.seed(123456)
         np.random.seed(123456)
+        # Set up the user
+        self.user, _ = User.objects.get_or_create(
+            username='testadmin', email='testadmin@example.com',
+            is_superuser=True
+        )
+        self.user.set_password("12345")
+        self.user.save()
+        self.client.login(username='testadmin', password='12345')
         # BN 1
         self.bn1, _ = models.BayesianNetwork.objects.get_or_create(
             name="BN for tests - 1")
@@ -649,6 +661,63 @@ class TestBN(TestCase):
         }
         output = parse_node_args(args_string)
         self.assertEqual(output, expected_output)
+
+        # Test invalid function invocaton
+        with self.settings(DJANGO_AI_WHITELISTED_MODULES=["numpy", ]):
+            # Reimport the function with the new settings
+            from django_ai.bayesian_networks.utils import \
+                parse_node_args as pnn
+            with self.assertRaises(ValueError):
+                pnn("numpy.ones(k)")
+
+        # Test flat output in args parsing
+        expected_output = [np.array([1., 1.])]
+        output = parse_node_args("numpy.ones(2)", flat=True)
+        self.assertTrue(all(output[0] == expected_output[0]))
+        output.pop(0)
+        self.assertEqual(output, [])
+
+    def test_utils_misc(self):
+        # Test Mahalanobis Distance
+        self.assertEqual(
+            mahalanobis_distance([0, 1], [1, 0], [[2, 0], [0, 2]]), 1.0
+        )
+
+    def test_views(self):
+        self.setUp()
+        # -> Test perform_inference view
+        # Test correct inference
+        url = reverse('bn_run_inference', args=(self.bn1.id, ))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.bn1.refresh_from_db()
+        self.assertTrue(self.bn1.engine_object is not None)
+        # Test incorrect inference
+        self.mu.distribution_params = "xxx:bad-dp"
+        self.mu.save()
+        url = reverse('bn_run_inference', args=(self.bn1.id, ))
+        referer = '/admin/bayesian_networks/bayesiannetwork/{}/change/'\
+            .format(self.bn1.id)
+        response = self.client.get(url, follow=True, HTTP_REFERER=referer)
+        self.assertEqual(response.status_code, 200)
+        message = list(response.context.get('messages'))[0]
+        self.assertEqual(message.tags, "error")
+        self.assertTrue("ERROR WHILE PERFORMING INFERENCE" in message.message)
+
+        # -> Test reset_inference view
+        url = reverse('bn_reset_inference', args=(self.bn1.id, ))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.bn1.refresh_from_db()
+        self.assertTrue(self.bn1.engine_object is None)
+
+        # -> Test reinitialize_rng view
+        state = random.getstate()
+        url = reverse('bn_reinitialize_rng')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        new_state = random.getstate()
+        self.assertTrue(state is not new_state)
 
     def tearDown(self):
         self.bn1.image.delete()
