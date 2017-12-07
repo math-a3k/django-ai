@@ -14,8 +14,9 @@ from unittest import mock
 from django.test import TestCase
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django_ai.base.models import (DataColumn, )
+from django.template import Context, Template
 
+from django_ai.base.models import (DataColumn, )
 from tests.test_models import models as test_models
 
 
@@ -178,3 +179,15 @@ class TestBase(TestCase):
         # Test correct content
         self.dc_ui2_avg2.ref_column = "avg2"
         self.assertEqual(self.dc_ui2_avg2.full_clean(), None)
+
+    def test_templatetags(self):
+        # Test getitem filter
+        context = Context({
+            'mydict': {'key1': 'value1', 'key2': 'value2'}
+        })
+        template_to_render = Template(
+            '{% load admin_extras %}'
+            '{{ mydict|get_item:"key2" }}'
+        )
+        rendered_template = template_to_render.render(context)
+        self.assertIn('value2', rendered_template)

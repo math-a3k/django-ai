@@ -31,3 +31,8 @@ def get_fieldsets_and_inlines(context):
         fieldsets_and_inlines.append(('i', inline))
 
     return(fieldsets_and_inlines)
+
+
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key)
