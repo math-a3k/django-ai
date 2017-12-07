@@ -14,6 +14,7 @@ omit =
     */migrations/*
     */examples/*
     *manage.py
+    django_ai/django_ai/urls.py
 
 show_missing = True
 exclude_lines =

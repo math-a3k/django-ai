@@ -49,7 +49,7 @@ class SpamFilterAdmin(admin.ModelAdmin):
 
     fieldsets_and_inlines_order = ('f', 'f', 'i', 'f', )
 
-    def get_form(self, request, obj=None, **kwargs):
+    def get_form(self, request, obj=None, **kwargs):  # pragma: no cover
         # Save obj reference in the request for future processing in Inline
         request._obj_ = obj
         form = super(SpamFilterAdmin, self).get_form(request, obj, **kwargs)
