@@ -21,7 +21,6 @@ from django_ai.bayesian_networks.bayespy_constants import (
     DIST_GAUSSIAN_ARD, DIST_GAMMA, DIST_GAUSSIAN, DET_ADD,
     DIST_DIRICHLET, DIST_WISHART, DIST_CATEGORICAL, DIST_MIXTURE, )
 from django_ai.bayesian_networks.utils import parse_node_args
-from django_ai.supervised_learning.models import svm
 
 from tests.test_models import models as test_models
 
