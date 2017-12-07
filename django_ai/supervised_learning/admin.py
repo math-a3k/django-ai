@@ -38,7 +38,7 @@ class SVCAdmin(admin.ModelAdmin):
         })
     )
 
-    def get_form(self, request, obj=None, **kwargs):
+    def get_form(self, request, obj=None, **kwargs):  # pragma: no cover
         # Save obj reference in the request for future processing in Inline
         request._obj_ = obj
         form = super(SVCAdmin, self).get_form(request, obj, **kwargs)
