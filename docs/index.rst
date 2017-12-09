@@ -15,6 +15,7 @@ Contents:
    overview
    installation
    apps/index
+   api/api
    contributing
    authors
    history
