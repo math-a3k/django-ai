@@ -310,6 +310,6 @@ If you want to do things programmatically, you should see the migrations of the 
 .. autofunction:: examples.migrations.0004_bn_example.create_bn1_example
 .. autofunction:: examples.migrations.0006_clustering_bn_example.create_clustering_bn_example
 
-and take a look at the :download:`tests <../../tests/test_bns.py>`.
+and take a look at the :download:`tests <../../tests/apps/bayesian_networks/test_bns.py>`.
 
 .. _`bayespy-quickstart`: http://bayespy.org/user_guide/quickstart.html
