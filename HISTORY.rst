@@ -52,12 +52,12 @@ Excited?
 You are welcome to join the community of users and developers :)
 
 Features
-~~~~~~~~
+^^^^^^^^
 
 * Bayesian Networks: Integrate Bayesian Networks through your models using the `BayesPy framework <http://bayespy.org/>`_.
 
 Known Issues
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
 * In development mode (``DEBUG = True``) the BayesPy Inference Engine may stall during model estimation on certain states of the Pseudo Random Number Generator. You may need to reset the PRNG or deactivate and activate again your Python virtualenv. This does not affect other operations like cluster assigment.
 
