@@ -9,11 +9,14 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.db.models import Avg
-# from django.db.models import F
+from django.views.generic import CreateView
+from django.urls import reverse_lazy
 
 from bayesian_networks.models import BayesianNetwork
+from systems.spam_filtering.models import SpamFilter
 from examples import metrics
-from .models import UserInfo
+from .models import (UserInfo, CommentOfMySite, )
+from .forms import (CommentOfMySiteForm, )
 
 PAGES_COLORS = {
     "A": "green", "B": "deep-orange", "C": "blue-grey", "D": "brown",
@@ -38,7 +41,7 @@ def a_page_of_type_X(request, page_type="A", user_id=random.randint(1, USERS)):
     if not bn.is_inferred:
         return(
             render(
-                request,
+                request,    
                 template_name="examples/sample_page.html",
                 context={"is_inferred": False}
             )
@@ -138,3 +141,50 @@ def process_metrics(request, verbose=True):
         return(HttpResponse(status=204))
     else:
         return(HttpResponse(status=400))
+
+
+class MetricsMixin(object):
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Usage metrics
+        bn = BayesianNetwork.objects.get(name="Clustering (Example)")
+        user_info = UserInfo.objects.get(id=self.user_id)
+        cluster_avg_time_pages = \
+            bn.metadata["clusters_means"][user_info.cluster_1][0]
+        context['cluster_avg_time_pages'] = cluster_avg_time_pages
+        return context
+
+
+class CommentsOfMySiteView(MetricsMixin, CreateView):
+    template_name = "examples/comments_of_my_site.html"
+    form_class = CommentOfMySiteForm
+    user_id = None
+
+    def get_user_id(self):
+        self.user_id = int(self.kwargs.get('user_id',
+                                           random.randint(1, USERS)))
+        return(self.user_id)
+
+    def get_success_url(self):
+        return(reverse_lazy('comments-of-my-site',
+                            kwargs={'user_id': self.get_user_id()}))
+
+    def get_initial(self):
+        return({'user_id': self.get_user_id()})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['is_inferred'] = True
+        context['page_type'] = "C"
+        context['page_color'] = PAGES_COLORS["C"]
+        context['current_user'] = self.get_user_id()
+        users_ids = UserInfo.objects.all().values_list("id", flat=True)\
+            .order_by('-id')[:200]  # Prevents becoming unresponsive
+        context['users_ids'] = users_ids
+        context['users_dropdown_target'] = "comments-of-my-site"
+        context['latest_comments'] = \
+            CommentOfMySite.objects.all().order_by("-id")[:10]
+        context['spam_filter'] = SpamFilter.objects.get(
+            name=CommentOfMySite.SPAM_FILTER)
+        return context

@@ -20,4 +20,10 @@ urlpatterns = [
     url(r'^metrics$',
         views.process_metrics,
         name="process-metrics"),
+    url(r'^comments$',
+        views.CommentsOfMySiteView.as_view(),
+        name="comments-of-my-site"),
+    url(r'^comments/(?P<user_id>[0-9]+)$',
+        views.CommentsOfMySiteView.as_view(),
+        name="comments-of-my-site"),
 ]
