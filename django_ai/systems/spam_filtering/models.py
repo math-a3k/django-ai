@@ -358,5 +358,5 @@ class IsSpammable(models.Model):
     def save(self, *args, **kwargs):
         spam_filter = SpamFilter.objects.get(name=self.SPAM_FILTER)
         spammable_field = getattr(self, self.SPAMMABLE_FIELD)
-        self.is_spam = spam_filter.predict(spammable_field)
+        self.is_spam = spam_filter.predict([spammable_field])
         super(IsSpammable, self).save(*args, **kwargs)
