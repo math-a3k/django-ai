@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from django.db import models
-from systems.spam_filtering.models import IsSpammable
+
+from systems.spam_filtering.models import (IsSpammable,
+                                           SpamFilterPreTraining, )
 
 
 class UserInfo(models.Model):
@@ -86,3 +88,18 @@ class CommentOfMySite(IsSpammable):
 
     def __str__(self):
         return("[U: {}] {}...".format(self.user_id, self.comment[:20]))
+
+
+class SFPTEnron(SpamFilterPreTraining):
+
+    class Meta:
+        verbose_name = "Spam Filter Pre-Training: Enron Email Data"
+        verbose_name_plural = "Spam Filter Pre-Training: Enron Emails Data"
+
+
+class SFPTYoutube(SpamFilterPreTraining):
+
+    class Meta:
+        verbose_name = "Spam Filter Pre-Training: Youtube Comment Data"
+        verbose_name_plural = ("Spam Filter Pre-Training: "
+                               "Youtube Comments Data")

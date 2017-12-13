@@ -45,8 +45,9 @@ django_ai/systems/spam_filtering/migrations/*
 # Ignore scratchpad
 scratchpad.*
 
-# Ignore tar.gz files
+# Ignore .tar.gz and .zip files
 *.tar.gz
+*.zip
 
 # Ignore generated images
 django_ai/media/django_ai/bayesian_networks/*
