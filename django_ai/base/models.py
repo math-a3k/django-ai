@@ -26,64 +26,80 @@ class StatisticalModel(models.Model):
     SM_TYPE_UNSUPERVISED = 2
 
     SM_TYPE_CHOICES = (
-        (SM_TYPE_GENERAL, "General"),
+        (SM_TYPE_GENERAL, "General / System"),
         (SM_TYPE_SUPERVISED, "Classification"),
         (SM_TYPE_UNSUPERVISED, "Regression"),
     )
 
+    #: Allowed Keywords for Threshold actions
     ACTIONS_KEYWORDS = [":recalculate", ]
 
+    #: Unique Name, meant to be used for retrieveing the object.
     name = models.CharField(
         "Name",
         unique=True,
         max_length=100
     )
-    engine_object = PickledObjectField(
-        "Engine Object",
-        protocol=pickle_HIGHEST_PROTOCOL,
-        blank=True, null=True
-    )
-    engine_object_timestamp = models.DateTimeField(
-        "Engine Object Timestamp",
-        blank=True, null=True
-    )
+    #: Type of the Statistical Model
     sm_type = models.SmallIntegerField(
         "Statistical Technique Type",
         choices=SM_TYPE_CHOICES, default=SM_TYPE_GENERAL,
         blank=True, null=True
     )
-    metadata = JSONField(
-        "Metadata",
-        default={}, blank=True, null=True
-    )
-    engine_meta_iterations = models.SmallIntegerField(
-        "Engine Meta Iterations",
-        default=1
-    )
-    engine_iterations = models.SmallIntegerField(
-        "Engine Iterations (Max)",
-        blank=True, null=True
-    )
+    #: If the System or Technique has results - i.e. Clustering
     has_results = models.BooleanField(
         "Has Results?",
         default=True
     )
+    #: Field for storing metadata (results and information related to
+    #: internal tasks) of the System or Technique
+    metadata = JSONField(
+        "Metadata",
+        default={}, blank=True, null=True
+    )
+    #: This is where the main object of the Engine resides.
+    engine_object = PickledObjectField(
+        "Engine Object",
+        protocol=pickle_HIGHEST_PROTOCOL,
+        blank=True, null=True
+    )
+    #: The timestamp of the Engine Object creation or last update
+    engine_object_timestamp = models.DateTimeField(
+        "Engine Object Timestamp",
+        blank=True, null=True
+    )
+    #: Number of times to run the Engine inference
+    engine_meta_iterations = models.SmallIntegerField(
+        "Engine Meta Iterations",
+        default=1
+    )
+    #: Engine Maximum iterations safeguard
+    engine_iterations = models.SmallIntegerField(
+        "Engine Iterations (Max)",
+        blank=True, null=True
+    )
+    #: Where to store the results (if applicable)
     results_storage = models.CharField(
         "Results Storage",
         max_length=100, blank=True, null=True
     )
+    #: Automation: Internal Counter
     counter = models.IntegerField(
         "Internal Counter",
         default=0, blank=True, null=True
     )
+    #: Automation: Internal Counter Threshold
     counter_threshold = models.IntegerField(
         "Internal Counter Threshold",
         blank=True, null=True
     )
+    #: Automation: Actions to be run when the threshold is met.
     threshold_actions = models.CharField(
         "Threshold actions",
         max_length=200, blank=True, null=True
     )
+    #: Fields, Attributes or Callables from where to retrieve the data
+    #: for the System or Technique
     data_columns = GenericRelation(
         "base.DataColumn",
         related_query_name="%(app_label)s_%(class)ss",
@@ -152,6 +168,21 @@ class StatisticalModel(models.Model):
         else:
             return(False)
 
+    def parse_and_run_threshold_actions(self):
+        """
+        Parses and runs the thresholds actions
+        """
+        if self.counter_threshold:
+            if self.counter_threshold <= self.counter:
+                self.counter = 0
+                actions = self.threshold_actions.split(" ")
+                for action in actions:
+                    if action == ":recalculate":
+                        self.perform_inference(recalculate=True)
+                return(True)
+        else:
+            return(False)
+
     # -> Django Models API
     def clean(self):
         if self.results_storage:
@@ -188,6 +219,12 @@ class StatisticalModel(models.Model):
                     raise ValidationError({'threshold_actions': _(
                         'Unrecognized action: {}'.format(action)
                     )})
+
+        def save(self, *args, **kwargs):
+            # Runs threshold actions if corresponds
+            self.parse_and_run_threshold_actions()
+
+            super(StatisticalModel, self).save(*args, **kwargs)
 
     # -> Internal API
     def _parse_results_storage(self):

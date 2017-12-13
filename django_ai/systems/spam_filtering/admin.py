@@ -33,6 +33,11 @@ class SpamFilterAdmin(admin.ModelAdmin):
                 'classifier',
             ),
         }),
+        ("Pre-Training", {
+            'fields': (
+                'pretraining',
+            ),
+        }),
         ("Bag of Words Transformation", {
             'fields': (
                 ('bow_enconding', 'bow_decode_error', 'bow_strip_accents', ),

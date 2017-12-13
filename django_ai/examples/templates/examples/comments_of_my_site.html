@@ -46,7 +46,7 @@
   {% endblock main_content %}
 
   {% block ai_info %}
-    <p class="light">You are using the spam filter <i>{{ spam_filter.name }}</i> with the <i>{{ spam_filter.classifier }}</i> classifier.</p>
+    <p class="light">You are using the spam filter <i>{{ spam_filter.name }}</i> with the <i>{{ spam_filter.classifier }}</i> classifier{% if spam_filter.pretraining %}, pre-trained with {{ spam_filter.pretraining }}{% endif %}.</p>
   {% endblock ai_info %}
 
   {% block ai_not_initialized_message %}

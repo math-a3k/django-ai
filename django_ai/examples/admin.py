@@ -2,9 +2,11 @@
 
 from django.contrib import admin
 
-from .models import (UserInfo, CommentOfMySite, )
+from .models import (UserInfo, CommentOfMySite, SFPTEnron, SFPTYoutube)
 
 UserInfo.get_sex_display.short_description = "Sex"
+
+
 @admin.register(UserInfo)
 class UserInfoAdmin(admin.ModelAdmin):
     list_display = ['id', 'age', 'get_sex_display', 'avg1',
@@ -19,25 +21,38 @@ class UserInfoAdmin(admin.ModelAdmin):
         }),
         ("Pages of Type X", {
             'fields': (
-                        ('visits_pages_a', 'avg_time_pages_a', ),
-                        ('visits_pages_b', 'avg_time_pages_b', ),
-                        ('visits_pages_c', 'avg_time_pages_c', ),
-                        ('visits_pages_d', 'avg_time_pages_d', ),
-                        ('visits_pages_e', 'avg_time_pages_e', ),
-                        ('visits_pages_f', 'avg_time_pages_f', ),
-                        ('visits_pages_g', 'avg_time_pages_g', ),
-                        ('visits_pages_h', 'avg_time_pages_h', ),
-                        ('visits_pages_i', 'avg_time_pages_i', ),
-                        ('visits_pages_j', 'avg_time_pages_j', ),
-                      ),
+                ('visits_pages_a', 'avg_time_pages_a', ),
+                ('visits_pages_b', 'avg_time_pages_b', ),
+                ('visits_pages_c', 'avg_time_pages_c', ),
+                ('visits_pages_d', 'avg_time_pages_d', ),
+                ('visits_pages_e', 'avg_time_pages_e', ),
+                ('visits_pages_f', 'avg_time_pages_f', ),
+                ('visits_pages_g', 'avg_time_pages_g', ),
+                ('visits_pages_h', 'avg_time_pages_h', ),
+                ('visits_pages_i', 'avg_time_pages_i', ),
+                ('visits_pages_j', 'avg_time_pages_j', ),
+            ),
         }),
         ("Visits and Pages (General)", {
             'fields': (
-                        ('visits_pages', 'avg_time_pages', ),
-                      ),
+                ('visits_pages', 'avg_time_pages', ),
+            ),
         }),
     )
 
+
 @admin.register(CommentOfMySite)
 class CommentsOfMySiteAdmin(admin.ModelAdmin):
-    pass
+    list_filter = ['is_spam', 'is_revised', ]
+
+
+@admin.register(SFPTEnron)
+class SFPTEnronAdmin(admin.ModelAdmin):
+    list_display = ['content', 'is_spam', ]
+    list_filter = ['is_spam', ]
+
+
+@admin.register(SFPTYoutube)
+class SFPTYoutubeAdmin(admin.ModelAdmin):
+    list_display = ['content', 'is_spam', ]
+    list_filter = ['is_spam', ]
