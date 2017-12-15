@@ -41,8 +41,10 @@ Once the inference is ran, you can do something like:
         print("Hmmm... the user seems to be atypical on avg1, I shall do something")
 
 
-Bayesian Network Example 2
-==========================
+.. clustering_bn_example::
+
+Clustering with Bayesian Networks (Example 2)
+=============================================
 
 The goal of this example is to show how to use unsupervised learning (clustering) to segmentate your users based on metrics of usage patterns.
 
@@ -259,3 +261,74 @@ Seeing is Believing
 --------------------
 
 Last but not least, run the development server and you can see all of this in action by going to http://localhost:8000/examples/pages and monitor it through the admin and the console log.
+
+
+.. spam_filtering::
+
+Spam Filtering with SVM (Example 3)
+===================================
+
+The goal of this example is to show how to integrate the Spam Filtering system into your project and apps.
+
+For that, we will discuss briefly the model that the SmartDjango company has implemented.
+
+Understanding the Bag of Words projection
+-----------------------------------------
+
+As in the :ref:`previous example <clustering_bn_example>`, when the SmartDjango decided to record the metrics on a per-category basis instead of per-page, the decision was made in order to reduce the dimensionality so the available toolkit can handle the problem (segmentate the users based on usage patterrns).
+
+Usually, all the Statistical Models in Machine Learning algorithms handle "numerical" inputs - or numerical representations of them, and the input of in this case are texts. Strings have "natural" numerical representations, like the ASCII (or more modern, UTF-8) internal representation, where "Hola!" is represented with (72, 111, 108, 97, 33) - a 256^5 point analogous to an R^5 point.
+
+sOne of the problems with this representation is that it may be very hard to discern between similar observations in the original domain: Natural Language.
+
+For example, the following 3 strings are represented in the same space as:
+
+``Hola!``
+    ( 72, 111, 108,  97,  33,  32,  32,  32,  32,  32)
+``Adios!``
+    ( 65, 100, 105, 111, 115,  33,  32,  32,  32,  32)
+``     HOLA!``
+    ( 32,  32,  32,  32,  32,  72,  79,  76,  65,  33)
+``Hola!``
+    ( 72, 111, 108,  97,  33,  32,  32,  32,  32,  32)
+``Hola!HOLA!``
+    ( 72, 111, 108,  97,  33,  72,  79,  76,  65,  33)
+
+The first one and the third one representes the "same" in the original space (thy semantically mean the same) while the second is the opposite. But, looking only at their ASCII representation (the R^10 points), the first one seems more like the second and opposite to the third one.
+
+Instead, if you consider a higher aggregation level, such as words instead of characters - just like categories of pages to single pages - you may represent them in:
+
+``Hola!``
+    (1, 0)
+``Adios!``
+    (0, 1)
+``     HOLA!``
+    (1, 0)
+``Hola!HOLA!``
+    (2, 0)
+
+which is analogous to an R^2 point which also represents better the "structure" in the original domain at glance, also in a much lower complexity space.
+
+For the task of classifying documents / texts / strings / messages / comments, it seems an easier task to work in a Word space than in a Character space.
+
+That is the `Bag of Word representation <https://en.wikipedia.org/wiki/Bag-of-words_model>`_, which can be seen as a non-linear projection or transformation from the character space into the word space.
+
+In the ASCII representation, each component of the vector point / axis of the space represents each character in the string, in an arbitrary meaningless order for the domain (Natural Language) - 32 is a space, 33 is an exclamation mark, 65 is an "a". If the max size of the string / message is 2000 chars, then we have R^2000 points.
+
+In the Bag of Words reperesentation, the base of the space is the set of words in the corpus (the random sample of texts, the observed messages in the database / model :), ì.e. in the previous example, ``Hola! Adios!``` has the coordinates (1, 1) in the base {``hola``, ``adios``} and has a more meaningful order in the space for the problem. But, unlike the ASCII representantion where the dimension could be fixed, there dimension is this transformation is random: depending on the amount and values of the observations you have, the resulting dimension of the space.
+
+This "better" ("more meaningful" to the problem) reperesentation provides a more suitable input for the tools available to perfrom better. It can also be tuned in an "artisan" way - with domain-specific knowledge - to provide better results in the process.
+
+As the sample size increases - the corpus has more documents - it is more likely to have more words to consider, and thus, tends to increase the dimension of the space. How much depends on many factors, in the example, a corpus of 3672 emails produces a dimension of approximately 50,000, while a corpus of 1956 comments produces points of R^XXXXX.
+
+Using domain-knowledge you can mitigate this, like removing the stop words, fixing the vocabulary and similar for "trimming" axes which won't contribute much to the goal of the task.
+
+Stop words ("And", "Or", "The", articles, connectors, etc.) are common words which usually does not help to discern between document classes as they are usually common to all sample points, so filtering them mitigates the dimensionality without affecting the classification performance. A way to filter this is either by "hardcoding" then for the Natural Languange of the corpus (i.e. English), or more generally by setting a threshold in the frecuency of the term, i.e. the words that appear in the 85% percent of the documments are probably stop words (independently of the Natural Laguange) and won't help in discerning classes between them.
+
+In the same reasoning, removing the terms with less frecuency will help to reduce the dimensionality while trimming possible outliers than may affect the performance.
+
+In the opposite way - but with the same goal - is instead of using one word per element of the base of the space, use two - or more - words. This is known as the `N-gram representation <https://en.wikipedia.org/wiki/N-gram>`_. The rationale of this representation is to retain better the underlaying structure of the documents by constructing the base as the combinations of two (or *N*) words of the total words of the corpus (vocabulary). The "better" representation has the "side-effect" of increasing the dimensionality drastically, i.e. a corpus of 1962 elements with a vocabulary of 5771 (and the same dimension for unigrams), leads to a dimension of 42,339 if you consider up to trigrams. This impacts the performance of the classifer, so it has to be balanced according to your case.
+
+Many classifiers - including SVM - are not scale invariant, so it is highly recommended to remove the scale of the data - normalize or standardize it. A way of achieving this is with the `tdif-idf <https://en.wikipedia.org/wiki/Tf%E2%80%93idf>`_ transformation, which also has the benefits of revealing stop words - among others.
+
+Once all the texts / messages are suitably represented to be an input of the classifier - the Supervised Learning Technique - the discerning between SPAM and HAM can be carried on.
