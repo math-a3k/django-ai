@@ -41,7 +41,7 @@ def a_page_of_type_X(request, page_type="A", user_id=random.randint(1, USERS)):
     if not bn.is_inferred:
         return(
             render(
-                request,    
+                request,
                 template_name="examples/sample_page.html",
                 context={"is_inferred": False}
             )

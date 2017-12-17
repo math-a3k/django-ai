@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
+
 from django.template import Library
+from django.contrib.contenttypes.models import ContentType
+from django.urls import reverse
 
 
 register = Library()
@@ -36,3 +39,25 @@ def get_fieldsets_and_inlines(context):
 @register.filter
 def get_item(dictionary, key):
     return dictionary.get(key)
+
+
+@register.simple_tag
+def action_url(action, action_object=None):
+    # import ipdb; ipdb.set_trace()
+    if action_object:
+        ct = ContentType.objects.get_for_model(action_object)
+        return(
+            reverse('run-action', kwargs={
+                "action": action, "content_type": ct.model,
+                "object_id": action_object.id}
+            )
+        )
+    else:
+        return(
+            reverse('run-action', kwargs={"action": action})
+        )
+
+
+@register.inclusion_tag('base/snippets/ai_actions.html', takes_context=True)
+def ai_actions(context):
+    return({"original": context['original']})

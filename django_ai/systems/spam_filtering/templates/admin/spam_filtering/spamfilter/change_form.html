@@ -21,3 +21,7 @@
 {# And there we remove standard inline rendering #}
 {% block inline_field_sets %}
 {% endblock %}
+
+{% block after_related_objects %}
+  {% ai_actions %}
+{% endblock %}

@@ -1,5 +1,5 @@
 {% extends "admin/change_form.html" %}
-{% load static i18n %}
+{% load static i18n admin_extras %}
 
 {% block after_related_objects %}
   {% if original.pk %}  
@@ -33,13 +33,7 @@
       </ul>
     {% endif %}
   {% endif %}
-  <p>
-    <h3 class="actions">{% trans "Actions" %}</h3>
-    <ul>
-      <li><a href="{% url 'bn_run_inference' original.pk %}" onclick="return confirm('RUN inference on the network?')">{% trans "Run inference on the network" %}</a></li>
-      <li><a href="{% url 'bn_reset_inference' original.pk %}" onclick="return confirm('RESET inference on the network?')">{% trans "Reset inference on the network" %}</a></li>
-      <li><a href="{% url 'bn_reinitialize_rng' %}">{% trans "Re-initialize the random number generator" %}</a></li>
-  </p>  
+  {% ai_actions %}
   {% endif %}
 {% endblock %}
 

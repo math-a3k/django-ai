@@ -12,7 +12,7 @@ import random
 import numpy as np
 from bayespy.nodes import Gaussian
 
-from django.test import (TestCase, Client, )
+from django.test import (TestCase, )
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.urls import reverse
@@ -24,7 +24,6 @@ from django_ai.bayesian_networks.bayespy_constants import (
     DIST_DIRICHLET, DIST_WISHART, DIST_CATEGORICAL, DIST_MIXTURE, )
 from django_ai.bayesian_networks.utils import (
     parse_node_args, mahalanobis_distance, )
-from django_ai.bayesian_networks import views
 
 from tests.test_models import models as test_models
 
@@ -682,42 +681,6 @@ class TestBN(TestCase):
         self.assertEqual(
             mahalanobis_distance([0, 1], [1, 0], [[2, 0], [0, 2]]), 1.0
         )
-
-    def test_views(self):
-        self.setUp()
-        # -> Test perform_inference view
-        # Test correct inference
-        url = reverse('bn_run_inference', args=(self.bn1.id, ))
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 302)
-        self.bn1.refresh_from_db()
-        self.assertTrue(self.bn1.engine_object is not None)
-        # Test incorrect inference
-        self.mu.distribution_params = "xxx:bad-dp"
-        self.mu.save()
-        url = reverse('bn_run_inference', args=(self.bn1.id, ))
-        referer = '/admin/bayesian_networks/bayesiannetwork/{}/change/'\
-            .format(self.bn1.id)
-        response = self.client.get(url, follow=True, HTTP_REFERER=referer)
-        self.assertEqual(response.status_code, 200)
-        message = list(response.context.get('messages'))[0]
-        self.assertEqual(message.tags, "error")
-        self.assertTrue("ERROR WHILE PERFORMING INFERENCE" in message.message)
-
-        # -> Test reset_inference view
-        url = reverse('bn_reset_inference', args=(self.bn1.id, ))
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 302)
-        self.bn1.refresh_from_db()
-        self.assertTrue(self.bn1.engine_object is None)
-
-        # -> Test reinitialize_rng view
-        state = random.getstate()
-        url = reverse('bn_reinitialize_rng')
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 302)
-        new_state = random.getstate()
-        self.assertTrue(state is not new_state)
 
     def tearDown(self):
         self.bn1.image.delete()
