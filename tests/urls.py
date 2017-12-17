@@ -8,5 +8,6 @@ from django.contrib import admin
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
+    url(r'^django-ai/', include('django_ai.base.urls')),
     url(r'^bayesian_networks/', include('django_ai.bayesian_networks.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

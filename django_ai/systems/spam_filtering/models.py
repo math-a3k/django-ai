@@ -211,6 +211,14 @@ class SpamFilter(SupervisedLearningTechnique):
         verbose_name = "Spam Filter"
         verbose_name_plural = "Spam Filters"
 
+    def save(self, *args, **kwargs):
+        # Initialize metadata field if corresponds
+        if self.metadata == {}:
+            self.metadata["cv_results"] = {}
+            self.metadata["prev_cv_results"] = {}
+
+        super(SpamFilter, self).save(*args, **kwargs)
+
     def __str__(self):
         return("[Spam Filter]{}".format(self.name))
 

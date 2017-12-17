@@ -11,12 +11,16 @@ import random
 import numpy as np
 from unittest import mock
 
-from django.test import TestCase
+from django.test import (TestCase, Client, )
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.template import Context, Template
+from django.urls import reverse
+from django.contrib.auth.models import User
 
 from django_ai.base.models import (DataColumn, )
+from django_ai.bayesian_networks import models as bn_models
+from django_ai.bayesian_networks import bayespy_constants as bp_consts
 from tests.test_models import models as test_models
 
 
@@ -26,6 +30,14 @@ class TestBase(TestCase):
         # Set the seeds
         random.seed(123456)
         np.random.seed(123456)
+        # Set up the user
+        self.user, _ = User.objects.get_or_create(
+            username='testadmin', email='testadmin@example.com',
+            is_superuser=True
+        )
+        self.user.set_password("12345")
+        self.user.save()
+        self.client.login(username='testadmin', password='12345')
 
         self.mystatmodel, _ = test_models.MyStatisticalModel.objects\
             .get_or_create(
@@ -60,6 +72,54 @@ class TestBase(TestCase):
             .objects.get_or_create(
                 name="My Unsupervised Learning Technique",
             )
+        # BN 1
+        self.bn1, _ = bn_models.BayesianNetwork.objects.get_or_create(
+            name="BN for tests - 1")
+        self.mu, _ = bn_models.BayesianNetworkNode.objects.get_or_create(
+            network=self.bn1,
+            name="mu",
+            node_type=bn_models.BayesianNetworkNode.NODE_TYPE_STOCHASTIC,
+            is_observable=False,
+            distribution=bp_consts.DIST_GAUSSIAN_ARD,
+            distribution_params="0, 1e-6",
+            graph_interval="-10, 20"
+        )
+        self.tau, _ = bn_models.BayesianNetworkNode.objects.get_or_create(
+            network=self.bn1,
+            name="tau",
+            node_type=bn_models.BayesianNetworkNode.NODE_TYPE_STOCHASTIC,
+            is_observable=False,
+            distribution=bp_consts.DIST_GAMMA,
+            distribution_params="1e-6, 1e-6",
+            graph_interval="1e-6, 0.1"
+        )
+        self.ui_avg1, _ = bn_models.BayesianNetworkNode.objects.get_or_create(
+            network=self.bn1,
+            name="userinfo.avg1",
+            node_type=bn_models.BayesianNetworkNode.NODE_TYPE_STOCHASTIC,
+            is_observable=True,
+            distribution=bp_consts.DIST_GAUSSIAN_ARD,
+            distribution_params="mu, tau",
+        )
+        self.ui_avg1_col, _ = \
+            bn_models.BayesianNetworkNodeColumn.objects.get_or_create(
+                node=self.ui_avg1,
+                ref_model=ContentType.objects.get(model="userinfo",
+                                                  app_label="test_models"),
+                ref_column="avg1",
+            )
+        self.e1, _ = bn_models.BayesianNetworkEdge.objects.get_or_create(
+            network=self.bn1,
+            description="mu -> userinfo.avg1",
+            parent=self.mu,
+            child=self.ui_avg1
+        )
+        self.e2, _ = bn_models.BayesianNetworkEdge.objects.get_or_create(
+            network=self.bn1,
+            description="tau -> userinfo.avg1",
+            parent=self.tau,
+            child=self.ui_avg1
+        )
 
     def test_statistical_model_get_data(self):
         # -> Test with no data columns
@@ -191,3 +251,97 @@ class TestBase(TestCase):
         )
         rendered_template = template_to_render.render(context)
         self.assertIn('value2', rendered_template)
+        # Test action_url tag
+        context = Context({
+            'bn': self.bn1
+        })
+        template_to_render = Template(
+            '{% load admin_extras %}'
+            '{% action_url "perform_inference" bn %}'
+            '{% action_url "reset_inference" bn %}'
+            '{% action_url "reinitialize_rng" %}'
+        )
+        rendered_template = template_to_render.render(context)
+        self.assertIn(
+            '/django-ai/run-action/perform_inference/bayesiannetwork/1',
+            rendered_template
+        )
+        self.assertIn(
+            '/django-ai/run-action/reset_inference/bayesiannetwork/1',
+            rendered_template
+        )
+        self.assertIn(
+            '/django-ai/run-action/reinitialize_rng',
+            rendered_template
+        )
+        # Test ai_actions tag
+        context = Context({
+            'original': self.bn1
+        })
+        template_to_render = Template(
+            '{% load admin_extras %}'
+            '{% ai_actions %}'
+        )
+        rendered_template = template_to_render.render(context)
+        self.assertIn(
+            '/django-ai/run-action/perform_inference/bayesiannetwork/1',
+            rendered_template
+        )
+        self.assertIn(
+            '/django-ai/run-action/reset_inference/bayesiannetwork/1',
+            rendered_template
+        )
+        self.assertIn(
+            '/django-ai/run-action/reinitialize_rng',
+            rendered_template
+        )
+
+    def test_views(self):
+        self.setUp()
+        # -> Test perform_inference view
+        # Test correct inference
+        url = reverse('run-action', kwargs={
+            "action": "perform_inference", "content_type": "bayesiannetwork",
+            "object_id": self.bn1.id, }
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.bn1.refresh_from_db()
+        self.assertTrue(self.bn1.engine_object is not None)
+        # Test incorrect inference
+        self.mu.distribution_params = "xxx:bad-dp"
+        self.mu.save()
+        referer = '/admin/bayesian_networks/bayesiannetwork/{}/change/'\
+            .format(self.bn1.id)
+        url = reverse('run-action', kwargs={
+            "action": "perform_inference", "content_type": "bayesiannetwork",
+            "object_id": self.bn1.id, }
+        )
+        # For some reason, the request must be done twice, otherwise it won't
+        # update the response :\
+        new_response = self.client.get(url, follow=True, HTTP_REFERER=referer)
+        new_response = self.client.get(url, follow=True, HTTP_REFERER=referer)
+        self.assertEqual(new_response.status_code, 200)
+        message = list(new_response.context.get('messages'))[0]
+        self.assertEqual(message.tags, "error")
+        self.assertTrue("ERROR WHILE PERFORMING INFERENCE" in message.message)
+
+        # -> Test reset_inference view
+        url = reverse('run-action', kwargs={
+            "action": "reset_inference", "content_type": "bayesiannetwork",
+            "object_id": self.bn1.id, }
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.bn1.refresh_from_db()
+        self.assertTrue(self.bn1.engine_object is None)
+
+        # -> Test reinitialize_rng view
+        state = random.getstate()
+        url = reverse('run-action', kwargs={
+            "action": "reinitialize_rng", }
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        new_state = random.getstate()
+        self.assertTrue(state is not new_state)
