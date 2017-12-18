@@ -11,12 +11,12 @@ import random
 import numpy as np
 from unittest import mock
 
-from django.test import (TestCase, Client, )
+from django.test import (TestCase, )
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.template import Context, Template
-from django.urls import reverse
 from django.contrib.auth.models import User
+from django.urls import reverse
 
 from django_ai.base.models import (DataColumn, )
 from django_ai.bayesian_networks import models as bn_models
@@ -73,10 +73,10 @@ class TestBase(TestCase):
                 name="My Unsupervised Learning Technique",
             )
         # BN 1
-        self.bn1, _ = bn_models.BayesianNetwork.objects.get_or_create(
-            name="BN for tests - 1")
+        self.bn_base, _ = bn_models.BayesianNetwork.objects.get_or_create(
+            name="BN for base tests")
         self.mu, _ = bn_models.BayesianNetworkNode.objects.get_or_create(
-            network=self.bn1,
+            network=self.bn_base,
             name="mu",
             node_type=bn_models.BayesianNetworkNode.NODE_TYPE_STOCHASTIC,
             is_observable=False,
@@ -85,7 +85,7 @@ class TestBase(TestCase):
             graph_interval="-10, 20"
         )
         self.tau, _ = bn_models.BayesianNetworkNode.objects.get_or_create(
-            network=self.bn1,
+            network=self.bn_base,
             name="tau",
             node_type=bn_models.BayesianNetworkNode.NODE_TYPE_STOCHASTIC,
             is_observable=False,
@@ -94,7 +94,7 @@ class TestBase(TestCase):
             graph_interval="1e-6, 0.1"
         )
         self.ui_avg1, _ = bn_models.BayesianNetworkNode.objects.get_or_create(
-            network=self.bn1,
+            network=self.bn_base,
             name="userinfo.avg1",
             node_type=bn_models.BayesianNetworkNode.NODE_TYPE_STOCHASTIC,
             is_observable=True,
@@ -109,13 +109,13 @@ class TestBase(TestCase):
                 ref_column="avg1",
             )
         self.e1, _ = bn_models.BayesianNetworkEdge.objects.get_or_create(
-            network=self.bn1,
+            network=self.bn_base,
             description="mu -> userinfo.avg1",
             parent=self.mu,
             child=self.ui_avg1
         )
         self.e2, _ = bn_models.BayesianNetworkEdge.objects.get_or_create(
-            network=self.bn1,
+            network=self.bn_base,
             description="tau -> userinfo.avg1",
             parent=self.tau,
             child=self.ui_avg1
@@ -253,7 +253,7 @@ class TestBase(TestCase):
         self.assertIn('value2', rendered_template)
         # Test action_url tag
         context = Context({
-            'bn': self.bn1
+            'bn': self.bn_base
         })
         template_to_render = Template(
             '{% load admin_extras %}'
@@ -276,7 +276,7 @@ class TestBase(TestCase):
         )
         # Test ai_actions tag
         context = Context({
-            'original': self.bn1
+            'original': self.bn_base
         })
         template_to_render = Template(
             '{% load admin_extras %}'
@@ -302,23 +302,23 @@ class TestBase(TestCase):
         # Test correct inference
         url = reverse('run-action', kwargs={
             "action": "perform_inference", "content_type": "bayesiannetwork",
-            "object_id": self.bn1.id, }
+            "object_id": self.bn_base.id, }
         )
         response = self.client.get(url)
         self.assertEqual(response.status_code, 302)
-        self.bn1.refresh_from_db()
-        self.assertTrue(self.bn1.engine_object is not None)
+        self.bn_base.refresh_from_db()
+        self.assertTrue(self.bn_base.engine_object is not None)
         # Test incorrect inference
         self.mu.distribution_params = "xxx:bad-dp"
         self.mu.save()
         referer = '/admin/bayesian_networks/bayesiannetwork/{}/change/'\
-            .format(self.bn1.id)
+            .format(self.bn_base.id)
         url = reverse('run-action', kwargs={
             "action": "perform_inference", "content_type": "bayesiannetwork",
-            "object_id": self.bn1.id, }
+            "object_id": self.bn_base.id, }
         )
         # For some reason, the request must be done twice, otherwise it won't
-        # update the response :\
+        # update the response :\ Maybe it is catching the previous redirect?
         new_response = self.client.get(url, follow=True, HTTP_REFERER=referer)
         new_response = self.client.get(url, follow=True, HTTP_REFERER=referer)
         self.assertEqual(new_response.status_code, 200)
@@ -329,12 +329,12 @@ class TestBase(TestCase):
         # -> Test reset_inference view
         url = reverse('run-action', kwargs={
             "action": "reset_inference", "content_type": "bayesiannetwork",
-            "object_id": self.bn1.id, }
+            "object_id": self.bn_base.id, }
         )
         response = self.client.get(url)
         self.assertEqual(response.status_code, 302)
-        self.bn1.refresh_from_db()
-        self.assertTrue(self.bn1.engine_object is None)
+        self.bn_base.refresh_from_db()
+        self.assertTrue(self.bn_base.engine_object is None)
 
         # -> Test reinitialize_rng view
         state = random.getstate()

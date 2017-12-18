@@ -15,7 +15,7 @@ from bayespy.nodes import Gaussian
 from django.test import (TestCase, )
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.urls import reverse
+# from django.urls import reverse
 from django.contrib.auth.models import User
 
 from django_ai.bayesian_networks import models
