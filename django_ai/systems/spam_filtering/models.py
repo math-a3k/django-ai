@@ -65,6 +65,14 @@ class SpamFilter(SupervisedLearningTechnique):
         )
     )
 
+    # -> Bag of Words Transformation
+    bow_is_enabled = models.BooleanField(
+        "BoW Is Enabled?",
+        default=True,
+        help_text=(
+            'Enable Bag of Words transformation'
+        )
+    )
     # encoding : string, ‘utf-8’ by default.
     bow_enconding = models.CharField(
         "BoW encoding",
@@ -198,12 +206,10 @@ class SpamFilter(SupervisedLearningTechnique):
     )
     # use tf-idf transformation
     bow_use_tf_idf = models.BooleanField(
-        "BoW Binary",
-        default=False,
+        "BoW Use TF-IDF transformation?",
+        default=True,
         help_text=_((
-            'If True, all non zero counts are set to 1. This is useful for '
-            'discrete probabilistic models that model binary events rather '
-            'than integer counts.'
+            'Use the TF-IDF transformation?'
         ))
     )
 
