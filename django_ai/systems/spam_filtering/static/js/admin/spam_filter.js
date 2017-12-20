@@ -1,4 +1,5 @@
 (function($) {
+    // BoW UI
     bow_is_enabled_cb = $("input[name$='bow_is_enabled']");
     bow_is_enabled_cb.change(function() {
         ie_cb = $(this);
@@ -14,6 +15,20 @@
         }
     });
     bow_is_enabled_cb.change();
+    
+    // CV UI
+    cv_is_enabled_cb = $("input[name$='cv_is_enabled']");
+    cv_is_enabled_cb.change(function() {
+        ie_cb = $(this);
+        ie_next_fields = ie_cb.parent().parent().nextAll()
+
+        if (ie_cb.is(':checked')) { 
+            ie_next_fields.show()
+        } else { 
+            ie_next_fields.hide()
+        }
+    });
+    cv_is_enabled_cb.change();
 
     $(document).on('formset:added', function(event, $row, formsetName) {
         //

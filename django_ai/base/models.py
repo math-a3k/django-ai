@@ -104,6 +104,11 @@ class StatisticalModel(models.Model):
         "base.DataColumn",
         related_query_name="%(app_label)s_%(class)ss",
     )
+    #: If Inference has been performed on the System or Technique
+    is_inferred = models.BooleanField(
+        "Is Inferred?",
+        default=False
+    )
 
     class Meta:
         abstract = True
@@ -117,14 +122,28 @@ class StatisticalModel(models.Model):
     def get_engine_object(self):
         raise NotImplementedError("A Technique should implement this method")
 
-    def reset_engine_object(self):
-        raise NotImplementedError("A Technique should implement this method")
+    def reset_engine_object(self, save=True):
+        """
+        Base resetting: Resets the Engine Object, Timestamp, Metadata
+        and is_inferred.
+        """
+        self.engine_object = None
+        self.engine_object_timestamp = None
+        self.metadata = {}
+        self.is_inferred = False
+        if save:
+            self.save()
+        return(True)
 
     def perform_inference(self):
         raise NotImplementedError("A Technique should implement this method")
 
     def reset_inference(self):
-        raise NotImplementedError("A Technique should implement this method")
+        """
+        Base inference resetting (defaults to reset_engine_object())
+        """
+        self.reset_engine_object(save=True)
+        return(True)
 
     def get_data(self):
         """
@@ -156,8 +175,8 @@ class StatisticalModel(models.Model):
 
     def store_results(self, reset=False):
         """
-        Stores the results of the inference of a network in a Model's field
-        (to be generalized for other storage options).
+        Stores the results of the inference of a System or Technique in a
+        Model's field (to be generalized for other storage options).
 
         Note that it will update the results using the default ordering of the
         Model in which will be stored.
@@ -221,6 +240,14 @@ class StatisticalModel(models.Model):
                     )})
 
         def save(self, *args, **kwargs):
+            """
+            Base save() processing
+            """
+            # Initialize metadata field if corresponds
+            if self.metadata == {}:
+                self.metadata["current_inference"] = {}
+                self.metadata["previous_inference"] = {}
+
             # Runs threshold actions if corresponds
             self.parse_and_run_threshold_actions()
 
@@ -384,7 +411,6 @@ class UnsupervisedLearningTechnique(StatisticalModel):
     # -> Public API
     def assign(self, sl_input):
         raise NotImplementedError("A Technique should implement this method")
-
 
 
 class DataColumn(models.Model):
