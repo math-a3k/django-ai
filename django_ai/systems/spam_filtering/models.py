@@ -7,6 +7,7 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
 
 from picklefield.fields import PickledObjectField
 from sklearn.feature_extraction.text import (CountVectorizer,
@@ -36,6 +37,15 @@ class SpamFilter(SupervisedLearningTechnique):
         ('char', _('Character')),
         ('char_wb', _("Characters in Word-Boundaries")),
     )
+    CV_CHOICES = (
+        ('accuracy', _("Accuracy")),
+        ('average_precision', _("Average Precision")),
+        ('f1', _("F1")),
+        ('neg_log_loss', _("Logistic Loss")),
+        ('precision', _("Precision")),
+        ('recall', _("Recall")),
+        ('roc_auc', _("Area under ROC Curve")),
+    )
 
     classifier = models.CharField(
         "Supervised Learning Classifier",
@@ -64,7 +74,28 @@ class SpamFilter(SupervisedLearningTechnique):
             '"app_label.model" format, i.e. "examples.SFPTEnron"'
         )
     )
-
+    # -> Cross Validation
+    cv_is_enabled = models.BooleanField(
+        "Cross Validation is Enabled?",
+        default=True,
+        help_text=(
+            'Enable Cross Validation'
+        )
+    )
+    cv_folds = models.SmallIntegerField(
+        "Cross Validation Folds",
+        blank=True, null=True,
+        help_text=(
+            'Quantity of Folds to be used in Cross Validation'
+        )
+    )
+    cv_metric = models.CharField(
+        "Cross Validation Metric",
+        max_length=20, blank=True, null=True, choices=CV_CHOICES,
+        help_text=(
+            'Metric to be evaluated in Cross Validation'
+        )
+    )
     # -> Bag of Words Transformation
     bow_is_enabled = models.BooleanField(
         "BoW Is Enabled?",
@@ -220,8 +251,8 @@ class SpamFilter(SupervisedLearningTechnique):
     def save(self, *args, **kwargs):
         # Initialize metadata field if corresponds
         if self.metadata == {}:
-            self.metadata["cv_results"] = {}
-            self.metadata["prev_cv_results"] = {}
+            self.metadata["current_inference"] = {}
+            self.metadata["previous_inference"] = {}
 
         super(SpamFilter, self).save(*args, **kwargs)
 
@@ -275,10 +306,34 @@ class SpamFilter(SupervisedLearningTechnique):
 
         super(SpamFilter, self).clean()
 
+    def get_pretraining_data(self):
+        if self.pretraining:
+            model = get_model(self.pretraining)
+            return(model.objects.values_list("content", flat=True))
+        else:
+            return(None)
+
+    def get_pretraining_labels(self):
+        if self.pretraining:
+            model = get_model(self.pretraining)
+            return(model.objects.values_list("is_spam", flat=True))
+        else:
+            return(None)
+
     def get_data(self):
         data = super(SpamFilter, self).get_data()
         # Flatten list
-        return(list(chain.from_iterable(data)))
+        data = list(chain.from_iterable(data))
+        if self.pretraining:
+            data += list(self.get_pretraining_data())
+        return(data)
+
+    def get_labels(self):
+        labels = super(SpamFilter, self).get_labels()
+        if self.pretraining:
+            labels = list(labels)
+            labels += list(self.get_pretraining_labels())
+        return(labels)
 
     def get_classifier(self):
         app_model, object_name = self.classifier.split("|")
@@ -322,8 +377,6 @@ class SpamFilter(SupervisedLearningTechnique):
                 bow_vectorizer_args['min_df'] = 1
             bow_vectorizer = BoW_Vectorizer(**bow_vectorizer_args)
             data = self.get_data()
-            if self.pretraining:
-                data += list(self.get_pretraining_data())
             # Save the BoW representation of the data
             self.engine_object_data = bow_vectorizer.fit_transform(data)
             self.engine_object_vectorizer = bow_vectorizer
@@ -341,36 +394,73 @@ class SpamFilter(SupervisedLearningTechnique):
     def get_engine_object(self, reconstruct=False, save=True):
         if self.engine_object is not None and not reconstruct:
             return(self.engine_object)
+        # Initialize BoW Vectorizer engine object if necessary
+        if self.bow_is_enabled:
+            self.get_engine_object_vectorizer(reconstruct=reconstruct,
+                                              save=True)
         classifier = self.get_classifier().get_engine_object()
-        bow_data = self.get_engine_object_data(reconstruct=reconstruct,
-                                               save=save)
-        labels = self.get_labels()
-        if self.pretraining:
-            labels = list(labels)
-            labels += list(self.get_pretraining_labels())
-        self.engine_object = classifier.fit(bow_data, labels)
+        self.engine_object = classifier
         if save:
             self.save()
         return(self.engine_object)
 
-    def get_pretraining_data(self):
-        if self.pretraining:
-            model = get_model(self.pretraining)
-            return(model.objects.values_list("content", flat=True))
-        else:
-            return(None)
-
-    def get_pretraining_labels(self):
-        if self.pretraining:
-            model = get_model(self.pretraining)
-            return(model.objects.values_list("is_spam", flat=True))
-        else:
-            return(None)
+    def perform_inference(self, recalculate=False, save=True):
+        if not self.is_inferred or recalculate:
+            # No need for running the inference 'engine_meta_iterations' times
+            eo = self.get_engine_object(reconstruct=True)
+            # -> Get the data
+            if self.bow_is_enabled:
+                data = self.get_engine_object_data(
+                    reconstruct=recalculate, save=save
+                )
+            else:
+                data = self.get_data()
+            # -> Get the labels
+            labels = self.get_labels()
+            # -> Run the algorithm and store the updated engine object
+            self.engine_object = eo.fit(data, labels)
+            # -> Rotate metadata
+            self.rotate_metadata()
+            # -> Perform Cross Validation
+            if self.cv_is_enabled:
+                self.perform_cross_validation(update_metadata=True)
+            # -> Update other metadata
+            self.metadata["current_inference"]["bow_dimensionality"] = \
+                self.engine_object_data.shape
+            # -> Set as inferred
+            self.is_inferred = True
+            if save:
+                self.engine_object_timestamp = timezone.now()
+                self.save()
+        return(self.engine_object)
 
     def predict(self, text):
         bow_text = self.get_engine_object_vectorizer().transform(text)
         classifier = self.get_engine_object()
         return(classifier.predict(bow_text))
+
+    def perform_cross_validation(self, update_metadata=False):
+        if self.bow_is_enabled:
+            data = self.get_engine_object_data()
+        else:
+            data = self.get_data()
+        labels = self.get_labels()
+        classifier = self.get_engine_object()
+        scores = cross_val_score(
+            classifier, data, labels,
+            cv=self.cv_folds, scoring=self.cv_metric
+        )
+        if update_metadata:
+            self.metadata["current_inference"]['cv_scores'] = scores
+            self.metadata["current_inference"]['cv_mean'] = scores.mean()
+            self.metadata["current_inference"]['cv_2std'] = 2 * scores.std()
+        return(scores)
+
+    def rotate_metadata(self):
+        if self.metadata["current_inference"] != {}:
+            self.metadata["previous_inference"] = \
+                self.metadata["current_inference"]
+            self.metadata["current_inference"] = {}
 
 
 class IsSpammable(models.Model):

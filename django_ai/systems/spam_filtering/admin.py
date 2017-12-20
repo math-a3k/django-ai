@@ -33,6 +33,12 @@ class SpamFilterAdmin(admin.ModelAdmin):
                 'classifier',
             ),
         }),
+        ("Cross Validation", {
+            'fields': (
+                'cv_is_enabled',
+                ('cv_folds', 'cv_metric', ),
+            ),
+        }),
         ("Pre-Training", {
             'fields': (
                 'pretraining',
