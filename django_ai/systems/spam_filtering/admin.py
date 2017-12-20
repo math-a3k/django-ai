@@ -40,12 +40,19 @@ class SpamFilterAdmin(admin.ModelAdmin):
         }),
         ("Bag of Words Transformation", {
             'fields': (
-                ('bow_enconding', 'bow_decode_error', 'bow_strip_accents', ),
+                ('bow_is_enabled', ),
+                ('bow_use_tf_idf', ),
                 ('bow_analyzer', 'bow_ngram_range_min',
                  'bow_ngram_range_max', ),
-                ('bow_stop_words', 'bow_vocabulary', ),
                 ('bow_max_df', 'bow_min_df', 'bow_max_features', ),
-                'bow_binary',
+            ),
+        }),
+        ("Bag of Words Transformation - Miscellanous", {
+            'classes': ('collapse',),
+            'fields': (
+                ('bow_binary', ),
+                ('bow_enconding', 'bow_decode_error', 'bow_strip_accents', ),
+                ('bow_stop_words', 'bow_vocabulary', ),
             ),
         }),
     )

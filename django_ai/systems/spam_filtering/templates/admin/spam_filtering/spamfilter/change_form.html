@@ -1,27 +1,11 @@
-{% extends "admin/change_form.html" %}
-{# https://github.com/dezede/dezede/blob/master/libretto/templates/admin/libretto/change_form.html #}
-{% load admin_extras %}
-
-{# Here we render mixed normal and inline fieldsets #}
-{% block field_sets %}
-  {% get_fieldsets_and_inlines as fieldsets_and_inlines %}
-  {% for type, fieldset_or_inline in fieldsets_and_inlines %}
-    {% if type == 'f' %}
-      {% with fieldset=fieldset_or_inline %}
-        {% include "admin/includes/fieldset.html" %}
-      {% endwith %}
-    {% elif type == 'i' %}
-      {% with inline_admin_formset=fieldset_or_inline %}
-        {% include inline_admin_formset.opts.template %}
-      {% endwith %}
-    {% endif %}
-  {% endfor %}
-{% endblock %}
-
-{# And there we remove standard inline rendering #}
-{% block inline_field_sets %}
-{% endblock %}
+{% extends "base/admin/mixed_inlines_change_form.html" %}
+{% load admin_extras static i18n %}
 
 {% block after_related_objects %}
   {% ai_actions %}
+{% endblock %}
+
+{% block admin_change_form_document_ready %}
+  {{ block.super }}
+  <script type="text/javascript" src="{% static 'js/admin/spam_filter.js' %}"></script>
 {% endblock %}
