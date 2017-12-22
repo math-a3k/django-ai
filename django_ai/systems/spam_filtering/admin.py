@@ -23,6 +23,11 @@ class SpamFilterAdmin(admin.ModelAdmin):
                 'metadata',
             ),
         }),
+        ("Spammable Model", {
+            'fields': (
+                'spam_model_is_enabled', 'spam_model_model',
+            ),
+        }),
         ("Labels", {
             'fields': (
                 'labels_column',
@@ -65,7 +70,7 @@ class SpamFilterAdmin(admin.ModelAdmin):
 
     inlines = [DataColumnInline, ]
 
-    fieldsets_and_inlines_order = ('f', 'f', 'i', 'f', )
+    fieldsets_and_inlines_order = ('f', 'f', 'f', 'i', )
 
     def get_form(self, request, obj=None, **kwargs):  # pragma: no cover
         # Save obj reference in the request for future processing in Inline
