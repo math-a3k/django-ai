@@ -7,7 +7,7 @@ import numpy as np
 from django.contrib import messages
 from django.views.generic import RedirectView
 from django.contrib.contenttypes.models import ContentType
-from django.http import HttpResponseBadRequest
+from django.http import Http404
 from django.contrib.auth.mixins import UserPassesTestMixin
 
 
@@ -70,7 +70,7 @@ class RunActionView(UserPassesTestMixin, RedirectView):
 
     def get_redirect_url(self, *args, **kwargs):
         if kwargs['action'] not in self.ACTIONS:
-            return(HttpResponseBadRequest("Unsupported Action"))
+            raise Http404("Action not Found")
         if self.ACTIONS[kwargs['action']]["type"] == 'object':
             action_object = self.get_ct_object(kwargs['content_type'],
                                                kwargs['object_id'])
