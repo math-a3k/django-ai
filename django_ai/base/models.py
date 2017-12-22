@@ -138,12 +138,11 @@ class StatisticalModel(models.Model):
     def perform_inference(self):
         raise NotImplementedError("A Technique should implement this method")
 
-    def reset_inference(self):
+    def reset_inference(self, save=True):
         """
         Base inference resetting (defaults to reset_engine_object())
         """
-        self.reset_engine_object(save=True)
-        return(True)
+        return(self.reset_engine_object(save=save))
 
     def get_data(self):
         """
@@ -239,19 +238,19 @@ class StatisticalModel(models.Model):
                         'Unrecognized action: {}'.format(action)
                     )})
 
-        def save(self, *args, **kwargs):
-            """
-            Base save() processing
-            """
-            # Initialize metadata field if corresponds
-            if self.metadata == {}:
-                self.metadata["current_inference"] = {}
-                self.metadata["previous_inference"] = {}
+    def save(self, *args, **kwargs):
+        """
+        Base save() processing
+        """
+        # Initialize metadata field if corresponds
+        if self.metadata == {}:
+            self.metadata["current_inference"] = {}
+            self.metadata["previous_inference"] = {}
 
-            # Runs threshold actions if corresponds
-            self.parse_and_run_threshold_actions()
+        # Runs threshold actions if corresponds
+        self.parse_and_run_threshold_actions()
 
-            super(StatisticalModel, self).save(*args, **kwargs)
+        super(StatisticalModel, self).save(*args, **kwargs)
 
     # -> Internal API
     def _parse_results_storage(self):

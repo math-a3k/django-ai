@@ -17,8 +17,10 @@ from django.core.exceptions import ValidationError
 from django.template import Context, Template
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.utils import timezone
 
 from django_ai.base.models import (DataColumn, )
+from django_ai.base import utils as ai_utils
 from django_ai.bayesian_networks import models as bn_models
 from django_ai.bayesian_networks import bayespy_constants as bp_consts
 from tests.test_models import models as test_models
@@ -163,6 +165,38 @@ class TestBase(TestCase):
                 "cluster_2", flat=True)
             self.assertTrue(not any(stored_results))
 
+    def test_statistical_model_resetting(self):
+        self.setUp()
+        empty_metadata = {"current_inference": {}, "previous_inference": {}}
+        # -> Test reset_engine_object
+        self.mystatmodel.engine_object = {"something": "to_pickle"}
+        self.mystatmodel.engine_object_timestamp = timezone.now()
+        self.mystatmodel.is_inferred = True
+        self.mystatmodel.reset_engine_object(save=True)
+        self.assertTrue(self.mystatmodel.engine_object is None)
+        self.assertTrue(self.mystatmodel.engine_object_timestamp is None)
+        self.assertTrue(self.mystatmodel.is_inferred is False)
+        self.assertTrue(self.mystatmodel.metadata == empty_metadata)
+        # -> Test reset_inferece
+        self.mystatmodel.engine_object = {"something": "to_pickle"}
+        self.mystatmodel.engine_object_timestamp = timezone.now()
+        self.mystatmodel.is_inferred = True
+        self.mystatmodel.reset_inference(save=True)
+        self.assertTrue(self.mystatmodel.engine_object is None)
+        self.assertTrue(self.mystatmodel.engine_object_timestamp is None)
+        self.assertTrue(self.mystatmodel.is_inferred is False)
+        self.assertTrue(self.mystatmodel.metadata == empty_metadata)
+
+    def test_statistical_model_parse_and_run_threshold_actions(self):
+        self.setUp()
+        self.mystatmodel.counter_threshold = 1
+        self.mystatmodel.counter = 1
+        my_sm = self.mystatmodel
+        # -> Test mocking results
+        with mock.patch.object(my_sm, 'perform_inference', return_value=True):
+            my_sm.save()
+            my_sm.perform_inference.assert_called_once_with(recalculate=True)
+
     def test_statistical_model_validation(self):
         # Test invalid syntax
         with self.assertRaises(ValidationError):
@@ -298,7 +332,7 @@ class TestBase(TestCase):
 
     def test_views(self):
         self.setUp()
-        # -> Test perform_inference view
+        # -> Test RunAction CBV
         # Test correct inference
         url = reverse('run-action', kwargs={
             "action": "perform_inference", "content_type": "bayesiannetwork",
@@ -326,7 +360,7 @@ class TestBase(TestCase):
         self.assertEqual(message.tags, "error")
         self.assertTrue("ERROR WHILE PERFORMING INFERENCE" in message.message)
 
-        # -> Test reset_inference view
+        # -> Test reset_inference action
         url = reverse('run-action', kwargs={
             "action": "reset_inference", "content_type": "bayesiannetwork",
             "object_id": self.bn_base.id, }
@@ -336,7 +370,7 @@ class TestBase(TestCase):
         self.bn_base.refresh_from_db()
         self.assertTrue(self.bn_base.engine_object is None)
 
-        # -> Test reinitialize_rng view
+        # -> Test reinitialize_rng action
         state = random.getstate()
         url = reverse('run-action', kwargs={
             "action": "reinitialize_rng", }
@@ -345,3 +379,15 @@ class TestBase(TestCase):
         self.assertEqual(response.status_code, 302)
         new_state = random.getstate()
         self.assertTrue(state is not new_state)
+
+        # -> Test unsupported action
+        url = reverse('run-action', kwargs={
+            "action": "unsupported_action", "content_type": "bayesiannetwork",
+            "object_id": self.bn_base.id, }
+        )
+        response = self.client.get(url, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+    def test_utils(self):
+        mystatmodel = ai_utils.get_model("test_models.MyStatisticalModel")
+        self.assertEqual(test_models.MyStatisticalModel, mystatmodel)
