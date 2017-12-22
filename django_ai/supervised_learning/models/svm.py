@@ -8,7 +8,7 @@ from sklearn import svm
 
 if 'DJANGO_TEST' in os.environ:
     from django_ai.base.models import SupervisedLearningTechnique
-else:
+else:  # pragma: no cover
     from base.models import SupervisedLearningTechnique
 
 
@@ -212,6 +212,3 @@ class SVC(SupervisedLearningTechnique):
         )
         self.engine_object = classifier
         return(classifier)
-
-    def perform_inference(self):
-        self.engine_object.fit()
