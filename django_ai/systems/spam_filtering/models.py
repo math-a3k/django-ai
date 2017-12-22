@@ -12,8 +12,7 @@ from django.utils import timezone
 from picklefield.fields import PickledObjectField
 from sklearn.feature_extraction.text import (CountVectorizer,
                                              TfidfVectorizer)
-from sklearn.model_selection import (cross_val_score, GridSearchCV, )
-from sklearn.pipeline import Pipeline
+from sklearn.model_selection import (cross_val_score, )
 
 from base.models import (SupervisedLearningTechnique, )
 from base.utils import (get_model, )
@@ -47,15 +46,6 @@ class SpamFilter(SupervisedLearningTechnique):
         ('roc_auc', _("Area under ROC Curve")),
     )
 
-    classifier = models.CharField(
-        "Supervised Learning Classifier",
-        max_length=100, blank=True, null=True,
-        help_text=(
-            'Classifier to be used in the System, in the '
-            '"app_label.model|name" format, i.e. '
-            '"supervised_learning.SVC|My SVM"'
-        )
-    )
     engine_object_vectorizer = PickledObjectField(
         "Engine Object Vectorizer",
         protocol=pickle_HIGHEST_PROTOCOL,
@@ -66,6 +56,31 @@ class SpamFilter(SupervisedLearningTechnique):
         protocol=pickle_HIGHEST_PROTOCOL,
         blank=True, null=True
     )
+    classifier = models.CharField(
+        "Supervised Learning Classifier",
+        max_length=100, blank=True, null=True,
+        help_text=(
+            'Classifier to be used in the System, in the '
+            '"app_label.model|name" format, i.e. '
+            '"supervised_learning.SVC|My SVM"'
+        )
+    )
+    spam_model_is_enabled = models.BooleanField(
+        "Use a Spammable Model?",
+        default=True,
+        help_text=(
+            'Use a Spammable Model'
+        )
+    )
+    spam_model_model = models.CharField(
+        "Spammable Django Model",
+        max_length=100, blank=True, null=True,
+        help_text=(
+            '"IsSpammable-Django Model" to be used with the Spam Filter (in '
+            'the "app_label.model" format, i.e. "examples.CommentOfMySite")'
+        )
+    )
+    # -> Pre-training
     pretraining = models.CharField(
         "Pre-Training dataset",
         max_length=100, blank=True, null=True,
@@ -303,33 +318,62 @@ class SpamFilter(SupervisedLearningTechnique):
                 raise ValidationError({'classifier': _(
                     'The App and Model must be a valid Django App and Model'
                 )})
+        if self.spam_model_is_enabled:
+            # Check the validity of the Spammable Model field
+            try:
+                app, model = self.spam_model_model.split(".")
+            except Exception:
+                raise ValidationError({'spam_model_model': _(
+                    'Invalid format'
+                )})
+            try:
+                model_class = ContentType.objects.get(
+                    app_label=app,
+                    model=model.lower()
+                ).model_class()
+            except Exception:
+                raise ValidationError({'spam_model_model': _(
+                    'The App and Model must be a valid Django App and Model'
+                )})
 
         super(SpamFilter, self).clean()
 
     def get_pretraining_data(self):
         if self.pretraining:
             model = get_model(self.pretraining)
-            return(model.objects.values_list("content", flat=True))
+            return(model.objects.values_list(model.SPAMMABLE_FIELD,
+                                             flat=True))
         else:
             return(None)
 
     def get_pretraining_labels(self):
         if self.pretraining:
             model = get_model(self.pretraining)
-            return(model.objects.values_list("is_spam", flat=True))
+            return(model.objects.values_list(model.SPAM_LABEL_FIELD,
+                                             flat=True))
         else:
             return(None)
 
     def get_data(self):
-        data = super(SpamFilter, self).get_data()
-        # Flatten list
-        data = list(chain.from_iterable(data))
+        if self.spam_model_is_enabled:
+            model = get_model(self.spam_model_model)
+            data = list(model.objects.values_list(model.SPAMMABLE_FIELD,
+                                                  flat=True))
+        else:
+            data = super(SpamFilter, self).get_data()
+            # Flatten list
+            data = list(chain.from_iterable(data))
         if self.pretraining:
             data += list(self.get_pretraining_data())
         return(data)
 
     def get_labels(self):
-        labels = super(SpamFilter, self).get_labels()
+        if self.spam_model_is_enabled:
+            model = get_model(self.spam_model_model)
+            labels = list(model.objects.values_list(model.SPAM_LABEL_FIELD,
+                                                    flat=True))
+        else:
+            labels = super(SpamFilter, self).get_labels()
         if self.pretraining:
             labels = list(labels)
             labels += list(self.get_pretraining_labels())
@@ -481,6 +525,9 @@ class IsSpammable(models.Model):
             SPAMMABLE_FIELD = "comment"
             ... # The rest of your code
     """
+    SPAMMABLE_FIELD = None
+    SPAM_LABEL_FIELD = "is_spam"
+
     is_spam = models.BooleanField(
         _("Is Spam?"),
         default=False,
@@ -518,8 +565,11 @@ class SpamFilterPreTraining(models.Model):
     Abstract Model for pre-training Spam Filters.
     Subclass this Model for incorporating datasets into the training of
     a Spam Filter (the subclass must be set in the Spam Filter's
-    ``pretraining`` field)
+    ``pretraining`` field).
     """
+    SPAMMABLE_FIELD = "content"
+    SPAM_LABEL_FIELD = "is_spam"
+
     content = models.TextField(
         _("Content")
     )
