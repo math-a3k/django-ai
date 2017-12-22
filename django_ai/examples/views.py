@@ -153,6 +153,7 @@ class MetricsMixin(object):
         cluster_avg_time_pages = \
             bn.metadata["clusters_means"][user_info.cluster_1][0]
         context['cluster_avg_time_pages'] = cluster_avg_time_pages
+        context['bn'] = bn
         return context
 
 
@@ -175,7 +176,11 @@ class CommentsOfMySiteView(MetricsMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['is_inferred'] = True
+        spam_filter = SpamFilter.objects.get(
+            name=CommentOfMySite.SPAM_FILTER)
+        context['spam_filter'] = spam_filter
+        context['is_inferred'] = (spam_filter.is_inferred and
+                                  context['bn'].is_inferred)
         context['page_type'] = "C"
         context['page_color'] = PAGES_COLORS["C"]
         context['current_user'] = self.get_user_id()
@@ -185,6 +190,4 @@ class CommentsOfMySiteView(MetricsMixin, CreateView):
         context['users_dropdown_target'] = "comments-of-my-site"
         context['latest_comments'] = \
             CommentOfMySite.objects.all().order_by("-id")[:10]
-        context['spam_filter'] = SpamFilter.objects.get(
-            name=CommentOfMySite.SPAM_FILTER)
         return context
