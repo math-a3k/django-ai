@@ -5,7 +5,7 @@ from pickle import HIGHEST_PROTOCOL as pickle_HIGHEST_PROTOCOL
 
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
-from django.core.exceptions import ValidationError
+from django.core.exceptions import (ValidationError, ImproperlyConfigured)
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
@@ -554,8 +554,20 @@ class IsSpammable(models.Model):
         abstract = True
 
     def save(self, *args, **kwargs):
-        spam_filter = SpamFilter.objects.get(name=self.SPAM_FILTER)
-        spammable_field = getattr(self, self.SPAMMABLE_FIELD)
+        try:
+            spam_filter = SpamFilter.objects.get(name=self.SPAM_FILTER)
+        except Exception:
+            raise ImproperlyConfigured(_(
+                "SPAMMABLE MODEL: "
+                "The SPAM_FILTER const reffers to a non-existant object")
+            )
+        try:
+            spammable_field = getattr(self, self.SPAMMABLE_FIELD)
+        except Exception:
+            raise ImproperlyConfigured(_(
+                "SPAMMABLE MODEL: "
+                "The SPAMMABLE_FIELD const refers to a non-existant field")
+            )
         self.is_spam = spam_filter.predict([spammable_field])
         super(IsSpammable, self).save(*args, **kwargs)
 
