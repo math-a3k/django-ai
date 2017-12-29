@@ -7,8 +7,8 @@
     <h3>{% trans "Current Inference" %}</h3>
     <p>
       <dl>
-        <dt>Bag of Words Dimensionality</dt>
-        <dd>{{ original.metadata.current_inference.bow_dimensionality.0 }} rows &times; {{ original.metadata.current_inference.bow_dimensionality.1 }} columns</dd>
+        <dt>Input Dimensionality ({% if original.metadata.current_inference.bow_is_enabled %}Bag of Words{% else %}UTF Code Point{% endif %} Representation)</dt>
+        <dd>{{ original.metadata.current_inference.input_dimensionality.0 }} rows &times; {{ original.metadata.current_inference.input_dimensionality.1 }} columns</dd>
         <dt>Cross Validation Estimation</dt>
         <dd>{{ original.get_cv_metric_display }} metric ({{ original.cv_folds }} folds): {{ original.metadata.current_inference.cv_mean|stringformat:".3f" }} &plusmn; {{ original.metadata.current_inference.cv_2std|stringformat:".3f" }} </dd>
       </dl>
@@ -17,8 +17,8 @@
     <h3>{% trans "Previous Inference" %}</h3>
     <p>
       <dl>
-        <dt>Bag of Words Dimensionality</dt>
-        <dd>{{ original.metadata.previous_inference.bow_dimensionality.0 }} rows &times; {{ original.metadata.previous_inference.bow_dimensionality.1 }} columns</dd>
+        <dt>Input Dimensionality  ({% if original.metadata.previous_inference.bow_is_enabled %}Bag of Words{% else %}UTF Code Point{% endif %} Representation)
+        <dd>{{ original.metadata.previous_inference.input_dimensionality.0 }} rows &times; {{ original.metadata.previous_inference.input_dimensionality.1 }} columns</dd>
         <dt>Cross Validation Estimation</dt>
         <dd>{{ original.get_cv_metric_display }} metric ({{ original.cv_folds }} folds): {{ original.metadata.previous_inference.cv_mean|stringformat:".3f" }} &plusmn; {{ original.metadata.previous_inference.cv_2std|stringformat:".3f" }} </dd>
       </dl>
