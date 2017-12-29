@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
+import os
 
 from django.contrib import admin
 
-# from nested_admin import (NestedModelAdmin, )
-from base.admin import DataColumnInline
-
 from .models import (SpamFilter, )
+
+if 'DJANGO_TEST' in os.environ:
+    from django_ai.base.admin import DataColumnInline
+else:  # pragma: no cover
+    from base.admin import DataColumnInline
 
 
 @admin.register(SpamFilter)

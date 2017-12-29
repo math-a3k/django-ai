@@ -5,7 +5,12 @@ from django.db import models
 from django_ai.base.models import (
     StatisticalModel,
     SupervisedLearningTechnique,
-    UnsupervisedLearningTechnique, )
+    UnsupervisedLearningTechnique,
+)
+from django_ai.systems.spam_filtering.models import (
+    IsSpammable,
+    SpamFilterPreTraining,
+)
 
 
 class UserInfo(models.Model):
@@ -55,3 +60,14 @@ class MySupervisedLearningTechnique(SupervisedLearningTechnique):
 class MyUnsupervisedLearningTechnique(UnsupervisedLearningTechnique):
     class Meta:
         app_label = "test_models"
+
+
+class SpammableModel(IsSpammable):
+    SPAM_FILTER = "Spam Filter for tests"
+    SPAMMABLE_FIELD = "comment"
+
+    comment = models.TextField("Comment")
+
+
+class MySFPT(SpamFilterPreTraining):
+    pass
