@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 from itertools import (chain, )
 from pickle import HIGHEST_PROTOCOL as pickle_HIGHEST_PROTOCOL
 
@@ -9,13 +10,19 @@ from django.core.exceptions import (ValidationError, ImproperlyConfigured)
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
+import numpy as np
 from picklefield.fields import PickledObjectField
 from sklearn.feature_extraction.text import (CountVectorizer,
                                              TfidfVectorizer)
 from sklearn.model_selection import (cross_val_score, )
+from scipy.sparse import csr_matrix
 
-from base.models import (SupervisedLearningTechnique, )
-from base.utils import (get_model, )
+if 'DJANGO_TEST' in os.environ:
+    from django_ai.base.models import SupervisedLearningTechnique
+    from django_ai.base.utils import (get_model, )
+else:  # pragma: no cover
+    from base.models import (SupervisedLearningTechnique, )
+    from base.utils import (get_model, )
 
 
 class SpamFilter(SupervisedLearningTechnique):
@@ -262,6 +269,7 @@ class SpamFilter(SupervisedLearningTechnique):
     class Meta:
         verbose_name = "Spam Filter"
         verbose_name_plural = "Spam Filters"
+        # app_label = "systems.spam_filtering"
 
     def save(self, *args, **kwargs):
         # Initialize metadata field if corresponds
@@ -341,20 +349,22 @@ class SpamFilter(SupervisedLearningTechnique):
     def get_pretraining_data(self):
         if self.pretraining:
             model = get_model(self.pretraining)
-            return(model.objects.values_list(model.SPAMMABLE_FIELD,
-                                             flat=True))
+            pt_data = model.objects.values_list(model.SPAMMABLE_FIELD,
+                                                flat=True)
+            return(list(pt_data))
         else:
             return(None)
 
     def get_pretraining_labels(self):
         if self.pretraining:
             model = get_model(self.pretraining)
-            return(model.objects.values_list(model.SPAM_LABEL_FIELD,
-                                             flat=True))
+            pt_labels = model.objects.values_list(model.SPAM_LABEL_FIELD,
+                                                  flat=True)
+            return(list(pt_labels))
         else:
             return(None)
 
-    def get_data(self):
+    def get_data(self, utf8_point_repr=False):
         if self.spam_model_is_enabled:
             model = get_model(self.spam_model_model)
             data = list(model.objects.values_list(model.SPAMMABLE_FIELD,
@@ -364,7 +374,11 @@ class SpamFilter(SupervisedLearningTechnique):
             # Flatten list
             data = list(chain.from_iterable(data))
         if self.pretraining:
-            data += list(self.get_pretraining_data())
+            data += self.get_pretraining_data()
+        if utf8_point_repr:
+            max_length = max([len(text) for text in data])
+            data = [[ord(character) for character in text.ljust(max_length)]
+                    for text in data]
         return(data)
 
     def get_labels(self):
@@ -376,7 +390,7 @@ class SpamFilter(SupervisedLearningTechnique):
             labels = super(SpamFilter, self).get_labels()
         if self.pretraining:
             labels = list(labels)
-            labels += list(self.get_pretraining_labels())
+            labels += self.get_pretraining_labels()
         return(labels)
 
     def get_classifier(self):
@@ -458,19 +472,25 @@ class SpamFilter(SupervisedLearningTechnique):
                     reconstruct=recalculate, save=save
                 )
             else:
-                data = self.get_data()
+                # Use the UTF-8 code point representation
+                data = self.get_data(utf8_point_repr=True)
             # -> Get the labels
             labels = self.get_labels()
+            # -> Remove Nones if any
+            data, labels = self.remove_nones_from_input(data, labels)
             # -> Run the algorithm and store the updated engine object
             self.engine_object = eo.fit(data, labels)
             # -> Rotate metadata
             self.rotate_metadata()
             # -> Perform Cross Validation
             if self.cv_is_enabled:
-                self.perform_cross_validation(update_metadata=True)
+                self.perform_cross_validation(data=data, labels=labels,
+                                              update_metadata=True)
             # -> Update other metadata
-            self.metadata["current_inference"]["bow_dimensionality"] = \
-                self.engine_object_data.shape
+            self.metadata["current_inference"]["bow_is_enabled"] = \
+                self.bow_is_enabled
+            self.metadata["current_inference"]["input_dimensionality"] = \
+                np.shape(data)
             # -> Set as inferred
             self.is_inferred = True
             if save:
@@ -478,17 +498,28 @@ class SpamFilter(SupervisedLearningTechnique):
                 self.save()
         return(self.engine_object)
 
-    def predict(self, text):
-        bow_text = self.get_engine_object_vectorizer().transform(text)
-        classifier = self.get_engine_object()
-        return(classifier.predict(bow_text))
-
-    def perform_cross_validation(self, update_metadata=False):
+    def predict(self, texts):
         if self.bow_is_enabled:
-            data = self.get_engine_object_data()
+            transformed_text = \
+                self.get_engine_object_vectorizer().transform(texts)
         else:
-            data = self.get_data()
-        labels = self.get_labels()
+            max_length = max([len(t) for t in self.get_data()])
+            transformed_text = \
+                [[ord(character) for character in text.ljust(max_length)]
+                 for text in texts][:max_length]
+        classifier = self.get_engine_object()
+        return(classifier.predict(transformed_text))
+
+    def perform_cross_validation(self, data=None, labels=None,
+                                 update_metadata=False):
+        if data is None:
+            if self.bow_is_enabled:
+                data = self.get_engine_object_data()
+            else:
+                data = self.get_data(utf8_point_repr=True)
+        if labels is None:
+            labels = self.get_labels()
+        data, labels = self.remove_nones_from_input(data, labels)
         classifier = self.get_engine_object()
         scores = cross_val_score(
             classifier, data, labels,
@@ -499,6 +530,20 @@ class SpamFilter(SupervisedLearningTechnique):
             self.metadata["current_inference"]['cv_mean'] = scores.mean()
             self.metadata["current_inference"]['cv_2std'] = 2 * scores.std()
         return(scores)
+
+    def remove_nones_from_input(self, data, labels):
+        # -> Remove data with missing labels if any
+        none_indices = [i for i, label in enumerate(labels)
+                        if label is None]
+        if none_indices:
+            if isinstance(data, csr_matrix):
+                mask = np.ones(data.shape[0], dtype=bool)
+                mask[none_indices] = False
+                data = data[mask]
+            else:
+                data = np.delete(data, none_indices, 0)
+            labels = np.delete(labels, none_indices, 0).astype(bool)
+        return(data, labels)
 
     def rotate_metadata(self):
         if self.metadata["current_inference"] != {}:
@@ -528,9 +573,8 @@ class IsSpammable(models.Model):
     SPAMMABLE_FIELD = None
     SPAM_LABEL_FIELD = "is_spam"
 
-    is_spam = models.BooleanField(
+    is_spam = models.NullBooleanField(
         _("Is Spam?"),
-        default=False,
         help_text=_((
             'If the object is Spam'
         ))
@@ -568,7 +612,8 @@ class IsSpammable(models.Model):
                 "SPAMMABLE MODEL: "
                 "The SPAMMABLE_FIELD const refers to a non-existant field")
             )
-        self.is_spam = spam_filter.predict([spammable_field])
+        if spam_filter.is_inferred:
+            self.is_spam = spam_filter.predict([spammable_field])
         super(IsSpammable, self).save(*args, **kwargs)
 
 
