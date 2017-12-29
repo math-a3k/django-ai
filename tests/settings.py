@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'django_ai.base.apps.BaseConfig',
     'django_ai.bayesian_networks.apps.BayesianNetworksConfig',
     'django_ai.supervised_learning.apps.SupervisedLearningConfig',
+    'django_ai.systems.spam_filtering.apps.SpamFilteringConfig',
     'tests.test_models'
 ]
 
