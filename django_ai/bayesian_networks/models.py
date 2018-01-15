@@ -200,9 +200,13 @@ class BayesianNetwork(StatisticalModel):
         and propagates the results to the Nodes.
         """
         if not self.engine_object or recalculate:
-            # If iters is not set, use the model's which defaults to 100
+            # If iters is not set, first use e_i, then default to 1000
             if not iters:
-                iters = self.engine_iterations
+                if self.engine_iterations:
+                    iters = self.engine_iterations
+                else:
+                    # Default to 1000
+                    iters = 1000
             # Run the inference 'e_m_i' times
             for i in range(self.engine_meta_iterations):
                 Q = self.get_engine_object(reconstruct=True)
