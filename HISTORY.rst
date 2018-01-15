@@ -4,7 +4,7 @@
 History
 =======
 
-0.0.2 (2017-12-04)
+0.0.2 (2018-01-15)
 ++++++++++++++++++
 
 django-ai 0.0.2 Release Notes
@@ -17,7 +17,11 @@ The main exciting features of this version are Spam Filtering systems and Classi
 Spam Filtering
 ^^^^^^^^^^^^^^
 
-This *system* allows you to incorporate to any Django Model susceptible to spamming a self-updating filter capable of learning from labelled history to discern spam content so you can act accordingly. The classifier can be chosen and all the parameters in the process can be fine-tunned conveniently via the admin front-end. See the example and the documentation for more.
+This *system* uses the `scikit-learn framework <http://scikit-learn.org>`_ as engine and allows you to incorporate to any Django Model susceptible to spamming a self-updating filter capable of learning from labelled history to discern Spam content so you can act accordingly.
+
+The classifier can be chosen and all the parameters in the process can be fine-tunned conveniently via the admin front-end. See the :ref:`example <example_spam_filtering>` and the :ref:`documentation <spam_filtering>` for more.
+
+Plugging Spam Filters to your project has never been so easy!! :) 
 
 Classification
 ^^^^^^^^^^^^^^
@@ -45,7 +49,7 @@ The rationale of ``django-ai`` is to provide for each statistical model or techn
 
 Excited?
 
-- :ref:`overview`
+- :ref:`introduction`
 - :ref:`quickstart`
 - :ref:`examples` 
 

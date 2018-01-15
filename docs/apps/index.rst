@@ -1,12 +1,15 @@
 .. apps_index:
 
-Available Apps in `django-ai`
-=============================
+Available Applications in `django-ai`
+=====================================
 
-The following apps are available:
+The following applications are available:
 
 .. toctree::
    :maxdepth: 1
 
+   base
    bayesian_networks
+   supervised_learning
+   spam_filtering
    examples

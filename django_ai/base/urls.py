@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from django.conf.urls import url
+from django.conf.urls import (url, include)
 
 from . import views
 
@@ -13,4 +13,6 @@ urlpatterns = [
     url((r'^run-action/(?P<action>[\w_]+)$'),
         views.RunActionView.as_view(),
         name="run-action"),
+    # Examples
+    url(r'^examples/', include('examples.urls')),
 ]

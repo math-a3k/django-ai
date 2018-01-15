@@ -167,46 +167,120 @@ class TestSpamFiltering(TestCase):
         expected_metadata = {
             'previous_inference': {},
             'current_inference': {
+                'cv': {
+                    '2std': 0.0,
+                    'mean': 1.0,
+                    'conf': {
+                        'metric': None,
+                        'folds': 2
+                    },
+                    # Numpy arrays need to be compared differently
+                    # 'scores': np.array([ 1.,  1.])
+                },
                 'bow_is_enabled': True,
+                'vectorizer_conf': {
+                    'bow_use_tf_idf': True,
+                    'binary': False,
+                    'bow_is_enabled': True,
+                    'df_min_max': '1.0 / 1.0',
+                    'analyzer': 'Word',
+                    'ngram_range': '(1, 1)',
+                    'str': ('BoW Representation: (TF-IDF Transformation) '
+                            'Analyzer: Word (1, 1) - Min / Max DF: 1.0 / 1.0')
+                },
                 'input_dimensionality': (10, 20),
-                'cv_mean': 1.0,
-                'cv_2std': 0.0
+                'classifier_conf': {
+                    'kernel': 'Linear',
+                    'kernel_details': '',
+                    'str': 'Kernel: Linear, Penalty: 0.1',
+                    'name': 'SVM for SF tests',
+                    'penalty_parameter': 0.1
+                }
             }
         }
         em_cv_scores = np.array([1., 1.])
         self.spam_filter_1.perform_inference(recalculate=True)
         self.assertEqual(self.spam_filter_1.is_inferred, True)
         actual_metadata = self.spam_filter_1.metadata
-        am_cv_scores = actual_metadata["current_inference"].pop("cv_scores")
+        am_cv_scores = actual_metadata["current_inference"]["cv"].pop("scores")
         self.assertEqual(actual_metadata, expected_metadata)
         self.assertTrue(all(em_cv_scores == am_cv_scores))
         # -> Test unicode representation
         self.spam_filter_1.bow_is_enabled = False
         expected_metadata = {
             'previous_inference': {
+                'cv': {
+                    '2std': 0.0,
+                    'mean': 1.0,
+                    'conf': {
+                        'metric': None,
+                        'folds': 2
+                    }
+                },
                 'bow_is_enabled': True,
+                'vectorizer_conf': {
+                    'bow_use_tf_idf': True,
+                    'binary': False,
+                    'bow_is_enabled': True,
+                    'df_min_max': '1.0 / 1.0',
+                    'analyzer': 'Word',
+                    'ngram_range': '(1, 1)',
+                    'str': ('BoW Representation: (TF-IDF Transformation) '
+                            'Analyzer: Word (1, 1) - Min / Max DF: 1.0 / 1.0')
+                },
                 'input_dimensionality': (10, 20),
-                'cv_mean': 1.0,
-                'cv_2std': 0.0},
+                'classifier_conf': {
+                    'kernel': 'Linear',
+                    'kernel_details': '',
+                    'str': 'Kernel: Linear, Penalty: 0.1',
+                    'name': 'SVM for SF tests',
+                    'penalty_parameter': 0.1
+                }
+            },
             'current_inference': {
+                'cv': {
+                    '2std': 0.5,
+                    'mean': 0.75,
+                    'conf': {
+                        'metric': None,
+                        'folds': 2
+                    },
+                    # Numpy arrays need to be compared differently
+                    # 'scores': array([ 0.5,  1. ])
+                },
                 'bow_is_enabled': False,
+                'vectorizer_conf': {
+                    'bow_use_tf_idf': True,
+                    'binary': False,
+                    'bow_is_enabled': False,
+                    'df_min_max': '1.0 / 1.0',
+                    'analyzer': 'Word',
+                    'ngram_range': '(1, 1)',
+                    'str': 'UTF-8 Representation (Vectorizer not enabled)'
+                },
                 'input_dimensionality': (10, 25),
-                'cv_mean': 0.75,
-                'cv_2std': 0.5
+                'classifier_conf': {
+                    'kernel': 'Linear',
+                    'kernel_details': '',
+                    'str': 'Kernel: Linear, Penalty: 0.1',
+                    'name': 'SVM for SF tests',
+                    'penalty_parameter': 0.1
+                }
             }
         }
-
         em_cv_scores = np.array([0.5, 1.])
         self.spam_filter_1.perform_inference(recalculate=True)
         actual_metadata = self.spam_filter_1.metadata
-        am_cv_scores = actual_metadata["current_inference"].pop("cv_scores")
-        # print(actual_metadata)
+        am_cv_scores = actual_metadata["current_inference"]["cv"].pop("scores")
         self.assertEqual(actual_metadata, expected_metadata)
         self.assertTrue(all(em_cv_scores == am_cv_scores))
 
     def test_spam_filter_predict(self):
         self.setUp()
         self.spam_filter_1.reset_inference()
+        # -> Test non-inferred spam filter
+        self.assertEqual(self.spam_filter_1.predict(["Buy a Whale Online!"]),
+                         None)
         # -> Predict using BOW
         self.spam_filter_1.bow_is_enabled = True
         self.spam_filter_1.perform_inference(recalculate=True)
@@ -245,3 +319,9 @@ class TestSpamFiltering(TestCase):
         self.setUp()
         self.spam_filter_1.perform_inference(recalculate=True, save=True)
         self.assertEqual(self.spammable_model_1.save(), None)
+
+    def test_vect_conf(self):
+        self.setUp()
+        self.spam_filter_1.bow_binary = True
+        vcdict = self.spam_filter_1.get_vect_conf_dict()
+        self.assertTrue("Binary" in vcdict['str'])

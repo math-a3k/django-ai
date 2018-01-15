@@ -29,20 +29,24 @@ class SpamFilter(SupervisedLearningTechnique):
     """
     Main object for the Spam Filtering System.
     """
+    #: BoW Decode Error choices
     BOW_DECODE_ERROR_CHOICES = (
         ('strict', _('Strict')),
         ('ignore', _('Ignore')),
         ('replace', _('Replace')),
     )
+    #: BoW Strip Accent choices
     BOW_STRIP_ACCENTS_CHOICES = (
         ('ascii', 'ASCII'),
         ('unicode', 'Unicode'),
     )
+    #: BoW Analyzer units choices
     BOW_ANALYZER_CHOICES = (
         ('word', _('Word')),
         ('char', _('Character')),
         ('char_wb', _("Characters in Word-Boundaries")),
     )
+    #: Cross Validation Available Metrics choices
     CV_CHOICES = (
         ('accuracy', _("Accuracy")),
         ('average_precision', _("Average Precision")),
@@ -52,17 +56,21 @@ class SpamFilter(SupervisedLearningTechnique):
         ('recall', _("Recall")),
         ('roc_auc', _("Area under ROC Curve")),
     )
-
+    #: Engine Object Vectorizer
     engine_object_vectorizer = PickledObjectField(
         "Engine Object Vectorizer",
         protocol=pickle_HIGHEST_PROTOCOL,
         blank=True, null=True
     )
+    #: Engine Object Data
     engine_object_data = PickledObjectField(
         "Engine Object Data",
         protocol=pickle_HIGHEST_PROTOCOL,
         blank=True, null=True
     )
+    #: Classifier to be used in the System, in the
+    #: "app_label.model|name" format, i.e.
+    #: "supervised_learning.SVC|My SVM"
     classifier = models.CharField(
         "Supervised Learning Classifier",
         max_length=100, blank=True, null=True,
@@ -72,6 +80,7 @@ class SpamFilter(SupervisedLearningTechnique):
             '"supervised_learning.SVC|My SVM"'
         )
     )
+    #: Whether to use a Spammable Model as a data source
     spam_model_is_enabled = models.BooleanField(
         "Use a Spammable Model?",
         default=True,
@@ -79,6 +88,8 @@ class SpamFilter(SupervisedLearningTechnique):
             'Use a Spammable Model'
         )
     )
+    #: "IsSpammable-Django Model" to be used with the Spam Filter (in
+    #: the "app_label.model" format, i.e. "examples.CommentOfMySite")
     spam_model_model = models.CharField(
         "Spammable Django Model",
         max_length=100, blank=True, null=True,
@@ -87,30 +98,8 @@ class SpamFilter(SupervisedLearningTechnique):
             'the "app_label.model" format, i.e. "examples.CommentOfMySite")'
         )
     )
-    # -> Pre-training
-    pretraining = models.CharField(
-        "Pre-Training dataset",
-        max_length=100, blank=True, null=True,
-        help_text=(
-            'Django Model containing the pre-training dataset in the'
-            '"app_label.model" format, i.e. "examples.SFPTEnron"'
-        )
-    )
     # -> Cross Validation
-    cv_is_enabled = models.BooleanField(
-        "Cross Validation is Enabled?",
-        default=True,
-        help_text=(
-            'Enable Cross Validation'
-        )
-    )
-    cv_folds = models.SmallIntegerField(
-        "Cross Validation Folds",
-        blank=True, null=True,
-        help_text=(
-            'Quantity of Folds to be used in Cross Validation'
-        )
-    )
+    #: Metric to be evaluated in Cross Validation
     cv_metric = models.CharField(
         "Cross Validation Metric",
         max_length=20, blank=True, null=True, choices=CV_CHOICES,
@@ -119,24 +108,30 @@ class SpamFilter(SupervisedLearningTechnique):
         )
     )
     # -> Bag of Words Transformation
+    #: Enable Bag of Words transformation
     bow_is_enabled = models.BooleanField(
-        "BoW Is Enabled?",
+        "Enable Bag of Words representation?",
         default=True,
         help_text=(
             'Enable Bag of Words transformation'
         )
     )
-    # encoding : string, ‘utf-8’ by default.
+    # (skl) encoding : string, ‘utf-8’ by default.
+    #: Encoding to be used to decode the corpus
     bow_enconding = models.CharField(
-        "BoW encoding",
+        "(BoW) Encoding",
         default='utf-8', max_length=20,
         help_text=(
             'Encoding to be used to decode.'
         )
     )
-    # decode_error : {‘strict’, ‘ignore’, ‘replace’}
+    # (skl) decode_error : {‘strict’, ‘ignore’, ‘replace’}
+    #: Instruction on what to do if a byte sequence is given to
+    #: analyze that contains characters not of the given encoding.
+    #: By default, it is ‘strict’, meaning that a UnicodeDecodeError
+    #: will be raised. Other values are ‘ignore’ and ‘replace’.'
     bow_decode_error = models.CharField(
-        "BoW Decode Error",
+        "(BoW) Decode Error",
         default='strict', max_length=20, choices=BOW_DECODE_ERROR_CHOICES,
         help_text=_((
             'Instruction on what to do if a byte sequence is given to '
@@ -145,9 +140,13 @@ class SpamFilter(SupervisedLearningTechnique):
             'will be raised. Other values are ‘ignore’ and ‘replace’.'
         ))
     )
-    # strip_accents : {‘ascii’, ‘unicode’, None}
+    # (skl) strip_accents : {‘ascii’, ‘unicode’, None}
+    #: Remove accents during the preprocessing step. ‘ascii’ is a fast
+    #: method that only works on characters that have an direct ASCII
+    #: mapping. ‘unicode’ is a slightly slower method that works on
+    #: any characters. None (default) does nothing.
     bow_strip_accents = models.CharField(
-        "BoW Strip Accents",
+        "(BoW) Strip Accents",
         default=None, max_length=20, choices=BOW_STRIP_ACCENTS_CHOICES,
         blank=True, null=True,
         help_text=_((
@@ -157,39 +156,56 @@ class SpamFilter(SupervisedLearningTechnique):
             'any characters. None (default) does nothing.'
         ))
     )
-    # analyzer : string, {‘word’, ‘char’, ‘char_wb’} or callable
+    # (skl) analyzer : string, {‘word’, ‘char’, ‘char_wb’} or callable
+    #: Whether the feature should be made of word or character n-grams.
+    #: Option ‘Chars in W-B’ creates character n-grams only from text inside
+    #: word boundaries; n-grams at the edges of words are padded with
+    #: space.'
     bow_analyzer = models.CharField(
-        "BoW Analyzer",
+        "(BoW) Analyzer",
         default='word', max_length=20, choices=BOW_ANALYZER_CHOICES,
         help_text=_((
             'Whether the feature should be made of word or character n-grams. '
-            'Option ‘char_wb’ creates character n-grams only from text inside '
-            'word boundaries; n-grams at the edges of words are padded with'
-            ' space.'
+            'Option ‘Chars in W-B’ creates character n-grams only from text '
+            'inside word boundaries; n-grams at the edges of words are padded '
+            'with space.'
         ))
     )
-    # ngram_range : tuple (min_n, max_n)
+    # (skl) ngram_range : tuple (min_n, max_n)
+    #: The lower boundary of the range of n-values for
+    #: different n-grams to be extracted. All value
+    #: of n such that min_n <= n <= max_n will be used.
     bow_ngram_range_min = models.SmallIntegerField(
-        "BoW n-gram Range - Min",
+        "(BoW) n-gram Range - Min",
         default=1,
         help_text=_((
             'The lower boundary of the range of n-values for '
-            'different n-grams to be extracted (comma-separated). All values '
+            'different n-grams to be extracted. All values '
             'of n such that min_n <= n <= max_n will be used.'
         ))
     )
+    #: The upper boundary of the range of n-values for
+    #: different n-grams to be extracted. All values
+    #: of n such that min_n <= n <= max_n will be used.
     bow_ngram_range_max = models.SmallIntegerField(
-        "BoW n-gram Range - Max",
+        "(BoW) n-gram Range - Max",
         default=1,
         help_text=_((
             'The upper boundary of the range of n-values for '
-            'different n-grams to be extracted (comma-separated). All values '
+            'different n-grams to be extracted. All values '
             'of n such that min_n <= n <= max_n will be used.'
         ))
     )
-    # stop_words : string {‘english’}, list, or None (default)
+    # (skl) stop_words : string {‘english’}, list, or None (default)
+    #: If ‘english’, a built-in stop word list for English is used.
+    #: If a comma-separated string, that list is assumed to contain
+    #: stop words, all of which will be removed from the resulting
+    #: tokens. Only applies if analyzer == ´word´. If None, no stop
+    #: words will be used. max_df can be set to a value in the range
+    #: [0.7, 1.0) to automatically detect and filter stop words based
+    #: on intra corpus document frequency of terms.'
     bow_stop_words = models.TextField(
-        "BoW Stop Words",
+        "(BoW) Stop Words",
         default=None, blank=True, null=True,
         help_text=_((
             'If ‘english’, a built-in stop word list for English is used. '
@@ -201,9 +217,14 @@ class SpamFilter(SupervisedLearningTechnique):
             'on intra corpus document frequency of terms.'
         ))
     )
-    # max_df : float in range [0.0, 1.0] or int, default=1.0
+    # (skl) max_df : float in range [0.0, 1.0] or int, default=1.0
+    # When building the vocabulary ignore terms that have a document
+    # frequency strictly higher than the given threshold
+    # (corpus-specific stop words). If float, the parameter represents
+    # a proportion of documents, integer absolute counts. This
+    # parameter is ignored if vocabulary is not None.
     bow_max_df = models.FloatField(
-        "BoW Maximum Document Frequency",
+        "(BoW) Maximum Document Frequency",
         default=1.0,
         help_text=_((
             'When building the vocabulary ignore terms that have a document '
@@ -213,9 +234,14 @@ class SpamFilter(SupervisedLearningTechnique):
             'parameter is ignored if vocabulary is not None.'
         ))
     )
-    # min_df : float in range [0.0, 1.0] or int, default=1
+    # (skl) min_df : float in range [0.0, 1.0] or int, default=1
+    #: When building the vocabulary ignore terms that have a document
+    #: frequency strictly lower than the given threshold. This value is
+    #: also called cut-off in the literature. If float, the parameter
+    #: represents a proportion of documents, integer absolute counts.
+    #: This parameter is ignored if vocabulary is not None.
     bow_min_df = models.FloatField(
-        "BoW Minimum Document Frequency",
+        "(BoW) Minimum Document Frequency",
         default=1,
         help_text=_((
             'When building the vocabulary ignore terms that have a document '
@@ -225,9 +251,12 @@ class SpamFilter(SupervisedLearningTechnique):
             'This parameter is ignored if vocabulary is not None.'
         ))
     )
-    # max_features : int or None, default=None
+    # (skl) max_features : int or None, default=None
+    #: If not None, build a vocabulary that only consider the top
+    #: max_features ordered by term frequency across the corpus.
+    #: This parameter is ignored if vocabulary is not None.
     bow_max_features = models.IntegerField(
-        "BoW Maximum Features",
+        "(BoW) Maximum Features",
         default=None, blank=True, null=True,
         help_text=_((
             'If not None, build a vocabulary that only consider the top '
@@ -235,21 +264,29 @@ class SpamFilter(SupervisedLearningTechnique):
             ' This parameter is ignored if vocabulary is not None.'
         ))
     )
-    # vocabulary : Mapping or iterable, optional
+    # (skl) vocabulary : Mapping or iterable, optional
+    #: A Mapping (e.g., a dict) where keys are terms and values
+    #: are indices in the feature matrix.
+    #: If not given, a vocabulary is determined from the input
+    #: documents. Indices in the mapping should not be repeated and
+    #: should not have any gap between 0 and the largest index.
     bow_vocabulary = models.TextField(
-        "BoW Vocabulary",
+        "(BoW) Vocabulary",
         default=None, blank=True, null=True,
         help_text=_((
-            'Either a Mapping (e.g., a dict) where keys are terms and values '
-            'are indices in the feature matrix, or an iterable over terms. '
+            'A Mapping (e.g., a dict) where keys are terms and values '
+            'are indices in the feature matrix. '
             'If not given, a vocabulary is determined from the input '
             'documents. Indices in the mapping should not be repeated and '
             'should not have any gap between 0 and the largest index.'
         ))
     )
-    # binary : boolean, default=False
+    # (skl) binary : boolean, default=False
+    #: If True, all non zero counts are set to 1. This is useful for
+    #: discrete probabilistic models that model binary events rather
+    #: than integer counts.
     bow_binary = models.BooleanField(
-        "BoW Binary",
+        "(BoW) Use Binary representation?",
         default=False,
         help_text=_((
             'If True, all non zero counts are set to 1. This is useful for '
@@ -257,9 +294,9 @@ class SpamFilter(SupervisedLearningTechnique):
             'than integer counts.'
         ))
     )
-    # use tf-idf transformation
+    #: Use the TF-IDF transformation?
     bow_use_tf_idf = models.BooleanField(
-        "BoW Use TF-IDF transformation?",
+        "(BoW) Use the TF-IDF transformation?",
         default=True,
         help_text=_((
             'Use the TF-IDF transformation?'
@@ -280,7 +317,7 @@ class SpamFilter(SupervisedLearningTechnique):
         super(SpamFilter, self).save(*args, **kwargs)
 
     def __str__(self):
-        return("[Spam Filter]{}".format(self.name))
+        return("[Spam Filter] {}".format(self.name))
 
     def clean(self):
         if self.classifier:
@@ -403,6 +440,10 @@ class SpamFilter(SupervisedLearningTechnique):
         return(model_class.objects.get(name=object_name))
 
     def get_engine_object_vectorizer(self, reconstruct=False, save=True):
+        """
+        Retrieves / Initializes the Engine's Vectorizer and transforms the
+        data making it available in the `self.engine_object_data` field.
+        """
         if self.engine_object_vectorizer is not None and not reconstruct:
             return(self.engine_object_vectorizer)
         else:
@@ -443,6 +484,9 @@ class SpamFilter(SupervisedLearningTechnique):
             return(self.engine_object_vectorizer)
 
     def get_engine_object_data(self, reconstruct=False, save=True):
+        """
+        Retrieves / Reconstructs the BoW representation of the data.
+        """
         if self.engine_object_data is not None and not reconstruct:
             return(self.engine_object_data)
         else:
@@ -491,6 +535,10 @@ class SpamFilter(SupervisedLearningTechnique):
                 self.bow_is_enabled
             self.metadata["current_inference"]["input_dimensionality"] = \
                 np.shape(data)
+            self.metadata["current_inference"]["vectorizer_conf"] = \
+                self.get_vect_conf_dict()
+            self.metadata["current_inference"]["classifier_conf"] = \
+                self.get_classifier().get_conf_dict()
             # -> Set as inferred
             self.is_inferred = True
             if save:
@@ -499,16 +547,22 @@ class SpamFilter(SupervisedLearningTechnique):
         return(self.engine_object)
 
     def predict(self, texts):
-        if self.bow_is_enabled:
-            transformed_text = \
-                self.get_engine_object_vectorizer().transform(texts)
+        """
+        Classifies a list of observations
+        """
+        if self.is_inferred:
+            if self.bow_is_enabled:
+                transformed_text = \
+                    self.get_engine_object_vectorizer().transform(texts)
+            else:
+                max_length = max([len(t) for t in self.get_data()])
+                transformed_text = \
+                    [[ord(character) for character in text.ljust(max_length)]
+                     for text in texts][:max_length]
+            classifier = self.get_engine_object()
+            return(classifier.predict(transformed_text))
         else:
-            max_length = max([len(t) for t in self.get_data()])
-            transformed_text = \
-                [[ord(character) for character in text.ljust(max_length)]
-                 for text in texts][:max_length]
-        classifier = self.get_engine_object()
-        return(classifier.predict(transformed_text))
+            return(None)
 
     def perform_cross_validation(self, data=None, labels=None,
                                  update_metadata=False):
@@ -526,9 +580,14 @@ class SpamFilter(SupervisedLearningTechnique):
             cv=self.cv_folds, scoring=self.cv_metric
         )
         if update_metadata:
-            self.metadata["current_inference"]['cv_scores'] = scores
-            self.metadata["current_inference"]['cv_mean'] = scores.mean()
-            self.metadata["current_inference"]['cv_2std'] = 2 * scores.std()
+            self.metadata["current_inference"]['cv'] = {}
+            self.metadata["current_inference"]['cv']['conf'] = {
+                "folds": self.cv_folds,
+                "metric": self.get_cv_metric_display()
+            }
+            self.metadata["current_inference"]['cv']['scores'] = scores
+            self.metadata["current_inference"]['cv']['mean'] = scores.mean()
+            self.metadata["current_inference"]['cv']['2std'] = 2 * scores.std()
         return(scores)
 
     def remove_nones_from_input(self, data, labels):
@@ -545,11 +604,44 @@ class SpamFilter(SupervisedLearningTechnique):
             labels = np.delete(labels, none_indices, 0).astype(bool)
         return(data, labels)
 
-    def rotate_metadata(self):
-        if self.metadata["current_inference"] != {}:
-            self.metadata["previous_inference"] = \
-                self.metadata["current_inference"]
-            self.metadata["current_inference"] = {}
+    def get_vect_conf_str(self):
+        """
+        Vectorizer summary configuration string
+        """
+        vcstr = ""
+        if self.bow_is_enabled:
+            vcstr += "BoW Representation: "
+            if self.bow_binary:
+                vcstr += "Binary"
+            else:
+                if self.bow_use_tf_idf:
+                    vcstr += "(TF-IDF Transformation) "
+                vcstr += "Analyzer: "
+                vcstr += self.get_bow_analyzer_display()
+                vcstr += " ({}, {}) - ".format(self.bow_ngram_range_min,
+                                               self.bow_ngram_range_max)
+                vcstr += "Min / Max DF: "
+                vcstr += "{} / {}".format(self.bow_min_df,
+                                          self.bow_max_df)
+        else:
+            vcstr += "UTF-8 Representation (Vectorizer not enabled)"
+        return(vcstr)
+
+    def get_vect_conf_dict(self):
+        """
+        Vectorizer summary configuration string
+        """
+        vcdict = {}
+        vcdict['bow_is_enabled'] = self.bow_is_enabled
+        vcdict['bow_use_tf_idf'] = self.bow_use_tf_idf
+        vcdict['binary'] = self.bow_binary
+        vcdict['analyzer'] = self.get_bow_analyzer_display()
+        vcdict['ngram_range'] = "({}, {})".format(self.bow_ngram_range_min,
+                                                  self.bow_ngram_range_max)
+        vcdict['df_min_max'] = "{} / {}".format(self.bow_min_df,
+                                                self.bow_max_df)
+        vcdict['str'] = self.get_vect_conf_str()
+        return(vcdict)
 
 
 class IsSpammable(models.Model):
@@ -557,28 +649,35 @@ class IsSpammable(models.Model):
     This Abstract Model (AM) is meant to be used in Django models which may
     recieve Spam.
 
-    Usage
-    =====
-    - Make your model inherit from this AM.
-    - Set the SPAM_FILTER constant to the name of the Spam Filter object
-      you would like to use
-    - Set the SPAMMABLE_FIELD to the name of the field which stores the
-      content.
-    - Example::
-        class CommentsOfMySite(IsSpammable):
-            SPAM_FILTER = "Comment Spam Filter"
-            SPAMMABLE_FIELD = "comment"
-            ... # The rest of your code
-    """
-    SPAMMABLE_FIELD = None
-    SPAM_LABEL_FIELD = "is_spam"
+    Usage:
+        - Make your model inherit from this AM.
+        - Set the SPAM_FILTER constant to the name of the Spam Filter object
+          you would like to use
+        - Set the SPAMMABLE_FIELD to the name of the field which stores the
+          content.
+        - Example::
 
+            class CommentsOfMySite(IsSpammable):
+                SPAM_FILTER = "Comment Spam Filter"
+                SPAMMABLE_FIELD = "comment"
+                ... # The rest of your code
+    """
+    #: Name of the field which stores the Spammable Content
+    SPAMMABLE_FIELD = None
+    #: Name of the field which stores the Spam labels
+    SPAM_LABEL_FIELD = "is_spam"
+    #: Name of the Spam Filter object to be used
+    SPAM_FILTER = None
+
+    #: If the object is Spam - Label of the Object
     is_spam = models.NullBooleanField(
         _("Is Spam?"),
         help_text=_((
             'If the object is Spam'
         ))
     )
+    #: If the object has been misclassified by the Spam Filter -
+    #: useful for some algorithms and for understanding the filter
     is_misclassified = models.BooleanField(
         _("Is Misclassified?"),
         default=False,
@@ -586,6 +685,8 @@ class IsSpammable(models.Model):
             'If the object has been misclassified by the Spam Filter'
         ))
     )
+    #: If the object classification has been revised by a Human -
+    #: Need for proper training and automation
     is_revised = models.BooleanField(
         _("Is Revised?"),
         default=False,
@@ -624,12 +725,16 @@ class SpamFilterPreTraining(models.Model):
     a Spam Filter (the subclass must be set in the Spam Filter's
     ``pretraining`` field).
     """
+    #: Name of the field which stores the Spammable Content
     SPAMMABLE_FIELD = "content"
+    #: Name of the field which stores the Spam labels
     SPAM_LABEL_FIELD = "is_spam"
 
+    #: Content
     content = models.TextField(
         _("Content")
     )
+    #: Spam label
     is_spam = models.BooleanField(
         _("Is Spam?"),
         default=False
