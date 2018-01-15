@@ -30,6 +30,10 @@ A new app is introduced: *Supervised Learning*, which provides Classification an
 
 Support Vector Machines (SVM), one of the most understood and best performing classifier for high-dimensional data is featured in this app.
 
+Others
+^^^^^^
+
+- Support for Django 2.0
 
 0.0.1 (2017-11-13)
 ++++++++++++++++++

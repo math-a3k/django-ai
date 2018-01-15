@@ -457,7 +457,8 @@ class BayesianNetworkNode(models.Model):
         "deterministic", "deterministic_params"
     ]
 
-    network = models.ForeignKey(BayesianNetwork, related_name="nodes")
+    network = models.ForeignKey(BayesianNetwork, related_name="nodes",
+                                on_delete=models.CASCADE)
     name = models.CharField("Node Name", max_length=50)
     node_type = models.SmallIntegerField("Type", choices=NODE_TYPE_CHOICES,
                                          default=NODE_TYPE_STOCHASTIC)
@@ -758,7 +759,8 @@ class BayesianNetworkEdge(models.Model):
     child = models.ForeignKey(BayesianNetworkNode,
                               related_name="child_edges",
                               on_delete=models.CASCADE)
-    network = models.ForeignKey(BayesianNetwork, related_name="edges")
+    network = models.ForeignKey(BayesianNetwork, related_name="edges",
+                                on_delete=models.CASCADE)
     description = models.CharField("Description", max_length=50)
 
     def __str__(self):
