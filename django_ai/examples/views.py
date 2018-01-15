@@ -171,6 +171,18 @@ class CommentsOfMySiteView(MetricsMixin, CreateView):
         return(reverse_lazy('comments-of-my-site',
                             kwargs={'user_id': self.get_user_id()}))
 
+    def form_valid(self, form):
+        # Increment the internal counter of the Spam Filter and
+        # eventually trigger a recalculation of the model
+        # BEWARE: This is inside the User's navigation request
+        # cycle and is for demostrating purposes. You should
+        # schedule a model update outside the cycle in production.
+        sf_name = form.Meta.model.SPAM_FILTER
+        spam_filter = SpamFilter.objects.get(name=sf_name)
+        spam_filter.counter += 1
+        spam_filter.save()
+        return(super(CommentsOfMySiteView, self).form_valid(form))
+
     def get_initial(self):
         return({'user_id': self.get_user_id()})
 

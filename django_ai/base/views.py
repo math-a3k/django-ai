@@ -12,7 +12,11 @@ from django.contrib.auth.mixins import UserPassesTestMixin
 
 
 class RunActionView(UserPassesTestMixin, RedirectView):
+    """
+    Runs common Actions for Systems and Techniques
+    """
     permanent = False
+    #: Available Actions
     ACTIONS = {
         "perform_inference": {
             "type": "object",

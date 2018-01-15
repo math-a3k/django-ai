@@ -25,8 +25,9 @@ class StatisticalModel(models.Model):
     SM_TYPE_SUPERVISED = 1
     SM_TYPE_UNSUPERVISED = 2
 
+    #: Choices for Statistical Model Type
     SM_TYPE_CHOICES = (
-        (SM_TYPE_GENERAL, "General / System"),
+        (SM_TYPE_GENERAL, "General"),
         (SM_TYPE_SUPERVISED, "Classification"),
         (SM_TYPE_UNSUPERVISED, "Regression"),
     )
@@ -119,13 +120,20 @@ class StatisticalModel(models.Model):
         return("[ST|{0}]".format(self.name))
 
     # -> Public API
-    def get_engine_object(self):
+    def get_engine_object(self, reconstruct=False, save=True):
+        """
+        Returns the main object provided by the Statistical Engine.
+
+        It is responsible for initializing the Engine object if not exists - or
+        is indicated by the "reconstruct" kwarg - and save it to the
+        "engine_object" field.
+        """
         raise NotImplementedError("A Technique should implement this method")
 
     def reset_engine_object(self, save=True):
         """
-        Base resetting: Resets the Engine Object, Timestamp, Metadata
-        and is_inferred.
+        Resets the Engine-related fields.
+        (engine_object, engine_object_timestamp, metadata and is_inferred).
         """
         self.engine_object = None
         self.engine_object_timestamp = None
@@ -135,7 +143,11 @@ class StatisticalModel(models.Model):
             self.save()
         return(True)
 
-    def perform_inference(self):
+    def perform_inference(self, recalculate=False, save=True):
+        """
+        Performs the Inference with the Statistical Engine and updates the
+        Engine Object
+        """
         raise NotImplementedError("A Technique should implement this method")
 
     def reset_inference(self, save=True):
@@ -188,7 +200,7 @@ class StatisticalModel(models.Model):
 
     def parse_and_run_threshold_actions(self):
         """
-        Parses and runs the thresholds actions
+        Parses and runs the thresholds actions.
         """
         if self.counter_threshold:
             if self.counter_threshold <= self.counter:
@@ -200,6 +212,16 @@ class StatisticalModel(models.Model):
                 return(True)
         else:
             return(False)
+
+    def rotate_metadata(self):
+        """
+        Rotates metadata from "current_inference" to "previous_inference" if
+        it is not empty.
+        """
+        if self.metadata["current_inference"] != {}:
+            self.metadata["previous_inference"] = \
+                self.metadata["current_inference"]
+            self.metadata["current_inference"] = {}
 
     # -> Django Models API
     def clean(self):
@@ -302,22 +324,61 @@ class SupervisedLearningTechnique(StatisticalModel):
     SL_TYPE_CLASSIFICATION = 0
     SL_TYPE_REGRESSION = 1
 
+    #: Choices for Supervised Learning Type
     SL_TYPE_CHOICES = (
         (SL_TYPE_CLASSIFICATION, "Classification"),
         (SL_TYPE_REGRESSION, "Regression"),
     )
 
+    #: Supervised Learning Type
     sl_type = models.SmallIntegerField(
         "Supervised Learning Type",
         choices=SL_TYPE_CHOICES, default=SL_TYPE_CLASSIFICATION,
         blank=True, null=True
     )
+    #: Field or Attribute containing the labels of the data
     labels_column = models.CharField(
         "Labels' Column",
         max_length=100, blank=True, null=True,
         help_text=_((
             'Format: app_label.model.attribute'
         ))
+    )
+    # -> Pre-training
+    #: Django Model containing the pre-training dataset in the
+    #: "app_label.model" format, i.e. "examples.SFPTEnron"
+    pretraining = models.CharField(
+        "Pre-Training dataset",
+        max_length=100, blank=True, null=True,
+        help_text=(
+            'Django Model containing the pre-training dataset in the'
+            '"app_label.model" format, i.e. "examples.SFPTEnron"'
+        )
+    )
+    # -> Cross Validation
+    #: Enable Cross Validation (k-Folded)
+    cv_is_enabled = models.BooleanField(
+        "Cross Validation is Enabled?",
+        default=True,
+        help_text=(
+            'Enable Cross Validation'
+        )
+    )
+    #: Quantity of Folds to be used in Cross Validation
+    cv_folds = models.SmallIntegerField(
+        "Cross Validation Folds",
+        blank=True, null=True,
+        help_text=(
+            'Quantity of Folds to be used in Cross Validation'
+        )
+    )
+    #: Metric to be evaluated in Cross Validation
+    cv_metric = models.CharField(
+        "Cross Validation Metric",
+        max_length=20, blank=True, null=True,
+        help_text=(
+            'Metric to be evaluated in Cross Validation'
+        )
     )
 
     class Meta:
@@ -338,6 +399,9 @@ class SupervisedLearningTechnique(StatisticalModel):
         raise NotImplementedError("A Technique should implement this method")
 
     def get_labels(self):
+        """
+        Returns a list of labels of the data available for the model.
+        """
         if self.labels_column:
             app, model, attribute = self.labels_column.split(".")
             model_class = ContentType.objects.get(
@@ -348,6 +412,26 @@ class SupervisedLearningTechnique(StatisticalModel):
             return(labels)
         else:
             return(None)
+
+    def get_pretraining_data(self):
+        """
+        Returns the pre-training data
+        """
+        raise NotImplementedError("A Technique should implement this method")
+
+    def get_pretraining_labels(self):
+        """
+        Returns the pre-training labels
+        """
+        raise NotImplementedError("A Technique should implement this method")
+
+    def perform_cross_validation(self, data=None, labels=None,
+                                 update_metadata=False):
+        """
+        Performs Cross Validation with the current state of the model on the
+        available data or in a given set.
+        """
+        raise NotImplementedError("A Technique should implement this method")
 
     # -> Django Models API
     def clean(self):

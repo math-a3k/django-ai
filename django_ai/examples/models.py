@@ -76,7 +76,7 @@ class UserInfo(models.Model):
 
 
 class CommentOfMySite(IsSpammable):
-    SPAM_FILTER = "Comment Spam Filter"
+    SPAM_FILTER = "Spam Filter for Comments (example)"
     SPAMMABLE_FIELD = "comment"
 
     comment = models.TextField("Comment")

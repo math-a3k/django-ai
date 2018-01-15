@@ -9,10 +9,10 @@ Welcome to django-ai's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    readme
-   overview
+   intro
    installation
    apps/index
    api/api

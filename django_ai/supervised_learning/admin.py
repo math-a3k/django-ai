@@ -9,7 +9,7 @@ from .models.svm import (SVC, )
 class SVCAdmin(admin.ModelAdmin):
     fieldsets = (
         ("General", {
-            'fields': ('name', 'results_storage')
+            'fields': ('name', )
         }),
         ("Miscellanous", {
             'classes': ('collapse',),

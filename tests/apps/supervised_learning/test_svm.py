@@ -31,3 +31,11 @@ class TestSVM(TestCase):
         classifier = self.svm1.get_engine_object()
         classifier.fit(X, y)
         self.assertEqual(classifier.predict([[-0.8, -1]]), [1])
+
+    def test_conf_dict(self):
+        self.setUp()
+        self.svm1.kernel = 'poly'
+        confdict = self.svm1.get_conf_dict()
+        self.assertTrue("Degree" in confdict["str"])
+        self.assertTrue("gamma" in confdict["str"])
+        self.assertTrue("Indep." in confdict["str"])
