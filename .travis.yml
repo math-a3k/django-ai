@@ -22,3 +22,7 @@ script: tox -e $TOX_ENV
 
 after_success:
   - codecov -e TOX_ENV
+
+sudo: required
+dist: trusty
+group: deprecated-2017Q4
