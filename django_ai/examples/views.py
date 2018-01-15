@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import random
 import math
 import json
@@ -12,11 +13,18 @@ from django.db.models import Avg
 from django.views.generic import CreateView
 from django.urls import reverse_lazy
 
-from bayesian_networks.models import BayesianNetwork
-from systems.spam_filtering.models import SpamFilter
-from examples import metrics
 from .models import (UserInfo, CommentOfMySite, )
 from .forms import (CommentOfMySiteForm, )
+
+if 'DJANGO_TEST' in os.environ:
+    from django_ai.bayesian_networks.models import BayesianNetwork
+    from django_ai.systems.spam_filtering.models import SpamFilter
+    from django_ai.examples import metrics
+else:  # pragma: no cover
+    from bayesian_networks.models import BayesianNetwork
+    from systems.spam_filtering.models import SpamFilter
+    from examples import metrics
+
 
 PAGES_COLORS = {
     "A": "green", "B": "deep-orange", "C": "blue-grey", "D": "brown",
