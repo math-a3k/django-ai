@@ -157,11 +157,12 @@ class MetricsMixin(object):
         context = super().get_context_data(**kwargs)
         # Usage metrics
         bn = BayesianNetwork.objects.get(name="Clustering (Example)")
-        user_info = UserInfo.objects.get(id=self.user_id)
-        cluster_avg_time_pages = \
-            bn.metadata["clusters_means"][user_info.cluster_1][0]
-        context['cluster_avg_time_pages'] = cluster_avg_time_pages
         context['bn'] = bn
+        user_info = UserInfo.objects.get(id=self.get_user_id())
+        if bn.is_inferred:
+            cluster_avg_time_pages = \
+                bn.metadata["clusters_means"][user_info.cluster_1][0]
+            context['cluster_avg_time_pages'] = cluster_avg_time_pages
         return context
 
 
