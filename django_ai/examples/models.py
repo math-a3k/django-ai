@@ -1,9 +1,21 @@
 # -*- coding: utf-8 -*-
 
+import os
+
 from django.db import models
 
-from systems.spam_filtering.models import (IsSpammable,
-                                           SpamFilterPreTraining, )
+if 'DJANGO_TEST' in os.environ:
+    from django_ai.systems.spam_filtering.models import (
+        IsSpammable,
+        SpamFilterPreTraining,
+    )
+    APP_LABEL = "django_ai.examples"
+else:  # pragma: no cover
+    from systems.spam_filtering.models import (
+        IsSpammable,
+        SpamFilterPreTraining,
+    )
+    APP_LABEL = "examples"
 
 
 class UserInfo(models.Model):
@@ -68,6 +80,7 @@ class UserInfo(models.Model):
     class Meta:
         verbose_name = "User Info"
         verbose_name_plural = "Users Infos"
+        app_label = APP_LABEL
 
     def __str__(self):
         return("{} - S: {}, A:{} - Group: {}".format(
@@ -85,6 +98,7 @@ class CommentOfMySite(IsSpammable):
     class Meta:
         verbose_name = "Comment of my Site"
         verbose_name_plural = "Comments of my Site"
+        app_label = APP_LABEL
 
     def __str__(self):
         return("[U: {}] {}...".format(self.user_id, self.comment[:20]))
@@ -95,6 +109,7 @@ class SFPTEnron(SpamFilterPreTraining):
     class Meta:
         verbose_name = "Spam Filter Pre-Training: Enron Email Data"
         verbose_name_plural = "Spam Filter Pre-Training: Enron Emails Data"
+        app_label = APP_LABEL
 
 
 class SFPTYoutube(SpamFilterPreTraining):
@@ -103,3 +118,4 @@ class SFPTYoutube(SpamFilterPreTraining):
         verbose_name = "Spam Filter Pre-Training: Youtube Comment Data"
         verbose_name_plural = ("Spam Filter Pre-Training: "
                                "Youtube Comments Data")
+        app_label = APP_LABEL
