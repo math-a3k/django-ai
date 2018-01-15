@@ -9,8 +9,9 @@ def adjust_data_forward(apps, schema_editor):
     BayesianNetworkNode = apps.get_model(
         "bayesian_networks", "BayesianNetworkNode")
     Y = BayesianNetworkNode.objects.get(
-            name="Y", network__name="Clustering (Example)")
-    Y_col_avg_logged = Y.columns.get(ref_column="avg_time_logged")
+        name="Y", network__name="Clustering (Example)"
+    )
+    Y_col_avg_logged = Y.data_columns.get(ref_column="avg_time_logged")
     Y_col_avg_logged.ref_column = "avg_time_pages"
     Y_col_avg_logged.save()
 
@@ -19,10 +20,12 @@ def adjust_data_backward(apps, schema_editor):
     BayesianNetworkNode = apps.get_model(
         "bayesian_networks", "BayesianNetworkNode")
     Y = BayesianNetworkNode.objects.get(
-            name="Y", network__name="Clustering (Example)")
-    Y_col_avg_time_pages = Y.columns.get(ref_column="avg_time_pages")
+        name="Y", network__name="Clustering (Example)"
+    )
+    Y_col_avg_time_pages = Y.data_columns.get(ref_column="avg_time_pages")
     Y_col_avg_time_pages.ref_column = "avg_time_logged"
     Y_col_avg_time_pages.save()
+
 
 class Migration(migrations.Migration):
 
