@@ -17,8 +17,8 @@ Artificial Intelligence for Django
 ``django-ai`` is a collection of apps for integrating statistical models into your
 Django project so you can implement machine learning conveniently.
 
-It integrates several libraries and engines providing your Django app with a set of 
-tools so you can leverage the data generated in your project. 
+It integrates several libraries and engines providing your Django app with a set of
+tools so you can leverage the data generated in your project.
 
 .. image:: http://django-ai.readthedocs.io/en/latest/_images/django_ai.jpg
     :target: https://django-ai.readthedocs.io/en/latest/introduction.html
@@ -31,10 +31,8 @@ The full documentation is at https://django-ai.readthedocs.io or the `/docs` dir
 Features
 --------
 
-* `Bayesian Networks <https://django-ai.readthedocs.io/en/latest/apps/bayesian_networks.html    >`_: Integrate Bayesian Networks through your models using the `BayesPy framework <http://bayespy.org/>`_.
+* `Bayesian Networks <https://django-ai.readthedocs.io/en/latest/apps/bayesian_networks.html>`_: Integrate Bayesian Networks through your models using the `BayesPy framework <http://bayespy.org/>`_.
 * `Spam Filtering <https://django-ai.readthedocs.io/en/latest/apps/spam_filtering.html>`_: Integrate Spam Filters to your Django project using the `scikit-learn framework <http://scikit-learn.org>`_.
-
-* Bayesian Networks: Integrate Bayesian Networks through your models using the `BayesPy framework <http://bayespy.org/>`_.
 
 See the `Introduction <https://django-ai.readthedocs.io/en/latest/introduction.html>`_ section in the documentation for more information.
 
@@ -53,12 +51,12 @@ Quickstart
 The easiest way of trying `django-ai` is inside its package:
 
 1. Create a virtual environment and activate it::
-    
+
     python3 -m venv django-ai_env
     source django-ai_env/bin/activate
 
 2. Upgrade ``pip`` and install ``django-ai``::
-    
+
     (django-ai_env) pip install --upgrade pip
     (django-ai_env) pip install django-ai
 
@@ -67,12 +65,12 @@ The easiest way of trying `django-ai` is inside its package:
     (django-ai_env) cd django-ai_env/lib/python3.5/site-packages/django_ai
 
 4. Create the migrations for the dependencies and apply them::
-    
+
     python manage.py makemigrations
     python manage.py migrate
 
 5. Create a superuser::
-    
+
     python manage.py createsuperuser
 
 6. Start the development server and visit http://127.0.0.1:8000/admin/, look at the examples and start creating your statistical models::
