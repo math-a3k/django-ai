@@ -6,6 +6,7 @@ Examples
 
 This app contains sample data and example objects of the apps of ``django-ai``.
 
+
 UserInfo Model
 ==============
 
@@ -50,24 +51,27 @@ The goal of this example is to show how to use unsupervised learning (clustering
 
 For this, we will discuss the SmartDjango site, which is an example biased - but not limited - towards applications of e-commerce / shopping and content-based sites - like news, blogging, etc.
 
-It can also be thought as a piece of a recommendation system, where the recommendations are based on what "similar" users (in the same group) do.
+It can also be thought as a piece of a recommendation system, where the recommendations are based on what "similar" users - in the same group - do.
+
 
 Recording the metrics
 ---------------------
 
-Recording metrics is application-specific, depends on your case: how your data is already "organized" or modelled, what you are trying to measure, your goals and the tools availability.
+Recording metrics is application-specific, depends on your case: how your data is already "organized" or modelled, what you are trying to measure, your goals and the tools' availability.
 
-In this case, the SmartDjango company knows - from their experience building and running the site over the time - that there are different groups of users which consume the application in different ways: among all the pages of the site, there are intrested pages (main content) which are not equally appealing to all the users.
+In this case, the SmartDjango company knows - from their experience building and running the site over the time - that there are different groups of users which consume the application in different ways: among all the pages of the site, there are pages (content) which are not equally appealing to all the users.
 
-They want to learn how these groups "behave" in order to provide a more personalized experience to engage users - like different templates, filtering of items - or at a higher level - promotions, content, etc.
+They want to learn how these groups "are" in order to provide a more personalized experience to engage users - like different templates, filtering of items - or at a higher level - promotions, content, etc.
 
 As an initial approach, starting from the scratch, the measuring of usage patterns of users should be done with the simplest metrics: how much time a user spends on a interested page (on average), and how many times does the user visits it.
 
-The SmartDjango site is small and has about 2 hundreds of different pages (different urls for items), so they would have 400 metrics recorded for each user.
+The SmartDjango site is small and has about 2 hundreds of different pages (different urls for items or content items), so 400 metrics would have to be recorded for each user.
 
-Each metric represents a dimension in the data that will feed the model, so each user usage pattern would be represented as an *R^400* point or observation. This is unsuitable for the models or techinques that `django-ai` currently supports because they are affected by the `Curse of Dimensionality <https://en.wikipedia.org/wiki/Curse_of_dimensionality>`_ (you should read this `explanation for Machine Learning <https://stats.stackexchange.com/a/169351>`_).
+Each metric represents a dimension in the data that will feed the model, so each user usage pattern would be represented as an *R^400* point or observation. This is unsuitable for the models or techinques that we are using in this example - a Bayesian Network of Gaussian Mixtures - because they are affected by the `Curse of Dimensionality <https://en.wikipedia.org/wiki/Curse_of_dimensionality>`_ (you should read this `explanation for Machine Learning <https://stats.stackexchange.com/a/169351>`_).
 
 A solution for this is recording the metrics at a higher level of aggregation, instead of a metric for each page, collect for different groups / categories / types of pages. This way, the dimensionality of the input is reduced to a "useful space" for the model.
+
+This showcase the need for "aligning" the model and the data in order to have a succesful application of the learning into the project. Having chosen a model for a goal, the data must in line with it so the solution it produces is the best within its scope or limitations - every model trades generality for acurracy in some way, for getting better in particular. This model works - it has been already proven that it will produce optimal results (in some sense) given cerntain conditions (characteristics of the input / data), having them "aligned" is what makes the best out of the tool.
 
 If the SmartDjango company was a concrete news or blogging site, their interested pages would be the news or posts, which are usually already categorized with sections like "Sports" (A), "Tech" (B), "Art" (C), "Culture" (D), etc. or the "main" tag of the post.
 
@@ -75,7 +79,7 @@ In the case of a concrete shopping site, their interested pages could be the cat
 
 For other content-based sites, the categories usually "emerge naturally", like in music or movies sites they could be the genres. In other cases, you may have to categorize them according to your goals.
 
-In this case, SmartDjango has categorized their intrested pages according to their role, resulting in 10 categories or types of pages - "A" ... "J" - resulting in 10 metrics of the form:
+In this case, SmartDjango has categorized their interested pages according to their role, resulting in 10 categories or types of pages - "A" ... "J" - resulting in 10 metrics of the form:
 
 ``avg_time_pages_X``
     Average Time Spent on Pages of type X (Seconds).
@@ -87,8 +91,7 @@ In this case, SmartDjango has categorized their intrested pages according to the
 
 .. autofunction:: examples.metrics.metric_visits_and_avg_time_on_pages
 
-
-For implementing the recording, SmartDjango had to update both front-end and back-end parts of the application.
+For implementing the metrics recording, SmartDjango had to update both front-end and back-end parts of the application.
 
 In the front-end, the base template of the interested pages was updated to include the necessary Javascript to measure the time spent on the page and then unobtrusively POST it to the back-end, where the implemented Metrics Pipeline executes all the code that calculates and store the metrics away from the user's "navigation" request cycle:
 
@@ -96,7 +99,7 @@ In the front-end, the base template of the interested pages was updated to inclu
 
 .. autofunction:: examples.views.process_metrics
 
-Realizing that the most visited ones are from type A, SmartDjango decided to go first on a smaller step, for the first building block the focus should be put on A-pages and the rest. Then, another metric should be recorded:
+Realizing that the most visited ones are from type A, SmartDjango decided to go first on a smaller step: for the first building block of the system the focus should be put on "A"-pages and then, the rest. Therefore, another metric should be recorded:
 
 ``avg_time_pages``
     Average Time Spent on Pages, independently of their type (Seconds).
@@ -106,12 +109,17 @@ Realizing that the most visited ones are from type A, SmartDjango decided to go 
 
 .. autofunction:: examples.metrics.metric_visits_and_avg_time_on_pages
 
+
 Constructing the model
 ----------------------
 
-Averages have the "nice" property of being well modelled with Gaussian (Normal) variables (even in the odd cases when it is not normally distributed, the approximation is "good"). In order to find the groups (clusters) of users which share a common usage pattern, a mixture of Normal variables will be used with only 2 of the recorded metrics: ``avg_time_pages`` and ``avg_time_pages_a``. Note that this metrics are not independent, a "hit" on a Page of type A will also make a "hit" on Pages.
+The reason for choosing recording averages is that they have the "nice" property of being well modelled with Gaussian (Normal) variables - even in the "odd" cases when it is not normally distributed, it takes a factible amount of measurements in this case - time spent by users - for the approximation to be "good".
 
-Once the groups have been identified, you can take actions based on their belonging and even find more patterns inside them.
+So, given that we will be dealing with averages, we will use a model that is geared towards that.
+
+In order to find the groups (clusters) of users which share a common usage pattern, a mixture of Normal variables will be used with only 2 of the recorded metrics: ``avg_time_pages`` and ``avg_time_pages_a``. Note that this metrics are not independent, a "hit" on a Page of type A will also make a "hit" on Pages.
+
+Once the groups have been identified, you can take actions based on their belonging and even find more patterns inside them using "extra information" (other metrics gathered not included for this model).
 
 This is an adaptation of the `BayesPy Gaussian Mixture Model Example <http://bayespy.org/examples/gmm.html>`_, where you can find more details about it, in this case there will be also 4 clusters, which can be briefly characterized by:
 
@@ -125,7 +133,7 @@ You can see the details of its construction in the following migration:
 
 .. autofunction:: examples.migrations.0005_add_avg_times_clusters.populate_avg_times
 
-The ``Network type`` is set to "Clustering" in the Bayesian Network object and the network topology can be briefly described as:
+For implementing the model, the ``Network type`` is set to "Clustering" in the Bayesian Network object and the network topology can be briefly described as:
 
 ``alpha``
     The prior for the probability of assignment to a cluster (group).
@@ -138,7 +146,9 @@ The ``Network type`` is set to "Clustering" in the Bayesian Network object and t
 
 After the inference is performed, the model should identify the 4 real clusters from the 10 initial ones set in the uninformative priors of the models (see the nodes parameters in the admin interface).
 
-Note that due to the random initialization of the BayesPy VB engine - due to the Categorical ``Z`` node - the algorithm may converge to local optimums which are not the global optima.
+This showcase how this technique chooses the number of clusters.
+
+A problem with this technique is relying on random initialization (Variational Bayes engine) and the algorithm may converge to local optimums which are not the global optima.
 
 For avoiding this, the ``Engine Meta Iterations`` in the Bayesian Network object (see :ref:`bayesian_network`) is set to 15. This will repeat the inference 15 times from different states of the random number generator and choose the one with the highest likelihood. Also, ``django-ai`` conveniently takes care of doing all the re-labelling required between inferences so you can compare the results and automate the inference and the actions you might take according to the results.
 
@@ -218,6 +228,8 @@ Updating the counter may be just a query to the database and may be not worthy o
 
 You can opt for no automation at all and "manually" recalculate all the model through the admin when deemed necessary. This may be suitable for the beginning, but with the adequate tuning, you can build and incorporate an autonomous system that constantly learns from the data into your application.
 
+For the cases where there is not possible or feasible to install an app like ``Celery``, with the mentioned caveats you can implement the functionality using the internal counters.
+
 Other Considerations
 --------------------
 
@@ -235,7 +247,7 @@ Selecting or determining the number of clusters is a key problem in Unsupervised
 
 If you reduce the maximum number of possible clusters, you will see an increase of the stability of the results.
 
-The initial number of clusters to search in the data is set in the Dirichlet Node (named `alpha`) parameters (set to 10 in ``numpy.full(``\ 10\ ``, 1e-05))``) and in hyper-parameters nodes `mu` and `Lambda` plates, which models the clusters means and covariance matrices (set to 10 in ``numpy.zeros(2), [[1e-5,0], [0, 1e-5]], plates=(``\ 10\ ``, )`` and ``2,  [[1e-5,0], [0, 1e-5]], plates=(``\ 10\ ``, )``).
+If you are on a quick read and haven't got to the details yet, the initial number of clusters to search in the data is set in the Dirichlet Node (named `alpha`) parameters (set to 10 in ``numpy.full(``\ *10* \ ``, 1e-05))``) and in hyper-parameters nodes `mu` and `Lambda` plates, which models the clusters means and covariance matrices (set to 10 in ``numpy.zeros(2), [[1e-5,0], [0, 1e-5]], plates=(``\ *10* \ ``, )`` and ``2,  [[1e-5,0], [0, 1e-5]], plates=(``\ *10* \ ``, )``).
 
 If you change this to 4 (the real number in this example) - or 5 for contemplating outliers (see below) - you will end up in a better shape for automating. In general, initially choose a "big number", then change to the number you expect in your data.
 
@@ -256,6 +268,8 @@ Third, optimization "stalls" in local optimums in the VB engine.
 For dealing with this, do not skimp on the ``Meta Iterations`` parameter of the BN discussed previously.
 
 Finally - and not related to the causes - you can also improve the stability and the speed of the results by using informative priors with what you have been observing - besides low-level tuning of the engine (which is out of the scope of this example).
+
+.. _bn_seeing_is_believing:
 
 Seeing is Believing
 --------------------
@@ -333,6 +347,7 @@ Many classifiers - including SVM - are not scale invariant, so it is recommended
 
 Once all the texts / messages are suitably represented to be an input of the classifier - the Supervised Learning Technique - the discerning between SPAM and HAM can be carried out.
 
+
 Setting and Plugin the Spam Filter
 ----------------------------------
 
@@ -394,9 +409,10 @@ Given the introduction to the Bag of Words projection, you should be able to tun
 
 Once you have reached a "reasonable" Bag of Words representation, it's time to tune the classifier. In this case, it will be the SVM penalty parameter and the kernel.
 
-Iterating in this will produce the best parameters of the model for your data. 
+Iterating in this will produce the best parameters of the model for your data.
 
 After this, your Spam Filter is ready :)
+
 
 Other Considerations
 --------------------
@@ -406,6 +422,9 @@ As the Spam Filter is a subclass of :ref:`Statistical Model <api_statistical_mod
 .. autoclass:: examples.views.CommentsOfMySiteView
 
 Discussing SVM is left out from this example for brevity. It can deal with high-dimensional data seamlessly, however, you should try to find the smallest dimension input where the data is "best separable" while maximizing its performance.
+
+
+.. _svm_seeing_is_believing:
 
 Seeing is Believing
 --------------------
