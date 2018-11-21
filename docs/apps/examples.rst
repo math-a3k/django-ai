@@ -289,24 +289,24 @@ For that, we will discuss briefly the model that the SmartDjango company has imp
 Understanding the Bag of Words projection
 -----------------------------------------
 
-As in the :ref:`previous example <clustering_bn_example>`, when the SmartDjango decided to record the metrics on a per-category basis instead of per-page, the decision was made in order to reduce the dimensionality so the available toolkit can handle the problem (segmentate the users based on usage patterns).
+As in the :ref:`previous example <clustering_bn_example>`, when SmartDjango decided to record the metrics on a per-category basis instead of per-page, the decision was made in order to reduce the dimensionality so the available toolkit can handle the problem (segmentate the users based on usage patterns).
 
 Usually, all the Statistical Models in Machine Learning algorithms handle "numerical" inputs - or numerical representations of them, and the input in this case are texts. Strings have "natural" numerical representations in computers, like the ASCII codes (or more modern, UTF-8) internal representation, where "Hola!" is represented with (72, 111, 108, 97, 33) - a point in a 128^5 space, analogous to an R^5 point.
 
-One of the problems with this representation is that it may be very hard to discern between similar observations in the original domain: Natural Language.
+One of the problems with this representation is that it may be very hard to discern between similar observations in the original domain: a Natural Language.
 
-For example, the following 4 strings are represented in the same space as:
+For example, the following 4 strings are represented in the same "ASCII space" as:
 
 ``Hola!``
     ( 72, 111, 108,  97,  33,  32,  32,  32,  32,  32)
 ``Adios!``
     ( 65, 100, 105, 111, 115,  33,  32,  32,  32,  32)
-``     HOLA!``
+``     HOLA!``
     ( 32,  32,  32,  32,  32,  72,  79,  76,  65,  33)
 ``Hola!HOLA!``
     ( 72, 111, 108,  97,  33,  72,  79,  76,  65,  33)
 
-The first one and the third one represents the "same" in the original space (they semantically mean the same) while the second is the opposite. But, looking only at their ASCII representation (the R^10 points), the first one seems more like the second and opposite to the third one.
+The first one and the third one represents the "same" in the original space (they semantically mean the same) while the second is the opposite. But, looking only at their ASCII representation (the R^10 points), the first one seems more like the second and opposite to the third one, which doesn't seem helpful for the matter.
 
 Instead, if you consider a higher aggregation level such as words instead of characters - just like categories of pages to single pages - you may represent them (discarding the case, punctuation et al.) in:
 
@@ -319,15 +319,15 @@ Instead, if you consider a higher aggregation level such as words instead of cha
 ``Hola!HOLA!``
     (2, 0)
 
-which is analogous to an R^2 point which also represents better the "structure" in the original domain at glance: the first and the third one (semantically equivalent) are represented in the way, the fourth is in the same axis and the second is represented in another direction. Also, in a much lower complexity space.
+which is analogous to an R^2 point which also represents better the "structure" in the original domain at glance: the first and the third one (semantically equivalent) are represented in the same way, the fourth is in the same axis and the second is represented in another direction. Also, in a much lower complexity space.
 
 For the task of classifying - discerning between "types" of - documents / texts / strings / messages / comments, it seems easier to work in a Word space than in a Character space.
 
 That is the `Bag of Word representation <https://en.wikipedia.org/wiki/Bag-of-words_model>`_, which can be seen as a non-linear projection or transformation from the character space (the strings) into the word space.
 
-In the ASCII representation, each component of the vector point (axis of the space) represents each character in the string in an arbitrary meaningless order for the domain (Natural Language) - 32 is a space, 33 is an exclamation mark, 65 is an "a". If the max size of the string / message is 2000 chars, then we have R^2000 points.
+In the ASCII representation, each component of the vector point (axis of the space) represents each character in the string in an arbitrary meaningless order for the domain (Natural Language) - 32 is a space, 33 is an exclamation mark, 65 is an "a", etc. Then, if the max size of the string / message is 2000 chars, we have R^2000 points.
 
-In the Bag of Words representation, the base of the space is the set of words in the corpus (the random sample of texts, the observed messages in the database / Django model :), ì.e. in the previous example, ``Hola! Adios!`` has the coordinates (1, 1) in the base {``hola``, ``adios``} and has a more meaningful order in the space for the problem.
+In the Bag of Words representation, the base of the space is the set of words in the corpus (the random sample of texts, the observed messages in the database / Django model :), i.e. in the previous example, ``Hola! Adios!`` has the coordinates (1, 1) in the base {``hola``, ``adios``} and has a more meaningful order in the space for the problem.
 
 This "better" representation provides a more suitable input for the tools available and make them perform better - i.e. achieve greater accuracy.
 
@@ -335,17 +335,17 @@ But, unlike the ASCII representantion where the dimension could be fixed, the di
 
 As the sample size increases - the corpus has more documents - it is more likely to have more words to consider, and thus, tends to increase the dimension of the space. Once the sample is "big enough", the increase starts to lower as there are "enough" words in the base to represent new documents. How much depends on many factors, for exemplifying, a corpus of 3672 emails produces a "raw" dimension of approximately 50,000, while a corpus of 1956 comments produces points of R^5773.
 
-As you may note, dimension can skyrocket and that poses a problem. Using domain-knowledge one can mitigate this, like removing the stop words and similar, "trimming" axes which won't contribute much to the goal of the task (classify documents) and provide better results in the process.
+As you may note, dimension can skyrocket and that generally poses a problem. Using domain-knowledge one can mitigate this, like removing the stop and common words between documents, "trimming" axes which won't contribute much to the goal of the task of classifying, providing better results in the process.
 
 Stop words - articles ("The", "A", "An"), conjunctions (i.e. "For", "And", "But"), etc. - are common words which usually does not help to discern between document classes as they are mostly common to all sample points, so filtering them mitigates the dimensionality without affecting the classification performance. A way to filter this is either by "hard-coding" then for the Natural Language of the corpus (i.e. English), or more generally by setting a threshold in the frequency of the term, i.e. the words that appear in at least 85% percent of the documents are probably stop words (independently of the Natural Language) and won't help in discerning classes between them.
 
 In the same reasoning, removing the terms with less frequency will help to reduce the dimensionality while trimming possible outliers than may affect the performance.
 
-In the opposite way - but with the same goal - is instead of using one word per element of the base of the space, use two - or more - words. This is known as the `N-gram representation <https://en.wikipedia.org/wiki/N-gram>`_. The rationale of this representation is to retain better the underlying structure of the documents by constructing the base as the combinations of two (or *N*) words of the total of the corpus (vocabulary). The "better" representation has the "side-effect" of increasing the dimensionality drastically, i.e. a corpus of 1962 elements with a vocabulary of 5771 (and the same dimension for unigrams), leads to a dimension of 42,339 if you consider up to trigrams. This impacts the performance of the classifier, so it has to be balanced according to your case.
+In the opposite way - but with the same goal - is instead of using one word per element of the base of the space, use two - or more - words. This is known as the `N-gram representation <https://en.wikipedia.org/wiki/N-gram>`_. The rationale of this representation is to retain better the underlying structure of the documents by constructing the base as the combinations of two (or *N*) words of the total of the corpus (vocabulary). The "better" representation has the "side-effect" of increasing the dimensionality drastically, i.e. a corpus of 1962 elements with a vocabulary of 5771 (and the same dimension for unigrams), leads to a dimension of 42,339 if you consider up to trigrams. This might impact the performance of the classifier, so it has to be balanced according to your case.
 
 Many classifiers - including SVM - are not scale invariant, so it is recommended to remove the scale of the data - normalize or standardize it. A way of achieving this is with the `tdif-idf <https://en.wikipedia.org/wiki/Tf%E2%80%93idf>`_ transformation, which also has the benefits of revealing stop words - among others.
 
-Once all the texts / messages are suitably represented to be an input of the classifier - the Supervised Learning Technique - the discerning between SPAM and HAM can be carried out.
+Once all the texts / messages are suitably represented to be an input of the classifier of choice - the Supervised Learning Technique - the discerning between SPAM and HAM can be carried out.
 
 
 Setting and Plugin the Spam Filter
@@ -353,7 +353,9 @@ Setting and Plugin the Spam Filter
 
 The SmartDjango Company have two sources of Spam: the yet-to-be-launched Comments System for their content pages and the "Contact" Forms.
 
-These are slightly different, the comments are usually shorter than the content submitted by the forms - which seemed more like emails. Technically, one could say that it is reasonable to assume that they are generated from different stochastic processes. So, each one would have a similar but different model, different Spam Filters with their parameters tuned accordingly. We will focus on the Comment System, as the other is analogous.
+These are slightly different, the comments are usually shorter than the content submitted by the forms - which seemed more like emails. Technically, one could say that it is reasonable to assume that they are generated from different stochastic processes. So, each one would have a similar but different model, different Spam Filters with their parameters tuned accordingly. We will focus on the Comment System, as the other one is analogous.
+
+For this, minimal changes must be done at the codebase level.
 
 The first step is making the Django model which stores the comments an Spammable Model by inherit from *IsSpammable* instead of the "traditional" Django's ``models.Model``::
 
@@ -373,19 +375,19 @@ and that's it: all objects in the Django model will be used as a source of data 
 
 .. autoclass:: examples.models.CommentOfMySite
 
-Then, they proceed to create an Spam Filter object in the admin front-end with that name.
+Then, the remaining can be done from the admin front-end: creating an Spam Filter object in the with that name.
 
 On the admin's *change form* of the Spam Filter, they choose to use the Spammable Model they had just made available and then save it.
 
-After, they created a Classifier to train and use for discerning between the Spam and Ham comments. As it is high dimensional data from the Bag of Words representation, Support Vector Machines would be an adequate choice for the task.
+After, a Classifier to train and use for discerning between the Spam and Ham comments must be created. As it is high dimensional data from the Bag of Words representation, Support Vector Machines would be an adequate choice for the task.
 
-`Support Vector Machines (SVM) <https://en.wikipedia.org/wiki/Support_vector_machine>`_ is one of the best understood (theoretically) techniques available that deals with high dimensional data with a superb performance - in terms of speed / resources and accuracy.
+`Support Vector Machines (SVM) <https://en.wikipedia.org/wiki/Support_vector_machine>`_ is one of the best understood (theoretically) techniques available that deals with high dimensional data with a superb performance - in terms of speed / resources and accuracy. 
 
 They opened a new tab and created a new *Support Vector Machine for Classification* object from the `django-ai`\ 's *Supervised Learning* section in the admin. Having given a meaningful name ("SVM for Comments Spam") for it, they chose a linear kernel and small penalty parameter to start with, save it, and back to the Spam Filter, where they chose to use this classifier.
 
 Once the classifier is set, the next is enabling metrics to evaluate its performance.
 
-`Cross Validation (CV) <https://en.wikipedia.org/wiki/Cross-validation_(statistics)>`_ is model validation technique, its goal is to estimate the performance of a predictive model in an independent dataset (i.e. in practice :).
+`Cross Validation (CV) <https://en.wikipedia.org/wiki/Cross-validation_(statistics)>`_ is a model validation technique, its goal is to estimate the performance of a predictive model in an independent dataset (i.e. in practice :).
 
 The available CV is stratified *k*-folded, where the training sample is divided into *k* parts or folds (stratums with the same distribution of classes). Then it will iterate on each part / fold / stratum. For each fold, it will train the model with the other *k - 1* folds and test it with the current fold, recording a metric of performance (i.e. accuracy). After this, *k* metrics of performance will be available, the mean of these metrics with its standard deviation is what will be used as an estimation for the performance of the Spam Filter.
 
@@ -399,17 +401,23 @@ From inspecting the data (available in the admin) one could tell that it may not
 
 The second one is a set of 5172 emails from the now-defunct American Corporation `Enron <https://www.google.com/search?q=enron>`_, from which roughly a third (1500) are Spam.
 
-This will be useful for the Contact Forms Spam Filter - which are more similar to emails. Although it has been pre-processed, the most important part of the content - the words - are there to train the model.
+This will be useful for the Contact Form Spam Filter - whose content is more similar to emails. Although it has been pre-processed, the most important part of the content - the words - are there to train the model.
 
-Once the source of data (the Spammable Django Model), the classifier (Support Vector Machine), the pre-training (YouTube comments), and the Cross Validation are set, the process of tuning the Spam Filter begins.
+Recapping:
+
+- Choose the source of data - the Spammable Django Model,
+- Choose the classifier - Support Vector Machines in this case,
+- Choose a Django model that contains the pre-training set - YouTube comments,
+- Choose how to perform the Cross Validation are set
+
+Once all this objects are created and set in the Spam Filter object, the process of tuning it begins.
 
 At the bottom of the page (the Spam Filter admin's change form), each time an inference is run from the "Actions" section, the table summarizing the results of the inference is updated, showing the "Current Inference" and the "Previous Inference" performance.
 
-Given the introduction to the Bag of Words projection, you should be able to tune its parameters to provide the classifier with a good input so it can perform best, using the Cross Validation metric to measure it.
+Given the introduction to the Bag of Words projection, you should be able to tune its parameters to provide the classifier with a good input so it can perform best - using the Cross Validation metric to measure it.
+Once you have reached a "reasonable" Bag of Words representation, it's time to tune the classifier. In this case, it will be the SVM penalty parameter (*C*) and the kernel. *Tunning C and the kernel is the key to achieve accurracy*. 
 
-Once you have reached a "reasonable" Bag of Words representation, it's time to tune the classifier. In this case, it will be the SVM penalty parameter and the kernel.
-
-Iterating in this will produce the best parameters of the model for your data.
+Iterating on this will produce the best parameters of the model for your data - which in this case is "pretrained" with the Youtube comments dataset.
 
 After this, your Spam Filter is ready :)
 
@@ -421,7 +429,7 @@ As the Spam Filter is a subclass of :ref:`Statistical Model <api_statistical_mod
 
 .. autoclass:: examples.views.CommentsOfMySiteView
 
-Discussing SVM is left out from this example for brevity. It can deal with high-dimensional data seamlessly, however, you should try to find the smallest dimension input where the data is "best separable" while maximizing its performance.
+Discussing SVMs is left out from this example for brevity. It can deal with high-dimensional data seamlessly, however, you should try to find the smallest dimension input where the data is "best separable" while maximizing its performance, which degrades with the addition of "noisy dimensions" despite of being "resistant" to overfitting and high dimensional spaces.
 
 
 .. _svm_seeing_is_believing:
