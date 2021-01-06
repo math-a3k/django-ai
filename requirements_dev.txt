@@ -1,6 +1,6 @@
 -r requirements_test.txt
 
-bumpversion==0.5.3
-wheel==0.29.0
-ipdb==0.10.3
-Sphinx==1.6.3
+bumpversion==0.6.0
+#wheel==0.29.0
+ipdb==0.13.4
+Sphinx==3.4.2
