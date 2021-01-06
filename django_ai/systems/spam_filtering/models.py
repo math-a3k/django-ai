@@ -18,11 +18,11 @@ from sklearn.model_selection import (cross_val_score, )
 from scipy.sparse import csr_matrix
 
 if 'DJANGO_TEST' in os.environ:
-    from django_ai.base.models import SupervisedLearningTechnique
-    from django_ai.base.utils import (get_model, )
+    from django_ai.ai_base.models import SupervisedLearningTechnique
+    from django_ai.ai_base.utils import (get_model, )
 else:  # pragma: no cover
-    from base.models import (SupervisedLearningTechnique, )
-    from base.utils import (get_model, )
+    from ai_base.models import (SupervisedLearningTechnique, )
+    from ai_base.utils import (get_model, )
 
 
 class SpamFilter(SupervisedLearningTechnique):

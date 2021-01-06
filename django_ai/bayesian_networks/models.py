@@ -26,10 +26,10 @@ from jsonfield import JSONField
 
 from .utils import (parse_node_args, )
 if 'DJANGO_TEST' in os.environ:
-    from django_ai.base.models import StatisticalModel
+    from django_ai.ai_base.models import StatisticalModel
     from django_ai.bayesian_networks import bayespy_constants as bp_consts
-else: # pragma: no cover
-    from base.models import StatisticalModel
+else:  # pragma: no cover
+    from ai_base.models import StatisticalModel
     from bayesian_networks import bayespy_constants as bp_consts
 
 

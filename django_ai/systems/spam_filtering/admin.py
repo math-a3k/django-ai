@@ -6,7 +6,7 @@ from django.contrib import admin
 from .models import (SpamFilter, )
 
 if 'DJANGO_TEST' in os.environ:
-    from django_ai.base.admin import DataColumnInline
+    from django_ai.ai_base.admin import DataColumnInline
 else:  # pragma: no cover
     from base.admin import DataColumnInline
 

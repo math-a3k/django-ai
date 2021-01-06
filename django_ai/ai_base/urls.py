@@ -20,5 +20,5 @@ urlpatterns = [
         views.RunActionView.as_view(),
         name="run-action"),
     # Examples
-    url(r'^examples/', include(examples_urls)),
+    # url(r'^examples/', include(examples_urls)),
 ]
