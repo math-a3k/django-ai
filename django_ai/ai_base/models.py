@@ -11,7 +11,6 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
 
 from picklefield.fields import PickledObjectField
-from jsonfield import JSONField
 
 
 class StatisticalModel(models.Model):
@@ -54,9 +53,9 @@ class StatisticalModel(models.Model):
     )
     #: Field for storing metadata (results and information related to
     #: internal tasks) of the System or Technique
-    metadata = JSONField(
+    metadata = models.JSONField(
         "Metadata",
-        default={}, blank=True, null=True
+        default=dict, blank=True, null=True
     )
     #: This is where the main object of the Engine resides.
     engine_object = PickledObjectField(

@@ -22,7 +22,6 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
 
 from picklefield.fields import PickledObjectField
-from jsonfield import JSONField
 
 from .utils import (parse_node_args, )
 if 'DJANGO_TEST' in os.environ:
