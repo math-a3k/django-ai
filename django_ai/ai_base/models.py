@@ -102,7 +102,7 @@ class StatisticalModel(models.Model):
     #: Fields, Attributes or Callables from where to retrieve the data
     #: for the System or Technique
     data_columns = GenericRelation(
-        "base.DataColumn",
+        "ai_base.DataColumn",
         related_query_name="%(app_label)s_%(class)ss",
     )
     #: If Inference has been performed on the System or Technique
@@ -530,7 +530,7 @@ class DataColumn(models.Model):
         unique_together = [("content_type", "object_id",
                             "ref_model", "ref_column"),
                            ("content_type", "object_id", "position")]
-        app_label = "base"
+        app_label = "ai_base"
 
     def __str__(self):
         return("{0} | {1} - {2}".format(self.content_type, self.ref_model,

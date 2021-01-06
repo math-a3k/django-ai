@@ -22,5 +22,5 @@ from django.contrib import admin
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^nested_admin/', include('nested_admin.urls')),
-    url(r'^django-ai/', include('base.urls')),
+    url(r'^django-ai/', include('ai_base.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

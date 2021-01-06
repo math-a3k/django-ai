@@ -7,9 +7,9 @@ from django.db import models
 from sklearn import svm
 
 if 'DJANGO_TEST' in os.environ:
-    from django_ai.base.models import SupervisedLearningTechnique
+    from django_ai.ai_base.models import SupervisedLearningTechnique
 else:  # pragma: no cover
-    from base.models import SupervisedLearningTechnique
+    from django_ai.ai_base.models import SupervisedLearningTechnique
 
 
 class SVC(SupervisedLearningTechnique):

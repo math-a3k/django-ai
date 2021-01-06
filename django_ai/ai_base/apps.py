@@ -5,10 +5,10 @@ import os
 from django.apps import AppConfig
 
 
-class BaseConfig(AppConfig):
-    name = 'base'
+class AIBaseConfig(AppConfig):
+    name = 'django_ai.ai_base'
     verbose_name = '[django-ai] Base'
 
 
 if 'DJANGO_TEST' in os.environ:
-    BaseConfig.name = 'django_ai.base'
+    AIBaseConfig.name = 'django_ai.ai_base'

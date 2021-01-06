@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'nested_admin',
 
     # django-ai
-    'base',
+    'ai_base',
     'bayesian_networks',
     'supervised_learning',
     'systems.spam_filtering',
