@@ -62,7 +62,6 @@ setup(
         'django-nested-admin==3.3.3',
         'django-picklefield==3.0.1',
         'graphviz==0.6',
-        'jsonfield==3.1',
         'Pillow==8.1.0',
         'scikit-learn==0.24',
     ],
