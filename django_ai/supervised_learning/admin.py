@@ -2,6 +2,8 @@
 
 from django.contrib import admin
 
+from django_ai.ai_base.admin import DataColumnInline
+
 from .models import (HGBTree, SVC, )
 
 
@@ -30,6 +32,7 @@ class SVCAdmin(admin.ModelAdmin):
             )
         }),
         ("Implementation Parameters", {
+            'classes': ('collapse',),
             'fields': (
                 ('decision_function_shape', ),
                 ('estimate_probability', 'use_shrinking', ),
@@ -62,6 +65,7 @@ class HGBTreeAdmin(admin.ModelAdmin):
             ),
         }),
         ("Model Parameters", {
+            'classes': ('collapse',),
             'fields': (
                 ('loss', ),
                 ('learning_rate', ),
@@ -71,6 +75,7 @@ class HGBTreeAdmin(admin.ModelAdmin):
             )
         }),
         ("Implementation Parameters", {
+            'classes': ('collapse',),
             'fields': (
                 ('warm_start', ),
                 ('early_stopping', 'scoring', 'validation_fraction',
@@ -78,8 +83,17 @@ class HGBTreeAdmin(admin.ModelAdmin):
                 ('random_state', ),
                 ('verbose', ),
             )
-        })
+        }),
+        ("Labels", {
+            'fields': (
+                'labels_column',
+            ),
+        }),
     )
+
+    inlines = [DataColumnInline, ]
+
+    fieldsets_and_inlines_order = ('f', 'f', 'f', 'i', )
 
     def get_form(self, request, obj=None, **kwargs):  # pragma: no cover
         # Save obj reference in the request for future processing in Inline
