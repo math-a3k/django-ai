@@ -1,0 +1,27 @@
+{% extends "ai_base/admin/mixed_inlines_change_form.html" %}
+{% load admin_extras static i18n %}
+
+{% block after_related_objects %}
+  {% if original.is_inferred %}
+    <h2>{% trans "Inference" %}</h2>
+    <h3>{% trans "Current Inference" %}</h3>
+    <p>
+      {% include "./snippets/model_info.html" with metadata=original.metadata.current_inference %}
+    </p>
+    {% if original.metadata.previous_inference %}
+    <h3>{% trans "Previous Inference" %}</h3>
+    <p>
+      {% include "./snippets/model_info.html" with metadata=original.metadata.previous_inference %}
+    </p>
+    {% endif %}
+
+  {% endif %}
+  {% ai_actions %}
+{% endblock %}
+
+{% block admin_change_form_document_ready %}
+  {{ block.super }}
+  {% comment %}
+  <script type="text/javascript" src="{% static 'js/admin/spam_filter.js' %}"></script>
+  {% endcomment %}
+{% endblock %}

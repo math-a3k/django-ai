@@ -38,7 +38,7 @@ class SVCAdmin(admin.ModelAdmin):
                 ('estimate_probability', 'use_shrinking', ),
                 ('tolerance', 'cache_size', 'random_seed', 'verbose', ),
             )
-        })
+        }),
     )
 
     def get_form(self, request, obj=None, **kwargs):  # pragma: no cover
@@ -84,6 +84,13 @@ class HGBTreeAdmin(admin.ModelAdmin):
                 ('verbose', ),
             )
         }),
+        ("Cross Validation", {
+            'classes': ('collapse',),
+            'fields': (
+                'cv_is_enabled',
+                ('cv_folds', 'cv_metric', ),
+            ),
+        }),
         ("Labels", {
             'fields': (
                 'labels_column',
@@ -93,7 +100,7 @@ class HGBTreeAdmin(admin.ModelAdmin):
 
     inlines = [DataColumnInline, ]
 
-    fieldsets_and_inlines_order = ('f', 'f', 'f', 'i', )
+    fieldsets_and_inlines_order = ('f', 'f', 'f', 'f', 'f', 'i', )
 
     def get_form(self, request, obj=None, **kwargs):  # pragma: no cover
         # Save obj reference in the request for future processing in Inline
