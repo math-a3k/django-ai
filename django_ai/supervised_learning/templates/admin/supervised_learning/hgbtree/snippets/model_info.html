@@ -1,0 +1,19 @@
+{% load admin_extras %}
+
+<dl>
+	<dt>Input Dimensionality</dt>
+	<dd>
+		{{ metadata.input_dimensionality.0 }} rows &times; {{ metadata.input_dimensionality.1 }} columns
+	</dd>
+	<dt>Classication Score</dt>
+	<dd>
+		{{ metadata.score }}
+	</dd>
+	<dt>Classifier Parameters</dt>
+	<dd>{% for param in metadata.classifier_conf.params %}
+		<i>{{ param }}</i>: {{ metadata.classifier_conf.params|get_item:param }},
+		{% endfor %}
+	</dd>
+	<dt>Cross Validation Estimation</dt>
+	<dd>{{ metadata.cv.conf.metric }} metric ({{ metadata.cv.conf.folds }} folds): {{ metadata.cv.mean|stringformat:".3f" }} &plusmn; {{ metadata.cv.2std|stringformat:".3f" }} </dd>
+</dl>
