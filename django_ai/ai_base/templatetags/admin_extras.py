@@ -58,6 +58,6 @@ def action_url(action, action_object=None):
         )
 
 
-@register.inclusion_tag('base/snippets/ai_actions.html', takes_context=True)
+@register.inclusion_tag('ai_base/snippets/ai_actions.html', takes_context=True)
 def ai_actions(context):
     return({"original": context['original']})
