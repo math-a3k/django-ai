@@ -321,3 +321,31 @@ class HGBTree(SupervisedLearningTechnique):
             self.metadata["current_inference"]['cv']['mean'] = scores.mean()
             self.metadata["current_inference"]['cv']['2std'] = 2 * scores.std()
         return(scores)
+
+    def predict(self, samples, include_probs=False):
+        if self.is_inferred:
+            f_samples = []
+            for sample in samples:
+                if isinstance(sample, dict):
+                    f_samples.append(self.format_sample_dict(sample))
+                else:
+                    # Assume it is already in good shape
+                    f_samples.append(sample)
+            classifier = self.get_engine_object()
+            predicted_classes = classifier.predict(f_samples)
+            if include_probs:
+                return (predicted_classes, classifier.predict_proba(f_samples))
+            else:
+                return predicted_classes
+        else:
+            return None
+
+    def format_sample_dict(self, sample):
+        col_names = list(
+            self.data_columns.all().order_by("position").values_list(
+                "ref_column", flat=True)
+        )
+        f_sample = []
+        for col in col_names:
+            f_sample.append(sample.get(col, None))
+        return f_sample
