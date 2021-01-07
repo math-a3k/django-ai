@@ -512,11 +512,21 @@ class DataColumn(models.Model):
     ref_model = models.ForeignKey(
         ContentType,
         on_delete=models.CASCADE,
-        related_name="%(app_label)s_%(class)ss"
+        related_name="%(app_label)s_%(class)ss",
+        verbose_name="Django Model"
     )
     ref_column = models.CharField(
-        "Reference Column",
+        "Column / Attribute",
         max_length=100
+    )
+    is_categorical = models.BooleanField(
+        "Is Categorical?",
+        default=False
+    )
+    monotonic_cst = models.SmallIntegerField(
+        "Monotonic Constraint",
+        choices=((-1, "-1"), (0, "0"), (1, "1")),
+        default=0
     )
     position = models.SmallIntegerField(
         "Position",
