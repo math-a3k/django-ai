@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 
 import os
-
-from django.db import models
-
+import numpy as np
 from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.model_selection import (cross_val_score, )
+
+from django.db import models
+from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _
+
 
 if 'DJANGO_TEST' in os.environ:
     from django_ai.ai_base.models import SupervisedLearningTechnique
@@ -28,6 +32,16 @@ class HGBTree(SupervisedLearningTechnique):
         ('auto', "Automatic"),
         ('true', "True"),
         ('false', "False"),
+    )
+
+    CV_CHOICES = (
+        ('accuracy', _("Accuracy")),
+        ('average_precision', _("Average Precision")),
+        ('f1', _("F1")),
+        ('neg_log_loss', _("Logistic Loss")),
+        ('precision', _("Precision")),
+        ('recall', _("Recall")),
+        ('roc_auc', _("Area under ROC Curve")),
     )
 
     loss = models.CharField(
@@ -166,6 +180,16 @@ class HGBTree(SupervisedLearningTechnique):
         )
     )
 
+    # -> Cross Validation
+    #: Metric to be evaluated in Cross Validation
+    cv_metric = models.CharField(
+        "Cross Validation Metric",
+        max_length=20, blank=True, null=True, choices=CV_CHOICES,
+        help_text=(
+            'Metric to be evaluated in Cross Validation'
+        )
+    )
+
     # #: Auto-generated Image if available
     # image = models.ImageField(
     #     "Image",
@@ -180,6 +204,13 @@ class HGBTree(SupervisedLearningTechnique):
         verbose_name_plural = "HGB Trees for Classification"
         app_label = "supervised_learning"
 
+    def save(self, *args, **kwargs):
+        # Initialize metadata field if corresponds
+        if self.metadata == {}:
+            self.metadata["current_inference"] = {}
+            self.metadata["previous_inference"] = {}
+        super().save(*args, **kwargs)
+
     def __init__(self, *args, **kwargs):
         kwargs["sl_type"] = self.SL_TYPE_CLASSIFICATION
         super(HGBTree, self).__init__(*args, **kwargs)
@@ -187,28 +218,27 @@ class HGBTree(SupervisedLearningTechnique):
     def __str__(self):
         return("[HGBTree|C] {0}".format(self.name))
 
-    def get_engine_object(self):
+    def get_engine_object(self, reconstruct=False, save=True):
+        if self.engine_object is not None and not reconstruct:
+            return(self.engine_object)
+
         # -> Ensure defaults
-        # gamma = self.kernel_coefficient
-        # if not gamma:
-        #     gamma = 'auto'
         max_iters = self.engine_iterations
         if not max_iters:
             max_iters = 100
-        # cache_size = self.cache_size
-        # if not cache_size:
-        #     cache_size = 200
+        categorical_features = self.get_categorical_mask()
+        monotonic_csts = self.get_monotonic_constraints()
         classifier = HistGradientBoostingClassifier(
             loss=self.loss,
-            learning_rate=self.self.learning_rate,
+            learning_rate=self.learning_rate,
             max_iter=max_iters,
             max_leaf_nodes=self.max_leaf_nodes,
             max_depth=self.max_depth,
             min_samples_leaf=self.min_samples_leaf,
             l2_regularization=self.l2_regularization,
             max_bins=self.max_bins,
-            categorical_features=None,  # <-- TODO
-            monotonic_cst=None,  # <-- TODO
+            categorical_features=categorical_features,
+            monotonic_cst=monotonic_csts,
             warm_start=self.warm_start,
             early_stopping=self.early_stopping,
             scoring=self.scoring,  # self.verbose,
@@ -219,27 +249,75 @@ class HGBTree(SupervisedLearningTechnique):
             random_state=self.random_state
         )
         self.engine_object = classifier
-        return(classifier)
+        if save:
+            self.save()
+        return(self.engine_object)
+
+    def perform_inference(self, recalculate=False, save=True):
+        if not self.is_inferred or recalculate:
+            # No need for running the inference 'engine_meta_iterations' times
+            eo = self.get_engine_object(reconstruct=True)
+            # -> Get the data
+            data = self.get_data()
+            # -> Get the labels
+            labels = self.get_labels()
+            # -> Run the algorithm and store the updated engine object
+            self.engine_object = eo.fit(data, labels)
+            # -> Rotate metadata
+            self.rotate_metadata()
+            # -> Perform Cross Validation
+            if self.cv_is_enabled:
+                self.perform_cross_validation(data=data, labels=labels,
+                                              update_metadata=True)
+            # -> Update other metadata
+            self.metadata["current_inference"]["input_dimensionality"] = \
+                np.shape(data)
+            self.metadata["current_inference"]["classifier_conf"] = \
+                self.get_conf_dict()
+            self.metadata["current_inference"]["score"] = \
+                float(self.engine_object.score(data, labels))
+            # -> Set as inferred
+            self.is_inferred = True
+            if save:
+                self.engine_object_timestamp = timezone.now()
+                self.save()
+        return(self.engine_object)
 
     def get_conf_dict(self):
         conf_dict = {}
         conf_dict['name'] = self.name
-        # conf_dict['kernel'] = self.get_kernel_display()
-        # kernel_details = ""
-        # if self.kernel == "poly":
-        #     kernel_details += "Degree: {} ".format(
-        #         self.kernel_poly_degree)
-        # if (self.kernel == "poly" or self.kernel == "sigmoid" or
-        #         self.kernel == "rbf"):
-        #     kc = self.kernel_coefficient if self.kernel_coefficient else "Auto"
-        #     kernel_details += "Coef. (gamma): {} - ".format(kc)
-        # if (self.kernel == "poly" or self.kernel == "sigmoid"):
-        #     kit = self.kernel_independent_term \
-        #         if self.kernel_independent_term else "0"
-        #     kernel_details += "Indep. Term: {} - ".format(kit)
-        # conf_dict['kernel_details'] = kernel_details
-        # conf_dict['penalty_parameter'] = self.penalty_parameter
-        # conf_dict['str'] = "Kernel: {}{}, Penalty: {}".format(
-        #     self.get_kernel_display(), kernel_details, self.penalty_parameter
-        # )
+        conf_dict['params'] = self.get_engine_object().get_params()
         return(conf_dict)
+
+    def get_labels(self):
+        return list(super().get_labels())
+
+    def get_categorical_mask(self):
+        return list(self.data_columns.all().order_by("position").values_list(
+            "is_categorical", flat=True))
+
+    def get_monotonic_constraints(self):
+        return list(self.data_columns.all().order_by("position").values_list(
+            "monotonic_cst", flat=True))
+
+    def perform_cross_validation(self, data=None, labels=None,
+                                 update_metadata=False):
+        if data is None:
+            data = self.get_data()
+        if labels is None:
+            labels = self.get_labels()
+        classifier = self.get_engine_object()
+        scores = cross_val_score(
+            classifier, data, labels,
+            cv=self.cv_folds, scoring=self.cv_metric
+        )
+        if update_metadata:
+            self.metadata["current_inference"]['cv'] = {}
+            self.metadata["current_inference"]['cv']['conf'] = {
+                "folds": self.cv_folds,
+                "metric": self.get_cv_metric_display()
+            }
+            self.metadata["current_inference"]['cv']['scores'] = list(scores)
+            self.metadata["current_inference"]['cv']['mean'] = scores.mean()
+            self.metadata["current_inference"]['cv']['2std'] = 2 * scores.std()
+        return(scores)
