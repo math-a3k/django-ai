@@ -41,7 +41,7 @@ class RunActionView(UserPassesTestMixin, RedirectView):
     }
 
     def test_func(self):
-        return(self.request.user.is_superuser)
+        return(self.request.user.is_superuser or self.request.user.is_staff)
 
     def action_reinitialize_rng(self):
         """
