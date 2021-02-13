@@ -41,7 +41,7 @@ General Techniques are those which provide a framework for implementing Techniqu
 
 Techniques are particular implementations of a Statistical Model providing the building block for constructing higher functionality.
 
-Each one should be encapsulated in a Django model which inherits from the appropiate class from ``django_ai.base.models``, providing all the functionality through the public API.
+Each one should be encapsulated in a Django model which inherits from the appropiate class from ``django_ai.ai_base.models``, providing all the functionality through the public API.
 
 .. _api_statistical_model:
 

@@ -1,0 +1,17 @@
+{% load i18n django_ai_tags %}
+
+{% for section, section_content in metadata|items %}
+	{% with descriptions|get_item:section as title %}
+	    {% if title %}
+			<dt>{% translate title %}</dt>
+		{% else %}
+			<dt>{{ section|upper }}</dt>
+		{% endif %}
+	{% endwith %}
+	    	<hr>
+	<dl>
+		<div style="margin-left: 1em;">
+		{% format_metadata_dict section_content descriptions %}
+		</div>
+	</dl>
+{% endfor %}

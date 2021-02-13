@@ -1,9 +1,0 @@
-{% load static i18n admin_extras %}
-
-  <p>
-    <h3 class="actions">{% trans "Actions" %}</h3>
-    <ul>
-      <li><a href="{% action_url 'perform_inference' original %}" onclick="return confirm('RUN inference?')">{% trans "Run inference" %}</a></li>
-      <li><a href="{% action_url 'reset_inference' original %}" onclick="return confirm('RESET inference?')">{% trans "Reset inference" %}</a></li>
-      <li><a href="{% action_url 'reinitialize_rng' %}">{% trans "Re-initialize the random number generator" %}</a></li>
-  </p>

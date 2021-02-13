@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import inspect
 import random
 import numpy as np
@@ -22,14 +20,18 @@ class RunActionView(UserPassesTestMixin, RedirectView):
             "type": "object",
             "str": "PERFORMING INFERENCE",
             "method": "perform_inference",
-            "kwargs": {
-                "recalculate": True
-            },
+            "kwargs": {},
         },
         "reset_inference": {
             "type": "object",
             "str": "RESETING INFERENCE",
             "method": "reset_inference",
+            "kwargs": {},
+        },
+        "reset_metadata": {
+            "type": "object",
+            "str": "RESETING METADATA",
+            "method": "reset_metadata",
             "kwargs": {},
         },
         "reinitialize_rng": {
@@ -41,7 +43,7 @@ class RunActionView(UserPassesTestMixin, RedirectView):
     }
 
     def test_func(self):
-        return(self.request.user.is_superuser or self.request.user.is_staff)
+        return self.request.user.is_superuser or self.request.user.is_staff
 
     def action_reinitialize_rng(self):
         """
@@ -52,7 +54,7 @@ class RunActionView(UserPassesTestMixin, RedirectView):
 
     def get_ct_object(self, content_type, object_id):
         ct = ContentType.objects.get(model=content_type)
-        return(ct.model_class().objects.get(id=object_id))
+        return ct.model_class().objects.get(id=object_id)
 
     def run_action(self, action, action_object=None):
         try:
@@ -81,4 +83,4 @@ class RunActionView(UserPassesTestMixin, RedirectView):
         else:
             action_object = None
         self.run_action(self.ACTIONS[kwargs['action']], action_object)
-        return(self.request.META.get('HTTP_REFERER', '/'))
+        return self.request.META.get('HTTP_REFERER', '/')
