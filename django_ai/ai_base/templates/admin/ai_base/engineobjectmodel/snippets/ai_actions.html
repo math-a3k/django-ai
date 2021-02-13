@@ -1,0 +1,10 @@
+{% load static i18n django_ai_tags %}
+
+  <p>
+    <h3 class="actions">{% trans "Actions" %}</h3>
+    <ul>
+      <li><a href="{% action_url 'perform_inference' original %}" onclick="return confirm('PERFORM Inference?')">{% trans "Perform inference" %}</a></li>
+      <li><a href="{% action_url 'reset_inference' original %}" onclick="return confirm('RESET Inference?')">{% trans "Reset inference" %}</a></li>
+      <li><a href="{% action_url 'reset_metadata' original %}" onclick="return confirm('RESET Metadata?')">{% trans "Reset metadata" %}</a></li>
+      <li><a href="{% action_url 'reinitialize_rng' %}">{% trans "Re-initialize the random number generator" %}</a></li>
+  </p>

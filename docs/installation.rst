@@ -18,7 +18,7 @@ For installing ``django-ai`` in your Django project use the following steps:
         'nested_admin',
 
         # django-ai apps
-        'django_ai.base',
+        'django_ai.ai_base',
         'django_ai.bayesian_networks',
         'django_ai.supervised_learning',
         'django_ai.systems.spam_filtering',
@@ -42,7 +42,7 @@ The ``django_ai.examples`` is optional but it is highly recommended that you kee
         url(r'^nested_admin/', # Dependency
             include('nested_admin.urls')),
         url(r'^django-ai/',
-            include(django_ai.base.urls)),
+            include(django_ai.ai_base.urls)),
         ...
     ]
 

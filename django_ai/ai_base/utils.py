@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from django.contrib.contenttypes.models import ContentType
 
 
@@ -10,3 +8,10 @@ def get_model(app_model_str):
         model=model.lower()
     ).model_class()
     return(model_class)
+
+
+def allNotNone(iterable):
+    for x in iterable:
+        if x is None:
+            return False
+    return True

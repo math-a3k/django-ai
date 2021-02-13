@@ -22,7 +22,7 @@ os.sys.path.insert(0, os.path.join(BASE_DIR, 'systems'))
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '66666666666666666666666666666666666666666666666666'
+SECRET_KEY = '666/666/66/6-6-6>6.6.6.<6/6.6/6/6.6.6.6?6'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -44,11 +44,9 @@ INSTALLED_APPS = [
     'nested_admin',
 
     # django-ai
-    'ai_base',
-    'bayesian_networks',
-    'supervised_learning',
-    'systems.spam_filtering',
-    'examples',
+    'django_ai.ai_base',
+    'django_ai.supervised_learning',
+    'django_ai.unsupervised_learning',
 ]
 
 MIDDLEWARE = [
@@ -61,7 +59,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'django_ai.urls'
+ROOT_URLCONF = 'django_ai.django_ai.urls'
 
 TEMPLATES = [
     {

@@ -1,110 +1,94 @@
-# -*- coding: utf-8 -*-
-
-from django.contrib import admin
-
-from django_ai.ai_base.admin import DataColumnInline
-
-from .models import (HGBTree, SVC, )
+from django_ai.ai_base.admin import EngineObjectAdmin, LearningTechniqueAdmin
 
 
-@admin.register(SVC)
-class SVCAdmin(admin.ModelAdmin):
-    fieldsets = (
-        ("General", {
-            'fields': ('name', )
-        }),
-        ("Miscellanous", {
-            'classes': ('collapse',),
-            'fields': (
-                ('engine_meta_iterations', 'engine_iterations'),
-                ('counter', 'counter_threshold', 'threshold_actions'),
-                ('engine_object_timestamp', 'image'),
-                'metadata',
-            ),
-        }),
-        ("Model Parameters", {
-            'fields': (
-                ('kernel', ),
-                ('penalty_parameter', ),
-                ('kernel_poly_degree', 'kernel_coefficient',
-                    'kernel_independent_term', ),
-                ('class_weight', ),
-            )
-        }),
-        ("Implementation Parameters", {
-            'classes': ('collapse',),
-            'fields': (
-                ('decision_function_shape', ),
-                ('estimate_probability', 'use_shrinking', ),
-                ('tolerance', 'cache_size', 'random_seed', 'verbose', ),
-            )
-        }),
+class SupervisedLearningTechniqueAdmin(LearningTechniqueAdmin):
+
+    data_model_fieldsets = ("Data Model", {
+        'classes': ('collapse',),
+        'fields': (
+            ('data_model', ),
+            ('learning_fields', 'learning_fields_categorical',),
+            ('learning_target', ),
+            ('monotonic_constraints', ),
+        ),
+    })
+
+    cross_validation_fieldsets = ("Cross Validation", {
+        'classes': ('collapse',),
+        'fields': (
+            'cv_is_enabled',
+            ('cv_folds', 'cv_metrics', ),
+        ),
+    })
+
+    fieldsets = EngineObjectAdmin.fieldsets + (
+        data_model_fieldsets,
+        LearningTechniqueAdmin.data_imputer_fieldsets,
+        LearningTechniqueAdmin.cift_fieldsets,
+        cross_validation_fieldsets,
     )
 
-    def get_form(self, request, obj=None, **kwargs):  # pragma: no cover
-        # Save obj reference in the request for future processing in Inline
-        request._obj_ = obj
-        form = super(SVCAdmin, self).get_form(request, obj, **kwargs)
-        form.base_fields["metadata"].widget.attrs["disabled"] = "disabled"
-        return(form)
 
+class HGBTreeClassifierAdmin(SupervisedLearningTechniqueAdmin):
 
-@admin.register(HGBTree)
-class HGBTreeAdmin(admin.ModelAdmin):
-    fieldsets = (
-        ("General", {
-            'fields': ('name', )
-        }),
-        ("Miscellanous", {
-            'classes': ('collapse',),
-            'fields': (
-                ('engine_meta_iterations', 'engine_iterations'),
-                ('counter', 'counter_threshold', 'threshold_actions'),
-                ('engine_object_timestamp', ),
-                'metadata',
-            ),
-        }),
-        ("Model Parameters", {
-            'classes': ('collapse',),
-            'fields': (
-                ('loss', ),
-                ('learning_rate', ),
-                ('max_leaf_nodes', 'max_depth',
-                    'min_samples_leaf', 'l2_regularization',
-                    'max_bins', ),
-            )
-        }),
-        ("Implementation Parameters", {
-            'classes': ('collapse',),
-            'fields': (
-                ('warm_start', ),
-                ('early_stopping', 'scoring', 'validation_fraction',
-                    'n_iter_no_change', 'tol'),
-                ('random_state', ),
-                ('verbose', ),
-            )
-        }),
-        ("Cross Validation", {
-            'classes': ('collapse',),
-            'fields': (
-                'cv_is_enabled',
-                ('cv_folds', 'cv_metric', ),
-            ),
-        }),
-        ("Labels", {
-            'fields': (
-                'labels_column',
-            ),
-        }),
+    engine_parameters_fieldsets = ("Engine Parameters", {
+        'classes': ('collapse',),
+        'fields': (
+            ('loss', ),
+            ('learning_rate', ),
+            ('max_leaf_nodes', 'max_depth',
+                'min_samples_leaf', 'l2_regularization',
+                'max_bins', ),
+            ('max_iter', ),
+            ('warm_start', ),
+            ('early_stopping', 'scoring', 'validation_fraction',
+                'n_iter_no_change', 'tol', ),
+            ('random_state', ),
+            ('verbose', ),
+
+        ),
+    })
+
+    fieldsets = SupervisedLearningTechniqueAdmin.fieldsets + (
+        engine_parameters_fieldsets,
     )
 
-    inlines = [DataColumnInline, ]
 
-    fieldsets_and_inlines_order = ('f', 'f', 'f', 'f', 'f', 'i', )
+class SVCAdmin(SupervisedLearningTechniqueAdmin):
 
-    def get_form(self, request, obj=None, **kwargs):  # pragma: no cover
-        # Save obj reference in the request for future processing in Inline
-        request._obj_ = obj
-        form = super(HGBTreeAdmin, self).get_form(request, obj, **kwargs)
-        form.base_fields["metadata"].widget.attrs["disabled"] = "disabled"
-        return(form)
+    engine_parameters_fieldsets = ("Engine Parameters", {
+        'classes': ('collapse',),
+        'fields': (
+            ('kernel', ),
+            ('penalty_parameter', ),
+            ('kernel_poly_degree', 'kernel_coefficient',
+                'kernel_independent_term', ),
+            ('class_weight', ),
+            ('decision_function_shape', ),
+            ('estimate_probability', 'use_shrinking', ),
+            ('tolerance', 'cache_size', 'random_state', 'verbose', ),
+        ),
+    })
+
+    fieldsets = SupervisedLearningTechniqueAdmin.fieldsets + (
+        engine_parameters_fieldsets,
+    )
+
+
+class SVRAdmin(SupervisedLearningTechniqueAdmin):
+
+    engine_parameters_fieldsets = ("Engine Parameters", {
+        'classes': ('collapse',),
+        'fields': (
+            ('kernel', ),
+            ('penalty_parameter', ),
+            ('kernel_poly_degree', 'kernel_coefficient',
+                'kernel_independent_term', ),
+            ('use_shrinking', ),
+            ('tolerance', 'cache_size', 'verbose', ),
+        ),
+    })
+
+    fieldsets = SupervisedLearningTechniqueAdmin.fieldsets + (
+        engine_parameters_fieldsets,
+    )

@@ -1,0 +1,30 @@
+{% load i18n django_ai_tags %}
+
+{% for key, item in metadata_dict|items %}
+	{% with descriptions|get_item:key as title %}
+	{% if title %}
+		<dt>{% translate title %}</dt>
+	{% else %}
+		<dt>{{ key|upper }}</dt>
+	{% endif %}
+	{% endwith %}
+	<dd>
+		{% if item|is_dict %}
+			{% if item|is_final_dict %}
+				{% for item_key in item %}
+					<b>{{ item_key }}</b>: {{ item|get_item:item_key }}{% if not forloop.last %}, {% endif %}
+				{% endfor %}
+			{% else %}
+				<dl style="margin-left: 1em;">
+				{% format_metadata_dict item descriptions %}
+				</dl>
+			{% endif %}
+		{% elif item|is_list %}
+			{% for item_value in item %}
+				{{ item_value }}{% if not forloop.last %}, {% endif %}
+			{% endfor %}
+		{% else %}
+			{{ item }}
+		{% endif %}
+	</dd>
+{% endfor %}
