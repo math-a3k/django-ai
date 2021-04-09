@@ -450,15 +450,13 @@ class LearningTechnique(EngineObjectModel):
     def _get_technique(self):
         techniques_fields = [
             f.related_query_name() for f in self._meta._relation_tree
-            if 'technique_ptr_id' in f.attname
+            if 'ptr_id' in f.attname
         ]
         if techniques_fields:
             for tf in techniques_fields:
                 if hasattr(self, tf):
-                    return getattr(self, tf)
-        else:
-            return self
-        return None
+                    return getattr(self, tf)._get_technique()
+        return self
 
     def _get_metadata_descriptions(self):
         descriptions = super()._get_metadata_descriptions()
