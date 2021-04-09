@@ -149,7 +149,7 @@ class TestBase(SimpleTestCase):
     def test_learning_technique__get_techique(self):
         # Test no childs
         sm = deepcopy(self.statmodel)
-        self.assertEqual(sm._get_technique(), None)
+        self.assertEqual(sm._get_technique(), sm)
         # Test no technique_fields (should be a technique)
         with mock.patch.object(sm._meta, '_relation_tree', []):
             self.assertEqual(sm._get_technique(), sm)
