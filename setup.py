@@ -63,7 +63,7 @@ setup(
         'django-picklefield==1.0.0',
         'graphviz==0.6',
         'jsonfield==2.0.2',
-        'Pillow==6.2.0',
+        'Pillow==8.2.0',
         'scikit-learn>=0.19.1',
     ],
     license="LGPLv3",
