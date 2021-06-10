@@ -58,7 +58,7 @@ setup(
     install_requires=[
         'numpy<1.14',
         'bayespy==0.5.6',
-        'Django>=1.11, <2.1',
+        'Django>=1.11, <2.3',
         'django-nested-admin==3.0.20',
         'django-picklefield==1.0.0',
         'graphviz==0.6',
