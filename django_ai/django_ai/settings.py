@@ -40,9 +40,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # Dependencies
-    'nested_admin',
-
     # django-ai
     'django_ai.ai_base',
     'django_ai.supervised_learning',
@@ -134,3 +131,4 @@ USE_TZ = True
 STATIC_URL = '/static/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'

@@ -1,10 +1,4 @@
-
-bayespy==0.5.20
-Django==3.1.5
-django-picklefield==3.0.1
-django-nested-admin==3.3.3
-graphviz==0.6
-numpy==1.19.5
-Pillow==8.1.0
-pyparsing==2.4.7
-scikit-learn==0.24
+Django>=3.2
+django-picklefield>=3.0.1
+Pillow>=8.4.0
+scikit-learn>=1.0

@@ -1,4 +1,3 @@
-from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.model_selection import cross_validate
 
@@ -20,9 +19,10 @@ class HGBTreeRegressor(SupervisedLearningTechnique):
     LEARNING_PAIR = 'django_ai.supervised_learning.models.HGBTreeClassifier'
 
     LOSS_CHOICES = (
-        ('least_squares', _("Least Squares")),
+        ('squared_error', _("Squared Error")),
         ('least_absolute_deviation', _("Least Absolute Deviation")),
         ('poisson', _("Poisson")),
+        ('absolute_error', _("Absolute Error")),
     )
 
     EARLY_STOPPING_CHOICES = (
@@ -33,7 +33,7 @@ class HGBTreeRegressor(SupervisedLearningTechnique):
 
     loss = models.CharField(
         _("Loss function"),
-        choices=LOSS_CHOICES, default='least_squares',
+        choices=LOSS_CHOICES, default='squared_error',
         blank=True, null=True, max_length=50,
         help_text=(_(
             'The loss function to be used in the boosting process. '

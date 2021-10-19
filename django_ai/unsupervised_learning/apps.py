@@ -2,4 +2,5 @@ from django.apps import AppConfig
 
 
 class UnsupervisedLearningConfig(AppConfig):
-    name = 'unsupervised_learning'
+    name = 'django_ai.unsupervised_learning'
+    verbose_name = '[django_ai] Unsupervised Learning'
