@@ -123,17 +123,20 @@ class LearningTechnique(EngineObjectModel):
         """
         return(data_list)
 
-    def get_data(self):
+    def get_data(self, fields=None):
         """
-        Returns a list with the data constructed either from the data model or
-        the Data Columns
+        Returns a list with the data constructed either from the data model
         """
         if not self._data:
             self._learning_fields_supported = None
             supported_fields = self._get_data_learning_fields_supported()
+            if fields:
+                fields_to_retrieve = [f for f in fields if f in supported_fields]
+            else:
+                fields_to_retrieve = supported_fields
             data_list = [
                 list(row) for row in
-                self._get_data_queryset().values_list(*supported_fields)
+                self._get_data_queryset().values_list(*fields_to_retrieve)
             ]
             if not self.SUPPORTS_CATEGORICAL and self.cift_is_enabled:
                 data_list = [self._cift_row(row) for row in data_list]
