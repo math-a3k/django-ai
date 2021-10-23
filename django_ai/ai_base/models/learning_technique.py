@@ -272,7 +272,10 @@ class LearningTechnique(EngineObjectModel):
         if not self.learning_fields_categorical:
             return self._get_data_model_attr('LEARNING_FIELDS_CATEGORICAL', [])
         else:
-            return self.learning_fields_categorical.split(", ")
+            if self.learning_fields_categorical == '__none__':
+                return []
+            else:
+                return self.learning_fields_categorical.split(", ")
 
     def _get_data_learning_fields_supported(self):
         if not self._learning_fields_supported:
@@ -565,7 +568,7 @@ class LearningTechnique(EngineObjectModel):
                                 'Fields: {}'.format(field))})
                     else:
                         last_field = field
-                    if field not in learning_fields:
+                    if field not in learning_fields + ['__none__', ]:
                         raise ValidationError({'data_model': _(
                             'Unrecognized field in Categorical Learning '
                             'Fields: {}'.format(field))})
@@ -583,7 +586,7 @@ class LearningTechnique(EngineObjectModel):
                                 'Categorical: {}'.format(field))})
                 else:
                     last_field = field
-                if field not in learning_fields:
+                if field not in learning_fields + ['__none__', ]:
                     raise ValidationError({'learning_fields_categorical': _(
                         'Unrecognized field for model {} Learning Fields: '
                         '{}'.format(self.data_model, field))})
