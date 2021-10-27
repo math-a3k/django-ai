@@ -334,6 +334,11 @@ class LearningTechnique(EngineObjectModel):
         learning_fields = self._get_data_learning_fields()
         return learning_fields[index]
 
+    def _get_field_index_by_name(self, name, supported=False):
+        learning_fields = self._get_data_learning_fields_supported()\
+            if supported else self._get_data_learning_fields()
+        return learning_fields.index(name)
+
     def _observation_dict_to_list(self, observation_dict):
         supported_fields = self._get_data_learning_fields_supported()
         observation_list = []
