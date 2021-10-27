@@ -330,8 +330,9 @@ class LearningTechnique(EngineObjectModel):
             if f not in learning_fields_categorical
         ]
 
-    def _get_field_name_by_index(self, index):
-        learning_fields = self._get_data_learning_fields()
+    def _get_field_name_by_index(self, index, supported=False):
+        learning_fields = self._get_data_learning_fields_supported()\
+            if supported else self._get_data_learning_fields()
         return learning_fields[index]
 
     def _get_field_index_by_name(self, name, supported=False):
