@@ -423,6 +423,14 @@ class LearningTechnique(EngineObjectModel):
             level_index = 0
         return field_levels[level_index]
 
+    def _get_cift_offset(self):
+        categorical_levels = self._get_categorical_fields_levels()
+        learning_fields_categorical = self._get_data_learning_fields_categorical()
+        levels_length = 0
+        for field, levels in categorical_levels.items():
+            levels_length += len(levels)
+        return levels_length - len(learning_fields_categorical)
+
     def _get_categorical_fields_levels(self):
         if not self._categorical_fields_levels:
             categorical_levels = {}
