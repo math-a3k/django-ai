@@ -1,5 +1,5 @@
 from django.core.exceptions import ValidationError
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from django_ai.supervised_learning.models.supervised_learning_imputer \
     import SupervisedLearningImputer
