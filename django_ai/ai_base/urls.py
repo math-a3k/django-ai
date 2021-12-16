@@ -1,15 +1,13 @@
-from django.conf.urls import url
+from django.urls import path
 
 from . import views
 
 
 urlpatterns = [
-    url((r'^run-action/(?P<action>[\w_]+)/'
-         r'(?P<content_type>[\w_]+)/'
-         r'(?P<object_id>[0-9]+)$'),
+    path('run-action/<action>/<content_type>/<int:object_id>',
         views.RunActionView.as_view(),
         name="run-action"),
-    url((r'^run-action/(?P<action>[\w_]+)$'),
+    path('run-action/<action>',
         views.RunActionView.as_view(),
         name="run-action"),
 ]
