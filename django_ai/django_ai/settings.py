@@ -132,3 +132,16 @@ STATIC_URL = '/static/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+
+DJANGO_AI_METRICS = [
+    'sklearn.metrics.SCORERS',
+]
+
+DJANGO_AI_METRICS_FORMATS = [
+    'django_ai.ai_base.metrics_formats.BASE_METRICS_FORMATS',
+]
+
+DJANGO_AI_METRICS_FORMATS_MAPPING = [
+    'django_ai.ai_base.metrics_formats.BASE_METRICS_FORMATS_MAPPING',
+]

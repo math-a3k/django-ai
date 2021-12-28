@@ -13,7 +13,6 @@ from django.core.exceptions import ValidationError
 from django.test import Client, SimpleTestCase, modify_settings
 from django.contrib.auth.models import User
 
-from django_ai.supervised_learning.metrics import format_metric
 from django_ai.supervised_learning.models import (
     HGBTreeClassifier, HGBTreeRegressor,
     SupervisedLearningTechnique, SupervisedLearningImputer,
@@ -409,12 +408,3 @@ class TestSupervisedLearning(SimpleTestCase):
         slt.cv_folds = 5
         slt.cv_metrics = 'accuracy'
         self.assertEqual(slt.full_clean(), None)
-
-    def test_format_metric(self):
-        metric = "test_metric"
-        format_string = format_metric(metric, [1])
-        self.assertEqual(format_string, 1)
-        format_string = format_metric(metric, [])
-        self.assertEqual(format_string, None)
-        format_string = format_metric(metric, [1, 2, 3])
-        self.assertEqual(format_string, '2.000 +/- 1.633')

@@ -4,6 +4,7 @@ from sklearn.model_selection import cross_validate
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from django_ai.ai_base.metrics import METRICS
 from django_ai.supervised_learning.models.supervised_learning_technique \
     import SupervisedLearningTechnique
 
@@ -243,7 +244,7 @@ class HGBTreeClassifier(SupervisedLearningTechnique):
         return scores
 
     def get_cross_validation_scores(self):
-        metrics = self._get_cv_metrics()
+        metrics = {key: METRICS[key] for key in self._get_cv_metrics()}
         data = self.get_data()
         labels = self.get_targets()
         classifier = self.get_engine_object()

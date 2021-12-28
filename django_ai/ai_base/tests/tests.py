@@ -17,6 +17,7 @@ from django.utils import timezone
 
 from django_ai.ai_base.models import LearningTechnique, DataImputer
 from django_ai.ai_base import utils as ai_utils
+from django_ai.ai_base.metrics import format_metric
 
 from django_ai.supervised_learning.models import SupervisedLearningTechnique
 
@@ -855,3 +856,12 @@ class TestBase(SimpleTestCase):
     def test_utils(self):
         statmodel = ai_utils.get_model("ai_base.LearningTechnique")
         self.assertEqual(LearningTechnique, statmodel)
+
+    def test_format_metric(self):
+        metric = "test_metric"
+        format_string = format_metric(metric, [1])
+        self.assertEqual(format_string, 1)
+        format_string = format_metric(metric, [])
+        self.assertEqual(format_string, None)
+        format_string = format_metric(metric, [1, 2, 3])
+        self.assertEqual(format_string, '2.000 +/- 1.633')

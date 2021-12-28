@@ -1,13 +1,10 @@
-from sklearn.metrics import SCORERS
-
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from django_ai.ai_base.models import LearningTechnique
 from django_ai.ai_base.utils import allNotNone
-
-from ..metrics import format_metric
+from django_ai.ai_base.metrics import METRICS, format_metric
 
 
 class SupervisedLearningTechnique(LearningTechnique):
@@ -352,7 +349,7 @@ class SupervisedLearningTechnique(LearningTechnique):
                 )})
             else:
                 for metric in self.cv_metrics.split(", "):
-                    if metric not in SCORERS.keys():
+                    if metric not in METRICS.keys():
                         raise ValidationError({'cv_metrics': _(
                             'Unrecognized metric: {}'.format(metric)
                         )})
