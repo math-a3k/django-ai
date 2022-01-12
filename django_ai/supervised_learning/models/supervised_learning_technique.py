@@ -86,7 +86,8 @@ class SupervisedLearningTechnique(LearningTechnique):
         app_label = "supervised_learning"
 
     def __init__(self, *args, **kwargs):
-        kwargs["technique_type"] = self.TYPE_SUPERVISED
+        if not args:
+            kwargs["technique_type"] = self.TYPE_SUPERVISED
         super(SupervisedLearningTechnique, self).__init__(*args, **kwargs)
 
     def __str__(self):

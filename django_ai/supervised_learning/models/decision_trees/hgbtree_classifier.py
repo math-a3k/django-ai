@@ -181,7 +181,8 @@ class HGBTreeClassifier(SupervisedLearningTechnique):
         app_label = "supervised_learning"
 
     def __init__(self, *args, **kwargs):
-        kwargs["sl_type"] = self.SL_TYPE_CLASSIFICATION
+        if not args:
+            kwargs["sl_type"] = self.SL_TYPE_CLASSIFICATION
         super(HGBTreeClassifier, self).__init__(*args, **kwargs)
 
     def __str__(self):

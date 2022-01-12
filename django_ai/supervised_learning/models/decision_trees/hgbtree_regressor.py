@@ -181,7 +181,8 @@ class HGBTreeRegressor(SupervisedLearningTechnique):
         app_label = "supervised_learning"
 
     def __init__(self, *args, **kwargs):
-        kwargs["sl_type"] = self.SL_TYPE_REGRESSION
+        if not args:
+            kwargs["sl_type"] = self.SL_TYPE_REGRESSION
         super(HGBTreeRegressor, self).__init__(*args, **kwargs)
 
     def __str__(self):
