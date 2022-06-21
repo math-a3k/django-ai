@@ -20,7 +20,7 @@ jsonfield==2.0.2
 MarkupSafe==1.0
 matplotlib==2.0.2
 mccabe==0.6.1
-numpy==1.13.1
+numpy==1.22.0
 olefile==0.44
 pbr==3.1.1
 pexpect==4.2.1
