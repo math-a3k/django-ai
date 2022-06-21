@@ -56,7 +56,7 @@ setup(
     ],
     include_package_data=True,
     install_requires=[
-        'numpy<1.14',
+        'numpy<1.23',
         'bayespy==0.5.6',
         'Django>=1.11, <2.1',
         'django-nested-admin==3.0.20',
