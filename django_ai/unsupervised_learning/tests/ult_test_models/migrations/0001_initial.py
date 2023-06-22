@@ -6,38 +6,75 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='UserInfo',
+            name="UserInfo",
             fields=[
-                ('id', models.AutoField(
-                    auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('age', models.IntegerField(verbose_name='Age')),
-                ('sex', models.CharField(
-                    choices=[(0, 'M'), (1, 'F')], max_length=1, verbose_name='Sex')),
-                ('avg1', models.FloatField(blank=True, null=True, verbose_name='Average 1')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("age", models.IntegerField(verbose_name="Age")),
+                (
+                    "sex",
+                    models.CharField(
+                        choices=[(0, "M"), (1, "F")],
+                        max_length=1,
+                        verbose_name="Sex",
+                    ),
+                ),
+                (
+                    "avg1",
+                    models.FloatField(
+                        blank=True, null=True, verbose_name="Average 1"
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='UserInfo2',
+            name="UserInfo2",
             fields=[
-                ('id', models.AutoField(
-                    auto_created=True, primary_key=True, serialize=False,
-                    verbose_name='ID')),
-                ('avg2', models.FloatField(
-                    blank=True, null=True, verbose_name='Average 2')),
-                ('avg_time_pages_b', models.FloatField(
-                    blank=True, null=True,
-                    verbose_name='Average Time spent on Pages B')),
-                ('cluster_2', models.CharField(
-                    blank=True, max_length=1, null=True,
-                    verbose_name='Cluster 1')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "avg2",
+                    models.FloatField(
+                        blank=True, null=True, verbose_name="Average 2"
+                    ),
+                ),
+                (
+                    "avg_time_pages_b",
+                    models.FloatField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Average Time spent on Pages B",
+                    ),
+                ),
+                (
+                    "cluster_2",
+                    models.CharField(
+                        blank=True,
+                        max_length=1,
+                        null=True,
+                        verbose_name="Cluster 1",
+                    ),
+                ),
             ],
         ),
     ]

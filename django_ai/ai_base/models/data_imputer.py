@@ -8,10 +8,11 @@ from django_ai.ai_base.models import LearningTechnique
 
 class DataImputer(LearningTechnique):
     technique = models.OneToOneField(
-        'ai_base.LearningTechnique',
-        related_name='data_imputer_object',
-        blank=True, null=True,
-        on_delete=models.SET_NULL
+        "ai_base.LearningTechnique",
+        related_name="data_imputer_object",
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
     )
 
     class Meta:
@@ -27,8 +28,9 @@ class DataImputer(LearningTechnique):
         imputer = cls(name=name, technique=technique)
         imputer.data_model = technique.data_model
         imputer.learning_fields = technique.learning_fields
-        imputer.learning_fields_categorical = \
+        imputer.learning_fields_categorical = (
             technique.learning_fields_categorical
+        )
         imputer.save()
         imputer.perform_inference()
         return imputer
@@ -38,8 +40,9 @@ class DataImputer(LearningTechnique):
 
     def _get_imputer(self):
         imputers_fields = [
-            f.related_query_name() for f in self._meta._relation_tree
-            if 'dataimputer_ptr_id' in f.attname
+            f.related_query_name()
+            for f in self._meta._relation_tree
+            if "dataimputer_ptr_id" in f.attname
         ]
         if imputers_fields:
             for i_f in imputers_fields:

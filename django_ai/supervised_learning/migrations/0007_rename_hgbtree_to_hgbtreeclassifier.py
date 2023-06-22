@@ -4,15 +4,14 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ai_base', '0003_engineobjectmodel_default_metadata'),
-        ('supervised_learning', '0006_svmimputer'),
+        ("ai_base", "0003_engineobjectmodel_default_metadata"),
+        ("supervised_learning", "0006_svmimputer"),
     ]
 
     operations = [
         migrations.RenameModel(
-            old_name='HGBTree',
-            new_name='HGBTreeClassifier',
+            old_name="HGBTree",
+            new_name="HGBTreeClassifier",
         ),
     ]

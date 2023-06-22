@@ -5,20 +5,29 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('supervised_learning', '0005_introspectionimputer'),
+        ("supervised_learning", "0005_introspectionimputer"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='SVMImputer',
+            name="SVMImputer",
             fields=[
-                ('supervisedlearningimputer_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='supervised_learning.supervisedlearningimputer')),
+                (
+                    "supervisedlearningimputer_ptr",
+                    models.OneToOneField(
+                        auto_created=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        parent_link=True,
+                        primary_key=True,
+                        serialize=False,
+                        to="supervised_learning.supervisedlearningimputer",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
-            bases=('supervised_learning.supervisedlearningimputer',),
+            bases=("supervised_learning.supervisedlearningimputer",),
         ),
     ]

@@ -5,15 +5,19 @@ import django_ai.ai_base.models.engine_object
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ai_base', '0002_learningtechnique_cift_is_enabled'),
+        ("ai_base", "0002_learningtechnique_cift_is_enabled"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='learningtechnique',
-            name='metadata',
-            field=models.JSONField(blank=True, default=django_ai.ai_base.models.engine_object._get_default_metadata, null=True, verbose_name='Metadata'),
+            model_name="learningtechnique",
+            name="metadata",
+            field=models.JSONField(
+                blank=True,
+                default=django_ai.ai_base.models.engine_object._get_default_metadata,
+                null=True,
+                verbose_name="Metadata",
+            ),
         ),
     ]

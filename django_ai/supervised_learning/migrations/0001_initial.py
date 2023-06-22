@@ -5,82 +5,462 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('ai_base', '0002_learningtechnique_cift_is_enabled'),
+        ("ai_base", "0002_learningtechnique_cift_is_enabled"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='SupervisedLearningTechnique',
+            name="SupervisedLearningTechnique",
             fields=[
-                ('learningtechnique_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='ai_base.learningtechnique')),
-                ('sl_type', models.SmallIntegerField(blank=True, choices=[(0, 'Classification'), (1, 'Regression')], default=0, null=True, verbose_name='Supervised Learning Type')),
-                ('cv_is_enabled', models.BooleanField(default=False, help_text='Enable Cross Validation', verbose_name='Cross Validation is Enabled?')),
-                ('cv_folds', models.SmallIntegerField(blank=True, help_text='Quantity of Folds to be used in Cross Validation', null=True, verbose_name='Cross Validation Folds')),
-                ('cv_metrics', models.CharField(blank=True, help_text='Metrics to be evaluated in Cross Validation separated by a comma and space (i.e. "accuracy, confusion_matrix, fowlkes_mallows_score")', max_length=255, null=True, verbose_name='Cross Validation Metric')),
-                ('learning_target', models.CharField(blank=True, help_text='Field in the Data Model containing the targets for Learning', max_length=50, null=True, verbose_name='Learning Labels')),
-                ('monotonic_constraints', models.TextField(blank=True, help_text='Monotonic Constraints for Learning Fields in the "field: {-1|0|1}" format separated by a comma and space, i.e. "avg1: -1, rbc: 1". Ommited fields will use 0. If left blank, the Data Model\'s one will be used. Use "None" to ensure no Monotic Constraints.', null=True, verbose_name='Monotonic Constraints')),
+                (
+                    "learningtechnique_ptr",
+                    models.OneToOneField(
+                        auto_created=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        parent_link=True,
+                        primary_key=True,
+                        serialize=False,
+                        to="ai_base.learningtechnique",
+                    ),
+                ),
+                (
+                    "sl_type",
+                    models.SmallIntegerField(
+                        blank=True,
+                        choices=[(0, "Classification"), (1, "Regression")],
+                        default=0,
+                        null=True,
+                        verbose_name="Supervised Learning Type",
+                    ),
+                ),
+                (
+                    "cv_is_enabled",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Enable Cross Validation",
+                        verbose_name="Cross Validation is Enabled?",
+                    ),
+                ),
+                (
+                    "cv_folds",
+                    models.SmallIntegerField(
+                        blank=True,
+                        help_text="Quantity of Folds to be used in Cross Validation",
+                        null=True,
+                        verbose_name="Cross Validation Folds",
+                    ),
+                ),
+                (
+                    "cv_metrics",
+                    models.CharField(
+                        blank=True,
+                        help_text='Metrics to be evaluated in Cross Validation separated by a comma and space (i.e. "accuracy, confusion_matrix, fowlkes_mallows_score")',
+                        max_length=255,
+                        null=True,
+                        verbose_name="Cross Validation Metric",
+                    ),
+                ),
+                (
+                    "learning_target",
+                    models.CharField(
+                        blank=True,
+                        help_text="Field in the Data Model containing the targets for Learning",
+                        max_length=50,
+                        null=True,
+                        verbose_name="Learning Labels",
+                    ),
+                ),
+                (
+                    "monotonic_constraints",
+                    models.TextField(
+                        blank=True,
+                        help_text='Monotonic Constraints for Learning Fields in the "field: {-1|0|1}" format separated by a comma and space, i.e. "avg1: -1, rbc: 1". Ommited fields will use 0. If left blank, the Data Model\'s one will be used. Use "None" to ensure no Monotic Constraints.',
+                        null=True,
+                        verbose_name="Monotonic Constraints",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Supervised Learning Technique',
-                'verbose_name_plural': 'Supervised Learning Techniques',
+                "verbose_name": "Supervised Learning Technique",
+                "verbose_name_plural": "Supervised Learning Techniques",
             },
-            bases=('ai_base.learningtechnique',),
+            bases=("ai_base.learningtechnique",),
         ),
         migrations.CreateModel(
-            name='HGBTree',
+            name="HGBTree",
             fields=[
-                ('supervisedlearningtechnique_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='supervised_learning.supervisedlearningtechnique')),
-                ('loss', models.CharField(blank=True, choices=[('auto', 'Automatic'), ('binary_crossentropy', 'Binary Cross-Entropy'), ('categorical_crossentropy', 'Categorical Cross-Entropy')], default='auto', help_text='The loss function to be used in the boosting process. If none is given, auto will be used.', max_length=50, null=True, verbose_name='Loss function')),
-                ('learning_rate', models.FloatField(blank=True, default=0.1, help_text='The leraning rate, a.k.a. shrinkage. Multiplicative factor for the leaves values. Use 1 for no shrinkage.', null=True, verbose_name='Learning Rate')),
-                ('max_leaf_nodes', models.IntegerField(blank=True, default=31, help_text='If not None, must be strictly greater than 1.', null=True, verbose_name='Maximum number of leaves for each tree')),
-                ('max_depth', models.IntegerField(blank=True, default=None, help_text='Depth is not constrained by default.', null=True, verbose_name='Maximum depth of each tree')),
-                ('min_samples_leaf', models.IntegerField(blank=True, default=20, help_text='For datasets with less than hundred of samples, it is recommended to be lower than 20.', null=True, verbose_name='Minimum number of samples per leaf')),
-                ('l2_regularization', models.FloatField(blank=True, default=0, help_text='Use 0 for no regularization.', null=True, verbose_name='L2 Regularization Parameter')),
-                ('max_bins', models.IntegerField(blank=True, default=255, help_text='Must be no larger than 255.', null=True, verbose_name='Maximum number of bins for non-missing values')),
-                ('warm_start', models.BooleanField(default=False, help_text='When set to True, reuse the solution of the previous call to fit and add more estimators to the ensemble. For results to be valid, the estimator should be re-trained on the same data only.', verbose_name='Warm Start')),
-                ('early_stopping', models.CharField(blank=True, choices=[('auto', 'Automatic'), ('true', 'True'), ('false', 'False')], default='auto', help_text='If auto, early stopping is enabled if the sample size is greater than 10000. If true, is enabled, otherwise disabled.', max_length=50, null=True, verbose_name='Early Stopping (ES)')),
-                ('scoring', models.CharField(blank=True, default='loss', help_text="If None, the estimator's default scorer is used. Only used if early stopping is performed.", max_length=50, null=True, verbose_name='Scoring Paramenter for ES')),
-                ('validation_fraction', models.FloatField(blank=True, default=0.1, help_text='Proportion of training data for validating early stopping. Only used if early stopping is performed.', null=True, verbose_name='Validation Fraction for ES')),
-                ('n_iter_no_change', models.IntegerField(blank=True, default=10, help_text='Used to determine when to "Early Stop". Only used if early stopping is performed.', null=True, verbose_name='Iterations without Change for ES')),
-                ('tol', models.FloatField(blank=True, default='1e-7', help_text='The higher the tolerance, the more likely to "early stop". Only used if early stopping is performed.', null=True, verbose_name='Abs. Tol. for comparing Scores for ES')),
-                ('verbose', models.IntegerField(blank=True, default=0, help_text='If not zero, print some information about the fitting process. (currently STDOUT in the Django process)', null=True, verbose_name='Verbosity Level')),
-                ('random_state', models.IntegerField(blank=True, default=None, help_text='Use a number for reproducible output across multiple function calls', null=True, verbose_name='Random State seed number')),
-                ('max_iter', models.IntegerField(blank=True, default=100, help_text='Maximum number of iterations', null=True, verbose_name='Maximum number of iterations')),
+                (
+                    "supervisedlearningtechnique_ptr",
+                    models.OneToOneField(
+                        auto_created=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        parent_link=True,
+                        primary_key=True,
+                        serialize=False,
+                        to="supervised_learning.supervisedlearningtechnique",
+                    ),
+                ),
+                (
+                    "loss",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("auto", "Automatic"),
+                            ("binary_crossentropy", "Binary Cross-Entropy"),
+                            (
+                                "categorical_crossentropy",
+                                "Categorical Cross-Entropy",
+                            ),
+                        ],
+                        default="auto",
+                        help_text="The loss function to be used in the boosting process. If none is given, auto will be used.",
+                        max_length=50,
+                        null=True,
+                        verbose_name="Loss function",
+                    ),
+                ),
+                (
+                    "learning_rate",
+                    models.FloatField(
+                        blank=True,
+                        default=0.1,
+                        help_text="The leraning rate, a.k.a. shrinkage. Multiplicative factor for the leaves values. Use 1 for no shrinkage.",
+                        null=True,
+                        verbose_name="Learning Rate",
+                    ),
+                ),
+                (
+                    "max_leaf_nodes",
+                    models.IntegerField(
+                        blank=True,
+                        default=31,
+                        help_text="If not None, must be strictly greater than 1.",
+                        null=True,
+                        verbose_name="Maximum number of leaves for each tree",
+                    ),
+                ),
+                (
+                    "max_depth",
+                    models.IntegerField(
+                        blank=True,
+                        default=None,
+                        help_text="Depth is not constrained by default.",
+                        null=True,
+                        verbose_name="Maximum depth of each tree",
+                    ),
+                ),
+                (
+                    "min_samples_leaf",
+                    models.IntegerField(
+                        blank=True,
+                        default=20,
+                        help_text="For datasets with less than hundred of samples, it is recommended to be lower than 20.",
+                        null=True,
+                        verbose_name="Minimum number of samples per leaf",
+                    ),
+                ),
+                (
+                    "l2_regularization",
+                    models.FloatField(
+                        blank=True,
+                        default=0,
+                        help_text="Use 0 for no regularization.",
+                        null=True,
+                        verbose_name="L2 Regularization Parameter",
+                    ),
+                ),
+                (
+                    "max_bins",
+                    models.IntegerField(
+                        blank=True,
+                        default=255,
+                        help_text="Must be no larger than 255.",
+                        null=True,
+                        verbose_name="Maximum number of bins for non-missing values",
+                    ),
+                ),
+                (
+                    "warm_start",
+                    models.BooleanField(
+                        default=False,
+                        help_text="When set to True, reuse the solution of the previous call to fit and add more estimators to the ensemble. For results to be valid, the estimator should be re-trained on the same data only.",
+                        verbose_name="Warm Start",
+                    ),
+                ),
+                (
+                    "early_stopping",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("auto", "Automatic"),
+                            ("true", "True"),
+                            ("false", "False"),
+                        ],
+                        default="auto",
+                        help_text="If auto, early stopping is enabled if the sample size is greater than 10000. If true, is enabled, otherwise disabled.",
+                        max_length=50,
+                        null=True,
+                        verbose_name="Early Stopping (ES)",
+                    ),
+                ),
+                (
+                    "scoring",
+                    models.CharField(
+                        blank=True,
+                        default="loss",
+                        help_text="If None, the estimator's default scorer is used. Only used if early stopping is performed.",
+                        max_length=50,
+                        null=True,
+                        verbose_name="Scoring Paramenter for ES",
+                    ),
+                ),
+                (
+                    "validation_fraction",
+                    models.FloatField(
+                        blank=True,
+                        default=0.1,
+                        help_text="Proportion of training data for validating early stopping. Only used if early stopping is performed.",
+                        null=True,
+                        verbose_name="Validation Fraction for ES",
+                    ),
+                ),
+                (
+                    "n_iter_no_change",
+                    models.IntegerField(
+                        blank=True,
+                        default=10,
+                        help_text='Used to determine when to "Early Stop". Only used if early stopping is performed.',
+                        null=True,
+                        verbose_name="Iterations without Change for ES",
+                    ),
+                ),
+                (
+                    "tol",
+                    models.FloatField(
+                        blank=True,
+                        default="1e-7",
+                        help_text='The higher the tolerance, the more likely to "early stop". Only used if early stopping is performed.',
+                        null=True,
+                        verbose_name="Abs. Tol. for comparing Scores for ES",
+                    ),
+                ),
+                (
+                    "verbose",
+                    models.IntegerField(
+                        blank=True,
+                        default=0,
+                        help_text="If not zero, print some information about the fitting process. (currently STDOUT in the Django process)",
+                        null=True,
+                        verbose_name="Verbosity Level",
+                    ),
+                ),
+                (
+                    "random_state",
+                    models.IntegerField(
+                        blank=True,
+                        default=None,
+                        help_text="Use a number for reproducible output across multiple function calls",
+                        null=True,
+                        verbose_name="Random State seed number",
+                    ),
+                ),
+                (
+                    "max_iter",
+                    models.IntegerField(
+                        blank=True,
+                        default=100,
+                        help_text="Maximum number of iterations",
+                        null=True,
+                        verbose_name="Maximum number of iterations",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'HGB Tree for Classification',
-                'verbose_name_plural': 'HGB Trees for Classification',
+                "verbose_name": "HGB Tree for Classification",
+                "verbose_name_plural": "HGB Trees for Classification",
             },
-            bases=('supervised_learning.supervisedlearningtechnique',),
+            bases=("supervised_learning.supervisedlearningtechnique",),
         ),
         migrations.CreateModel(
-            name='SVC',
+            name="SVC",
             fields=[
-                ('supervisedlearningtechnique_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='supervised_learning.supervisedlearningtechnique')),
-                ('penalty_parameter', models.FloatField(blank=True, default=1.0, help_text='Penalty parameter (C) of the error term.', null=True, verbose_name='Penalty Parameter')),
-                ('kernel', models.CharField(blank=True, choices=[('linear', 'Linear'), ('poly', 'Polynomial'), ('rbf', 'RBF'), ('linear', 'Linear'), ('sigmoid', 'Sigmoid'), ('precomputed', 'Precomputed')], default='rbf', help_text='Kernel to be used in the SVM. If none is given, RBF will be used.', max_length=50, null=True, verbose_name='SVM Kernel')),
-                ('kernel_poly_degree', models.IntegerField(blank=True, default=3, help_text='Degree of the Polynomial Kernel function. Ignored by all other Kernels.', null=True, verbose_name='Polynomial Kernel degree')),
-                ('kernel_coefficient', models.CharField(blank=True, default='scale', help_text='Kernel coefficient for RBF, Polynomial and Sigmoid. "scale", "auto" or a float are supported.', max_length=20, null=True, verbose_name='Kernel coefficient')),
-                ('kernel_independent_term', models.FloatField(blank=True, default=0.0, help_text='Independent term in kernel function. It is only significant in Polynomial and Sigmoid kernels.', null=True, verbose_name='Kernel Independent Term')),
-                ('estimate_probability', models.BooleanField(default=True, help_text='Whether to enable probability estimates. This will slow model fitting.', verbose_name='Estimate Probability?')),
-                ('use_shrinking', models.BooleanField(default=True, help_text='Whether to use the shrinking heuristic.', verbose_name='Use Shrinking Heuristic?')),
-                ('tolerance', models.FloatField(blank=True, default='1e-3', help_text='Tolerance for stopping criterion.', null=True, verbose_name='Tolerance')),
-                ('cache_size', models.FloatField(blank=True, default=200, help_text='Specify the size of the kernel cache (in MB).', null=True, verbose_name='Kernel Cache Size (MB)')),
-                ('class_weight', models.CharField(blank=True, help_text='Set the parameter C of class i to class_weight[i]*C for SVC. If not given, all classes are supposed to have weight one. The “balanced” mode uses the values of y to automatically adjust weights inversely proportional to class frequencies in the input data as n_samples / (n_classes * np.bincount(y))', max_length=50, null=True, verbose_name='Class Weight')),
-                ('verbose', models.BooleanField(default=False, help_text='Enable verbose output. Note that this setting takes advantage of a per-process runtime setting in libsvm that, if enabled, may not work properly in a multithreaded context.', verbose_name='Be Verbose?')),
-                ('decision_function_shape', models.CharField(blank=True, choices=[('ovo', 'One-VS-One'), ('ovr', 'One-VS-Rest')], default='ovr', help_text='Whether to return a one-vs-rest (‘ovr’) decision function of shape (n_samples, n_classes) as all other classifiers, or the original one-vs-one (‘ovo’) decision function of libsvm which has shape (n_samples, n_classes * (n_classes - 1) / 2).', max_length=10, null=True, verbose_name='Decision Function Shape')),
-                ('random_state', models.IntegerField(blank=True, help_text='The seed of the pseudo random number generator to use when shuffling the data. If int, random_state is the seed used by the random number generator; If RandomState instance, random_state is the random number generator; If None, the random number generator is the RandomState instance used by np.random.', null=True, verbose_name='Random Seed')),
-                ('max_iter', models.IntegerField(blank=True, default=10000, help_text='Stop if Maximum Iterations has been reached without meeting algorithm converge conditions', null=True, verbose_name='Maximum Iterations Safeguard')),
-                ('images', models.ImageField(blank=True, help_text='Auto-generated Image if available', null=True, upload_to='', verbose_name='Image')),
+                (
+                    "supervisedlearningtechnique_ptr",
+                    models.OneToOneField(
+                        auto_created=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        parent_link=True,
+                        primary_key=True,
+                        serialize=False,
+                        to="supervised_learning.supervisedlearningtechnique",
+                    ),
+                ),
+                (
+                    "penalty_parameter",
+                    models.FloatField(
+                        blank=True,
+                        default=1.0,
+                        help_text="Penalty parameter (C) of the error term.",
+                        null=True,
+                        verbose_name="Penalty Parameter",
+                    ),
+                ),
+                (
+                    "kernel",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("linear", "Linear"),
+                            ("poly", "Polynomial"),
+                            ("rbf", "RBF"),
+                            ("linear", "Linear"),
+                            ("sigmoid", "Sigmoid"),
+                            ("precomputed", "Precomputed"),
+                        ],
+                        default="rbf",
+                        help_text="Kernel to be used in the SVM. If none is given, RBF will be used.",
+                        max_length=50,
+                        null=True,
+                        verbose_name="SVM Kernel",
+                    ),
+                ),
+                (
+                    "kernel_poly_degree",
+                    models.IntegerField(
+                        blank=True,
+                        default=3,
+                        help_text="Degree of the Polynomial Kernel function. Ignored by all other Kernels.",
+                        null=True,
+                        verbose_name="Polynomial Kernel degree",
+                    ),
+                ),
+                (
+                    "kernel_coefficient",
+                    models.CharField(
+                        blank=True,
+                        default="scale",
+                        help_text='Kernel coefficient for RBF, Polynomial and Sigmoid. "scale", "auto" or a float are supported.',
+                        max_length=20,
+                        null=True,
+                        verbose_name="Kernel coefficient",
+                    ),
+                ),
+                (
+                    "kernel_independent_term",
+                    models.FloatField(
+                        blank=True,
+                        default=0.0,
+                        help_text="Independent term in kernel function. It is only significant in Polynomial and Sigmoid kernels.",
+                        null=True,
+                        verbose_name="Kernel Independent Term",
+                    ),
+                ),
+                (
+                    "estimate_probability",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Whether to enable probability estimates. This will slow model fitting.",
+                        verbose_name="Estimate Probability?",
+                    ),
+                ),
+                (
+                    "use_shrinking",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Whether to use the shrinking heuristic.",
+                        verbose_name="Use Shrinking Heuristic?",
+                    ),
+                ),
+                (
+                    "tolerance",
+                    models.FloatField(
+                        blank=True,
+                        default="1e-3",
+                        help_text="Tolerance for stopping criterion.",
+                        null=True,
+                        verbose_name="Tolerance",
+                    ),
+                ),
+                (
+                    "cache_size",
+                    models.FloatField(
+                        blank=True,
+                        default=200,
+                        help_text="Specify the size of the kernel cache (in MB).",
+                        null=True,
+                        verbose_name="Kernel Cache Size (MB)",
+                    ),
+                ),
+                (
+                    "class_weight",
+                    models.CharField(
+                        blank=True,
+                        help_text="Set the parameter C of class i to class_weight[i]*C for SVC. If not given, all classes are supposed to have weight one. The “balanced” mode uses the values of y to automatically adjust weights inversely proportional to class frequencies in the input data as n_samples / (n_classes * np.bincount(y))",
+                        max_length=50,
+                        null=True,
+                        verbose_name="Class Weight",
+                    ),
+                ),
+                (
+                    "verbose",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Enable verbose output. Note that this setting takes advantage of a per-process runtime setting in libsvm that, if enabled, may not work properly in a multithreaded context.",
+                        verbose_name="Be Verbose?",
+                    ),
+                ),
+                (
+                    "decision_function_shape",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("ovo", "One-VS-One"),
+                            ("ovr", "One-VS-Rest"),
+                        ],
+                        default="ovr",
+                        help_text="Whether to return a one-vs-rest (‘ovr’) decision function of shape (n_samples, n_classes) as all other classifiers, or the original one-vs-one (‘ovo’) decision function of libsvm which has shape (n_samples, n_classes * (n_classes - 1) / 2).",
+                        max_length=10,
+                        null=True,
+                        verbose_name="Decision Function Shape",
+                    ),
+                ),
+                (
+                    "random_state",
+                    models.IntegerField(
+                        blank=True,
+                        help_text="The seed of the pseudo random number generator to use when shuffling the data. If int, random_state is the seed used by the random number generator; If RandomState instance, random_state is the random number generator; If None, the random number generator is the RandomState instance used by np.random.",
+                        null=True,
+                        verbose_name="Random Seed",
+                    ),
+                ),
+                (
+                    "max_iter",
+                    models.IntegerField(
+                        blank=True,
+                        default=10000,
+                        help_text="Stop if Maximum Iterations has been reached without meeting algorithm converge conditions",
+                        null=True,
+                        verbose_name="Maximum Iterations Safeguard",
+                    ),
+                ),
+                (
+                    "images",
+                    models.ImageField(
+                        blank=True,
+                        help_text="Auto-generated Image if available",
+                        null=True,
+                        upload_to="",
+                        verbose_name="Image",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Support Vector Machine - Classification',
-                'verbose_name_plural': 'Support Vector Machines - Classification',
+                "verbose_name": "Support Vector Machine - Classification",
+                "verbose_name_plural": "Support Vector Machines - Classification",
             },
-            bases=('supervised_learning.supervisedlearningtechnique',),
+            bases=("supervised_learning.supervisedlearningtechnique",),
         ),
     ]

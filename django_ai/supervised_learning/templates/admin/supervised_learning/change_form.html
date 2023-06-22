@@ -1,2 +1,37 @@
 {% extends "admin/ai_base/change_form.html" %}
 {% load django_ai_tags static i18n %}
+
+{% block after_related_objects %}
+  {% if original.is_inferred %}
+    <h2>{% trans "Inference" %}</h2>
+    {% if original.metadata.inference.previous %}
+    <table>
+      <tr>
+        <td>
+          <h3>{% trans "Current Inference" %}</h3>
+          <p>
+            {% format_inference_metadata original.metadata.inference.current original.metadata.meta.descriptions %}
+          </p>
+        </td>
+        <td>
+          <h3>{% trans "Previous Inference" %}</h3>
+          <p>
+            <p>
+            {% format_inference_metadata original.metadata.inference.previous original.metadata.meta.descriptions %}
+          </p>
+          </p>
+        </td>
+      </tr>
+    </table>
+    {% else %}
+    <h3>{% trans "Current Inference" %}</h3>
+    <p>
+      <p>
+        {% format_inference_metadata original.metadata.inference.current original.metadata.meta.descriptions %}
+      </p>
+    </p>
+    {% endif %}
+
+  {% endif %}
+  {% ai_actions %}
+{% endblock %}

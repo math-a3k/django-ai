@@ -5,25 +5,51 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('ai_base', '0001_initial'),
+        ("ai_base", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='UnsupervisedLearningTechnique',
+            name="UnsupervisedLearningTechnique",
             fields=[
-                ('learningtechnique_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='ai_base.learningtechnique')),
-                ('ul_type', models.SmallIntegerField(blank=True, choices=[(0, 'Clustering'), (1, 'Other')], default=0, null=True, verbose_name='Unsupervised Learning Type')),
-                ('results_storage', models.CharField(blank=True, max_length=150, null=True, verbose_name='Results Storage')),
+                (
+                    "learningtechnique_ptr",
+                    models.OneToOneField(
+                        auto_created=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        parent_link=True,
+                        primary_key=True,
+                        serialize=False,
+                        to="ai_base.learningtechnique",
+                    ),
+                ),
+                (
+                    "ul_type",
+                    models.SmallIntegerField(
+                        blank=True,
+                        choices=[(0, "Clustering"), (1, "Other")],
+                        default=0,
+                        null=True,
+                        verbose_name="Unsupervised Learning Type",
+                    ),
+                ),
+                (
+                    "results_storage",
+                    models.CharField(
+                        blank=True,
+                        max_length=150,
+                        null=True,
+                        verbose_name="Results Storage",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Unsupervised Learning Technique',
-                'verbose_name_plural': 'Unsupervised Learning Techniques',
+                "verbose_name": "Unsupervised Learning Technique",
+                "verbose_name_plural": "Unsupervised Learning Techniques",
             },
-            bases=('ai_base.learningtechnique',),
+            bases=("ai_base.learningtechnique",),
         ),
     ]

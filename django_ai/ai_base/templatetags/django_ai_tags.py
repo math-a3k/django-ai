@@ -38,32 +38,35 @@ def is_final_dict(dictionary):
 def action_url(action, action_object=None):
     if action_object:
         ct = ContentType.objects.get_for_model(action_object)
-        return(
-            reverse('run-action', kwargs={
-                "action": action, "content_type": ct.model,
-                "object_id": action_object.id}
-            )
+        return reverse(
+            "run-action",
+            kwargs={
+                "action": action,
+                "content_type": ct.model,
+                "object_id": action_object.id,
+            },
         )
     else:
-        return(
-            reverse('run-action', kwargs={"action": action})
-        )
+        return reverse("run-action", kwargs={"action": action})
 
 
 @register.inclusion_tag(
-    'admin/ai_base/engineobjectmodel/snippets/ai_actions.html',
-    takes_context=True)
+    "admin/ai_base/engineobjectmodel/snippets/ai_actions.html",
+    takes_context=True,
+)
 def ai_actions(context):
-    return({"original": context['original']})
+    return {"original": context["original"]}
 
 
 @register.inclusion_tag(
-    'ai_base/inference_metadata.html',)
+    "ai_base/inference_metadata.html",
+)
 def format_inference_metadata(inference_metadata, descriptions=None):
-    return({"metadata": inference_metadata, "descriptions": descriptions})
+    return {"metadata": inference_metadata, "descriptions": descriptions}
 
 
 @register.inclusion_tag(
-    'ai_base/metadata_dict.html',)
+    "ai_base/metadata_dict.html",
+)
 def format_metadata_dict(metadata_dict, descriptions=None):
-    return({"metadata_dict": metadata_dict, "descriptions": descriptions})
+    return {"metadata_dict": metadata_dict, "descriptions": descriptions}

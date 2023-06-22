@@ -4,15 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ai_base', '0001_initial'),
+        ("ai_base", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='learningtechnique',
-            name='cift_is_enabled',
-            field=models.BooleanField(default=False, help_text='Enable Categorical Indicator Function Transformation (only if technique does not supports categorical data)', verbose_name='Is CIFT Enabled?'),
+            model_name="learningtechnique",
+            name="cift_is_enabled",
+            field=models.BooleanField(
+                default=False,
+                help_text="Enable Categorical Indicator Function Transformation (only if technique does not supports categorical data)",
+                verbose_name="Is CIFT Enabled?",
+            ),
         ),
     ]

@@ -6,50 +6,115 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='UserInfo',
+            name="UserInfo",
             fields=[
-                ('id', models.AutoField(
-                    auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('age', models.IntegerField(verbose_name='Age')),
-                ('sex', models.CharField(
-                    choices=[('xy', 'Male'), ('xx', 'Female')], max_length=1, verbose_name='Sex')),
-                ('avg1', models.FloatField(blank=True, null=True, verbose_name='Average 1')),
-                ('avg_time_pages', models.FloatField(blank=True, null=True,
-                                                     verbose_name='Average Time spent on Pages')),
-                ('avg_time_pages_a', models.FloatField(blank=True, null=True,
-                                                       verbose_name='Average Time spent on Pages A')),
-                ('cluster_1', models.CharField(
-                    blank=True, max_length=1, null=True,
-                    verbose_name='Cluster 1')),
-                ('cluster_2', models.IntegerField(
-                    choices=[(0, 'A'), (1, 'B'), (2, 'C')],
-                    blank=True, null=True,
-                    verbose_name='Cluster 2')),
-                ('bool_field', models.BooleanField(null=True, verbose_name='Boolean Field')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("age", models.IntegerField(verbose_name="Age")),
+                (
+                    "sex",
+                    models.CharField(
+                        choices=[("xy", "Male"), ("xx", "Female")],
+                        max_length=1,
+                        verbose_name="Sex",
+                    ),
+                ),
+                (
+                    "avg1",
+                    models.FloatField(
+                        blank=True, null=True, verbose_name="Average 1"
+                    ),
+                ),
+                (
+                    "avg_time_pages",
+                    models.FloatField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Average Time spent on Pages",
+                    ),
+                ),
+                (
+                    "avg_time_pages_a",
+                    models.FloatField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Average Time spent on Pages A",
+                    ),
+                ),
+                (
+                    "cluster_1",
+                    models.CharField(
+                        blank=True,
+                        max_length=1,
+                        null=True,
+                        verbose_name="Cluster 1",
+                    ),
+                ),
+                (
+                    "cluster_2",
+                    models.IntegerField(
+                        choices=[(0, "A"), (1, "B"), (2, "C")],
+                        blank=True,
+                        null=True,
+                        verbose_name="Cluster 2",
+                    ),
+                ),
+                (
+                    "bool_field",
+                    models.BooleanField(
+                        null=True, verbose_name="Boolean Field"
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='UserInfo2',
+            name="UserInfo2",
             fields=[
-                ('id', models.AutoField(
-                    auto_created=True, primary_key=True, serialize=False,
-                    verbose_name='ID')),
-                ('avg2', models.FloatField(
-                    blank=True, null=True, verbose_name='Average 2')),
-                ('avg_time_pages_b', models.FloatField(
-                    blank=True, null=True,
-                    verbose_name='Average Time spent on Pages B')),
-                ('cluster_2', models.CharField(
-                    blank=True, max_length=1, null=True,
-                    verbose_name='Cluster 1')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "avg2",
+                    models.FloatField(
+                        blank=True, null=True, verbose_name="Average 2"
+                    ),
+                ),
+                (
+                    "avg_time_pages_b",
+                    models.FloatField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Average Time spent on Pages B",
+                    ),
+                ),
+                (
+                    "cluster_2",
+                    models.CharField(
+                        blank=True,
+                        max_length=1,
+                        null=True,
+                        verbose_name="Cluster 1",
+                    ),
+                ),
             ],
         ),
     ]

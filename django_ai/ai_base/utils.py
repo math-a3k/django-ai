@@ -6,10 +6,9 @@ from django.utils.module_loading import import_string
 def get_model(app_model_str):
     app, model = app_model_str.split(".")
     model_class = ContentType.objects.get(
-        app_label=app,
-        model=model.lower()
+        app_label=app, model=model.lower()
     ).model_class()
-    return(model_class)
+    return model_class
 
 
 def allNotNone(iterable):

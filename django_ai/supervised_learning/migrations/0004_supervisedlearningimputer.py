@@ -5,23 +5,50 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ai_base', '0003_engineobjectmodel_default_metadata'),
-        ('supervised_learning', '0003_slt_learning_target_alter_verbose_name'),
+        ("ai_base", "0003_engineobjectmodel_default_metadata"),
+        ("supervised_learning", "0003_slt_learning_target_alter_verbose_name"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='SupervisedLearningImputer',
+            name="SupervisedLearningImputer",
             fields=[
-                ('dataimputer_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='ai_base.dataimputer')),
-                ('classification_technique', models.CharField(blank=True, help_text='Supervised Learning Technique Class to handle categorical field imputing.', max_length=255, null=True, verbose_name='Classification Technique')),
-                ('regression_technique', models.CharField(blank=True, help_text='Supervised Learning Technique Class to handle non-categorical field imputing.', max_length=255, null=True, verbose_name='Regression Technique')),
+                (
+                    "dataimputer_ptr",
+                    models.OneToOneField(
+                        auto_created=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        parent_link=True,
+                        primary_key=True,
+                        serialize=False,
+                        to="ai_base.dataimputer",
+                    ),
+                ),
+                (
+                    "classification_technique",
+                    models.CharField(
+                        blank=True,
+                        help_text="Supervised Learning Technique Class to handle categorical field imputing.",
+                        max_length=255,
+                        null=True,
+                        verbose_name="Classification Technique",
+                    ),
+                ),
+                (
+                    "regression_technique",
+                    models.CharField(
+                        blank=True,
+                        help_text="Supervised Learning Technique Class to handle non-categorical field imputing.",
+                        max_length=255,
+                        null=True,
+                        verbose_name="Regression Technique",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
-            bases=('ai_base.dataimputer',),
+            bases=("ai_base.dataimputer",),
         ),
     ]

@@ -14,62 +14,61 @@ def _get_default_metadata():
 
 class EngineObjectModel(models.Model):
     #: Allowed Keywords for Threshold actions
-    ACTIONS_KEYWORDS = [":recalculate", ]
+    ACTIONS_KEYWORDS = [
+        ":recalculate",
+    ]
     DEFAULT_METADATA = {
-        "inference": {
-            "current": {}, "previous": {}
-        },
-        "meta": {"descriptions": {}}
+        "inference": {"current": {}, "previous": {}},
+        "meta": {"descriptions": {}},
     }
 
     #: This is where the main object of the Engine resides.
     engine_object = PickledObjectField(
         "Engine Object",
         protocol=pickle_HIGHEST_PROTOCOL,
-        blank=True, null=True
+        blank=True,
+        null=True,
     )
     #: The timestamp of the Engine Object creation or last update
     engine_object_timestamp = models.DateTimeField(
-        "Engine Object Timestamp",
-        blank=True, null=True
+        "Engine Object Timestamp", blank=True, null=True
     )
     #: If Inference has been performed on the Engine Object
-    is_inferred = models.BooleanField(
-        "Is Inferred?",
-        default=False
-    )
+    is_inferred = models.BooleanField("Is Inferred?", default=False)
     #: Field for storing metadata (results and / or information related to
     #: internal tasks) of the Engine Object
     metadata = models.JSONField(
-        "Metadata",
-        default=_get_default_metadata, blank=True, null=True
+        "Metadata", default=_get_default_metadata, blank=True, null=True
     )
     #: Internal Counter for automating running actions.
     counter = models.IntegerField(
         "Internal Counter",
-        default=0, blank=True, null=True,
-        help_text=(
-            'Internal Counter for automating running actions.'
-        )
+        default=0,
+        blank=True,
+        null=True,
+        help_text=("Internal Counter for automating running actions."),
     )
     #: Automation: Internal Counter Threshold
     counter_threshold = models.IntegerField(
         "Internal Counter Threshold",
-        blank=True, null=True,
+        blank=True,
+        null=True,
         help_text=(
-            'Threshold of the Internal Counter for triggering the running '
-            'of actions.'
-        )
+            "Threshold of the Internal Counter for triggering the running "
+            "of actions."
+        ),
     )
     #: Automation: Actions to be run when the threshold is met.
     threshold_actions = models.CharField(
         "Threshold actions",
-        max_length=200, blank=True, null=True,
+        max_length=200,
+        blank=True,
+        null=True,
         help_text=(
-            'Actions to be run once the Internal Counter has reachd the '
+            "Actions to be run once the Internal Counter has reachd the "
             'Counter Threshold in the ":action_name" format and separated '
             'by a space, i.e. ":recalculate :mail_staff"'
-        )
+        ),
     )
 
     class Meta:
@@ -123,7 +122,7 @@ class EngineObjectModel(models.Model):
         Returns the main object provided by the Statistical Engine.
         """
         if self.engine_object is not None and not reconstruct:
-            return(self.engine_object)
+            return self.engine_object
 
         self.engine_object = self.engine_object_init()
         return self.engine_object
@@ -141,7 +140,7 @@ class EngineObjectModel(models.Model):
         self.metadata["inference"]["current"] = self.get_inference_metadata()
         if save:
             self.save()
-        return(self.engine_object)
+        return self.engine_object
 
     def reset_inference(self, save=True):
         """
@@ -164,8 +163,9 @@ class EngineObjectModel(models.Model):
         it is not empty.
         """
         if self.metadata["inference"]["current"] != {}:
-            self.metadata["inference"]["previous"] = \
-                self.metadata["inference"]["current"]
+            self.metadata["inference"]["previous"] = self.metadata[
+                "inference"
+            ]["current"]
             self.metadata["inference"]["current"] = {}
 
     def get_inference_metadata(self):
@@ -176,7 +176,8 @@ class EngineObjectModel(models.Model):
     def run_actions(self, actions=[]):
         actions = actions or [
             a.removeprefix("action_")
-            for a in dir(self) if a.startswith("action_")
+            for a in dir(self)
+            if a.startswith("action_")
         ]
         results = {}
         for action in actions:
@@ -220,9 +221,13 @@ class EngineObjectModel(models.Model):
         if self.threshold_actions:
             for action in self.threshold_actions.split(" "):
                 if action not in self.ACTIONS_KEYWORDS:
-                    raise ValidationError({'threshold_actions': _(
-                        'Unrecognized action: {}'.format(action)
-                    )})
+                    raise ValidationError(
+                        {
+                            "threshold_actions": _(
+                                "Unrecognized action: {}".format(action)
+                            )
+                        }
+                    )
         super().clean()
 
     def save(self, *args, **kwargs):
@@ -236,7 +241,9 @@ class EngineObjectModel(models.Model):
             self.metadata["meta"] = {}
 
         # [Re]build metadata descriptions
-        self.metadata["meta"]["descriptions"] = self._get_metadata_descriptions()
+        self.metadata["meta"][
+            "descriptions"
+        ] = self._get_metadata_descriptions()
 
         # Runs threshold actions if corresponds
         self.run_actions_if_threshold()

@@ -14,40 +14,46 @@ class SVR(SupervisedLearningTechnique):
     Support Vector Machine - Regression
 
     """
+
     SUPPORTS_NA = False
     SUPPORTS_CATEGORICAL = False
     PREDICT_SCORE_TYPE = None
-    LEARNING_PAIR = 'django_ai.supervised_learning.models.SVC'
+    LEARNING_PAIR = "django_ai.supervised_learning.models.SVC"
 
     SVM_KERNEL_CHOICES = (
-        ('linear', _("Linear")),
-        ('poly', _("Polynomial")),
-        ('rbf', _("RBF")),
-        ('linear', _("Linear")),
-        ('sigmoid', _("Sigmoid")),
-        ('precomputed', _("Precomputed")),
+        ("linear", _("Linear")),
+        ("poly", _("Polynomial")),
+        ("rbf", _("RBF")),
+        ("linear", _("Linear")),
+        ("sigmoid", _("Sigmoid")),
+        ("precomputed", _("Precomputed")),
     )
 
     # (skl) C : float, optional (default=1.0)
     #: Penalty parameter (C) of the error term.
     penalty_parameter = models.FloatField(
         _("Penalty Parameter"),
-        default=1.0, blank=True, null=True,
-        help_text=(_(
-            'Penalty parameter (C) of the error term.'
-        ))
+        default=1.0,
+        blank=True,
+        null=True,
+        help_text=(_("Penalty parameter (C) of the error term.")),
     )
 
     # (skl) kernel : string, optional (default=’rbf’)
     #: Kernel to be used in the SVM. If none is given, RBF will be used.
     kernel = models.CharField(
         _("SVM Kernel"),
-        choices=SVM_KERNEL_CHOICES, default='rbf',
-        blank=True, null=True, max_length=50,
-        help_text=(_(
-            'Kernel to be used in the SVM. If none is given, RBF will be '
-            'used.'
-        ))
+        choices=SVM_KERNEL_CHOICES,
+        default="rbf",
+        blank=True,
+        null=True,
+        max_length=50,
+        help_text=(
+            _(
+                "Kernel to be used in the SVM. If none is given, RBF will be "
+                "used."
+            )
+        ),
     )
 
     # (skl) degree : int, optional (default=3)
@@ -55,11 +61,15 @@ class SVR(SupervisedLearningTechnique):
     #: by all other kernels.
     kernel_poly_degree = models.IntegerField(
         _("Polynomial Kernel degree"),
-        default=3, blank=True, null=True,
-        help_text=(_(
-            'Degree of the Polynomial Kernel function. Ignored '
-            'by all other Kernels.'
-        ))
+        default=3,
+        blank=True,
+        null=True,
+        help_text=(
+            _(
+                "Degree of the Polynomial Kernel function. Ignored "
+                "by all other Kernels."
+            )
+        ),
     )
 
     # (skl) gamma : 'scale', 'auto' or float, optional (default=’scale’)
@@ -67,12 +77,16 @@ class SVR(SupervisedLearningTechnique):
     #: Leave blank "for automatic" (1/n_features will be used)
     kernel_coefficient = models.CharField(
         _("Kernel coefficient"),
-        blank=True, null=True, max_length=20,
+        blank=True,
+        null=True,
+        max_length=20,
         default="scale",
-        help_text=(_(
-            'Kernel coefficient for RBF, Polynomial and Sigmoid. '
-            '"scale", "auto" or a float are supported.'
-        ))
+        help_text=(
+            _(
+                "Kernel coefficient for RBF, Polynomial and Sigmoid. "
+                '"scale", "auto" or a float are supported.'
+            )
+        ),
     )
 
     # (skl) coef0 : float, optional (default=0.0)
@@ -80,11 +94,15 @@ class SVR(SupervisedLearningTechnique):
     #: in Polynomial and Sigmoid kernels.
     kernel_independent_term = models.FloatField(
         _("Kernel Independent Term"),
-        default=0.0, blank=True, null=True,
-        help_text=(_(
-            'Independent term in kernel function. It is only significant '
-            'in Polynomial and Sigmoid kernels.'
-        ))
+        default=0.0,
+        blank=True,
+        null=True,
+        help_text=(
+            _(
+                "Independent term in kernel function. It is only significant "
+                "in Polynomial and Sigmoid kernels."
+            )
+        ),
     )
 
     # (skl) shrinking : boolean, optional (default=True)
@@ -92,30 +110,27 @@ class SVR(SupervisedLearningTechnique):
     use_shrinking = models.BooleanField(
         _("Use Shrinking Heuristic?"),
         default=True,
-        help_text=(_(
-            'Whether to use the shrinking heuristic.'
-        ))
+        help_text=(_("Whether to use the shrinking heuristic.")),
     )
 
     # (skl) tol : float, optional (default=1e-3)
     #: Tolerance for stopping criterion.
     tolerance = models.FloatField(
         _("Tolerance"),
-        default="1e-3", blank=True, null=True,
-        help_text=(_(
-            "Tolerance for stopping criterion."
-        ))
+        default="1e-3",
+        blank=True,
+        null=True,
+        help_text=(_("Tolerance for stopping criterion.")),
     )
 
     # cache_size : float, optional
     #: Specify the size of the kernel cache (in MB).
     cache_size = models.FloatField(
-        _('Kernel Cache Size (MB)'),
-        blank=True, null=True,
+        _("Kernel Cache Size (MB)"),
+        blank=True,
+        null=True,
         default=200,
-        help_text=(_(
-            'Specify the size of the kernel cache (in MB).'
-        ))
+        help_text=(_("Specify the size of the kernel cache (in MB).")),
     )
 
     # (skl) verbose : bool, default: False
@@ -123,33 +138,37 @@ class SVR(SupervisedLearningTechnique):
     #: of a per-process runtime setting in libsvm that, if enabled,
     #: may not work properly in a multithreaded context.
     verbose = models.BooleanField(
-        _('Be Verbose?'),
+        _("Be Verbose?"),
         default=False,
-        help_text=(_(
-            'Enable verbose output. Note that this setting takes advantage '
-            'of a per-process runtime setting in libsvm that, if enabled, '
-            'may not work properly in a multithreaded context.'
-        ))
+        help_text=(
+            _(
+                "Enable verbose output. Note that this setting takes advantage "
+                "of a per-process runtime setting in libsvm that, if enabled, "
+                "may not work properly in a multithreaded context."
+            )
+        ),
     )
 
     # (skl) max_iter : int, (default=10000)
     max_iter = models.IntegerField(
         _("Maximum Iterations Safeguard"),
         default=10000,
-        blank=True, null=True,
-        help_text=(_(
-            'Stop if Maximum Iterations has been reached without '
-            'meeting algorithm converge conditions'
-        ))
+        blank=True,
+        null=True,
+        help_text=(
+            _(
+                "Stop if Maximum Iterations has been reached without "
+                "meeting algorithm converge conditions"
+            )
+        ),
     )
 
     #: Auto-generated Images if available
     images = models.ImageField(
         _("Image"),
-        blank=True, null=True,
-        help_text=(_(
-            'Auto-generated Image if available'
-        ))
+        blank=True,
+        null=True,
+        help_text=(_("Auto-generated Image if available")),
     )
 
     class Meta:
@@ -163,7 +182,7 @@ class SVR(SupervisedLearningTechnique):
         super(SVR, self).__init__(*args, **kwargs)
 
     def __str__(self):
-        return("[SVM|R] {0}".format(self.name))
+        return "[SVM|R] {0}".format(self.name)
 
     def engine_object_init(self):
         # -> Ensure defaults
@@ -203,9 +222,9 @@ class SVR(SupervisedLearningTechnique):
 
     def get_engine_object_conf(self):
         conf = self.get_engine_object().get_params()
-        conf.pop('steps')
-        conf.pop('standardscaler')
-        conf.pop('svr')
+        conf.pop("steps")
+        conf.pop("standardscaler")
+        conf.pop("svr")
         return conf
 
     def get_inference_scores(self):
@@ -218,8 +237,7 @@ class SVR(SupervisedLearningTechnique):
         labels = self.get_targets()
         classifier = self.get_engine_object()
         raw_scores = cross_validate(
-            classifier, data, labels,
-            cv=self.cv_folds, scoring=metrics
+            classifier, data, labels, cv=self.cv_folds, scoring=metrics
         )
         scores = {}
         for metric in metrics:

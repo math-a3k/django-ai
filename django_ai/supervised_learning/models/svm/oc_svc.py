@@ -9,10 +9,11 @@ from django.utils.translation import gettext_lazy as _
 from django_ai.supervised_learning.models import SupervisedLearningTechnique
 
 
-class SVC(SupervisedLearningTechnique):
+class OneClassSVC(SupervisedLearningTechnique):
     """
-    Support Vector Machine - Classification
-
+    Support Vector Machine - One-Class Classification for Outlier and
+    Novelity detection (Unsupervised Outlier Detection)
+    NOTE: This should be on the unsupervised learning module
     """
 
     SUPPORTS_NA = False
@@ -27,16 +28,6 @@ class SVC(SupervisedLearningTechnique):
         ("linear", _("Linear")),
         ("sigmoid", _("Sigmoid")),
         ("precomputed", _("Precomputed")),
-    )
-
-    # (skl) C : float, optional (default=1.0)
-    #: Penalty parameter (C) of the error term.
-    penalty_parameter = models.FloatField(
-        _("Penalty Parameter"),
-        default=1.0,
-        blank=True,
-        null=True,
-        help_text=(_("Penalty parameter (C) of the error term.")),
     )
 
     # (skl) kernel : string, optional (default=’rbf’)
@@ -105,16 +96,20 @@ class SVC(SupervisedLearningTechnique):
         ),
     )
 
-    # (skl) probability : boolean, optional (default=False)
-    #: Whether to enable probability estimates. This will slow
-    #: model fitting.
-    estimate_probability = models.BooleanField(
-        _("Estimate Probability?"),
-        default=True,
+    # (skl) nufloat, default=0.5
+    #: An upper bound on the fraction of training errors and a lower bound of
+    #: the fraction of support vectors. Should be in the interval (0, 1]. By
+    #: default 0.5 will be taken.
+    nu = models.FloatField(
+        _("Nu"),
+        default=0.5,
+        blank=True,
+        null=True,
         help_text=(
             _(
-                "Whether to enable probability estimates. This will slow "
-                "model fitting."
+                "An upper bound on the fraction of training errors and a "
+                "lower bound of the fraction of support vectors. Should be "
+                "in the interval (0, 1]. By default 0.5 will be taken."
             )
         ),
     )
@@ -147,28 +142,6 @@ class SVC(SupervisedLearningTechnique):
         help_text=(_("Specify the size of the kernel cache (in MB).")),
     )
 
-    # (skl) class_weight : {dict, ‘balanced’}, optional
-    #: Set the parameter C of class i to class_weight[i]*C for SVC.
-    #: If not given, all classes are supposed to have weight one. The
-    #: “balanced” mode uses the values of y to automatically adjust
-    #: weights inversely proportional to class frequencies in the
-    #: input data as n_samples / (n_classes * np.bincount(y))
-    class_weight = models.CharField(
-        _("Class Weight"),
-        max_length=50,
-        blank=True,
-        null=True,
-        help_text=(
-            _(
-                "Set the parameter C of class i to class_weight[i]*C for SVC. "
-                "If not given, all classes are supposed to have weight one. The "
-                "“balanced” mode uses the values of y to automatically adjust "
-                "weights inversely proportional to class frequencies in the "
-                "input data as n_samples / (n_classes * np.bincount(y))"
-            )
-        ),
-    )
-
     # (skl) verbose : bool, default: False
     #: Enable verbose output. Note that this setting takes advantage
     #: of a per-process runtime setting in libsvm that, if enabled,
@@ -181,50 +154,6 @@ class SVC(SupervisedLearningTechnique):
                 "Enable verbose output. Note that this setting takes advantage "
                 "of a per-process runtime setting in libsvm that, if enabled, "
                 "may not work properly in a multithreaded context."
-            )
-        ),
-    )
-
-    # (skl) decision_function_shape : ‘ovo’, ‘ovr’, default=’ovr’
-    #: Whether to return a one-vs-rest (‘ovr’) decision function of
-    #: shape (n_samples, n_classes) as all other classifiers, or the
-    #: original one-vs-one (‘ovo’) decision function of libsvm which
-    #: has shape (n_samples, n_classes * (n_classes - 1) / 2).
-    decision_function_shape = models.CharField(
-        _("Decision Function Shape"),
-        choices=(("ovo", "One-VS-One"), ("ovr", "One-VS-Rest")),
-        default="ovr",
-        max_length=10,
-        blank=True,
-        null=True,
-        help_text=(
-            _(
-                "Whether to return a one-vs-rest (‘ovr’) decision function of "
-                "shape (n_samples, n_classes) as all other classifiers, or the "
-                "original one-vs-one (‘ovo’) decision function of libsvm which "
-                "has shape (n_samples, n_classes * (n_classes - 1) / 2)."
-            )
-        ),
-    )
-
-    # (skl) random_state : int, RandomState instance or None,
-    #                      optional (default=None)
-    #: The seed of the pseudo random number generator to use when
-    #: shuffling the data. If int, random_state is the seed used by the
-    #: random number generator; If RandomState instance, random_state
-    #: is the random number generator; If None, the random number
-    #: generator is the RandomState instance used by np.random.
-    random_state = models.IntegerField(
-        _("Random Seed"),
-        blank=True,
-        null=True,
-        help_text=(
-            _(
-                "The seed of the pseudo random number generator to use when "
-                "shuffling the data. If int, random_state is the seed used by the "
-                "random number generator; If RandomState instance, random_state "
-                "is the random number generator; If None, the random number "
-                "generator is the RandomState instance used by np.random."
             )
         ),
     )
@@ -252,14 +181,14 @@ class SVC(SupervisedLearningTechnique):
     )
 
     class Meta:
-        verbose_name = _("Support Vector Machine - Classification")
-        verbose_name_plural = _("Support Vector Machines - Classification")
+        verbose_name = _("Support Vector Machine - Outlier Detection")
+        verbose_name_plural = _("Support Vector Machines - Outlier Detection")
         app_label = "supervised_learning"
 
     def __init__(self, *args, **kwargs):
         if not args:
             kwargs["sl_type"] = self.SL_TYPE_CLASSIFICATION
-        super(SVC, self).__init__(*args, **kwargs)
+        super(OneClassSVC, self).__init__(*args, **kwargs)
 
     def __str__(self):
         return "[SVM|C] {0}".format(self.name)
@@ -271,21 +200,17 @@ class SVC(SupervisedLearningTechnique):
         if not max_iters:
             max_iters = -1
         #
-        classifier = svm.SVC(
-            C=self.penalty_parameter,
+        classifier = svm.OneClassSVM(
             kernel=self.kernel,
             degree=self.kernel_poly_degree,
             gamma=gamma,
             coef0=self.kernel_independent_term,
+            nu=self.nu,
             shrinking=self.use_shrinking,
-            probability=self.estimate_probability,
             tol=float(self.tolerance),
             cache_size=self.cache_size,
-            class_weight=self.class_weight,
             verbose=self.verbose,
             max_iter=max_iters,
-            decision_function_shape=self.decision_function_shape,
-            random_state=self.random_state,
         )
         pipe = make_pipeline(StandardScaler(), classifier)
         return pipe
@@ -312,16 +237,17 @@ class SVC(SupervisedLearningTechnique):
         conf = self.get_engine_object().get_params()
         conf.pop("steps")
         conf.pop("standardscaler")
-        conf.pop("svc")
+        conf.pop("oneclasssvm")
         return conf
 
     def get_inference_scores(self):
-        scores = super().get_inference_scores()
-        data = self.get_data()
-        labels = self.get_targets()
-        eo = self.get_engine_object()
-        scores["ldra"] = float(eo.score(data, labels))
-        return scores
+        # scores = super().get_inference_scores()
+        # data = self.get_data()
+        # labels = self.get_targets()
+        # eo = self.get_engine_object()
+        # scores["ldra"] = float(eo.score(data, labels))
+        # return scores
+        return []
 
     def get_cross_validation_scores(self):
         metrics = self._get_cv_metrics()

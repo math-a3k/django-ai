@@ -37,8 +37,9 @@ def populate_userinfos(apps, schema_editor):
     # Create the objects in the Model
     uis = []
     for i in range(0, size):
-        uis.append(UserInfo2(avg_time_pages_b=avg_time_pages_b[i],
-                             avg2=avg2[i]))
+        uis.append(
+            UserInfo2(avg_time_pages_b=avg_time_pages_b[i], avg2=avg2[i])
+        )
     UserInfo2.objects.bulk_create(uis)
 
 
@@ -50,12 +51,10 @@ def unpopuplate_userinfos(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ult_test_models', '0001_initial'),
+        ("ult_test_models", "0001_initial"),
     ]
 
     operations = [
-        migrations.RunPython(populate_userinfos,
-                             unpopuplate_userinfos),
+        migrations.RunPython(populate_userinfos, unpopuplate_userinfos),
     ]

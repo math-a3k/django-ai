@@ -22,8 +22,9 @@ def populate_userinfos(apps, schema_editor):
     avg1[-3] = None
     avg1[-1] = None
     # Cluster 2
-    cluster_2 = [random.sample([0, 1, 2], counts=[1, 5, 1], k=1)[0]
-                 for r in range(size)]
+    cluster_2 = [
+        random.sample([0, 1, 2], counts=[1, 5, 1], k=1)[0] for r in range(size)
+    ]
     cluster_2[-2] = None
     cluster_2[-1] = None
     # Boolean Field is ~ 50% 0 / 50% 1
@@ -34,8 +35,15 @@ def populate_userinfos(apps, schema_editor):
     # Create the objects in the Model
     uis = []
     for i in range(0, size):
-        uis.append(UserInfo(age=age[i], sex=sex[i], avg1=avg1[i],
-                            cluster_2=cluster_2[i], bool_field=bool_field[i]))
+        uis.append(
+            UserInfo(
+                age=age[i],
+                sex=sex[i],
+                avg1=avg1[i],
+                cluster_2=cluster_2[i],
+                bool_field=bool_field[i],
+            )
+        )
     UserInfo.objects.bulk_create(uis)
 
     UserInfo2 = apps.get_model("test_models", "UserInfo2")
@@ -53,8 +61,13 @@ def populate_userinfos(apps, schema_editor):
     # Create the objects in the Model
     uis = []
     for i in range(0, size):
-        uis.append(UserInfo2(avg_time_pages_b=avg_time_pages_b[i],
-                             avg2=avg2[i], cluster_2=cluster_2[i]))
+        uis.append(
+            UserInfo2(
+                avg_time_pages_b=avg_time_pages_b[i],
+                avg2=avg2[i],
+                cluster_2=cluster_2[i],
+            )
+        )
     UserInfo2.objects.bulk_create(uis)
 
 
@@ -66,12 +79,10 @@ def unpopuplate_userinfos(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('test_models', '0001_initial'),
+        ("test_models", "0001_initial"),
     ]
 
     operations = [
-        migrations.RunPython(populate_userinfos,
-                             unpopuplate_userinfos),
+        migrations.RunPython(populate_userinfos, unpopuplate_userinfos),
     ]

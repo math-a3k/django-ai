@@ -15,15 +15,18 @@ class SimpleDataImputer(DataImputer):
 
     def engine_object_init(self):
         field_imputer = {}
-        learning_fields_categorical = \
+        learning_fields_categorical = (
             self._get_data_learning_fields_categorical()
+        )
         for field in self.get_non_na_fields():
             if field in learning_fields_categorical:
-                field_imputer[field] = \
-                    self.engine_object_class(strategy='most_frequent')
+                field_imputer[field] = self.engine_object_class(
+                    strategy="most_frequent"
+                )
             else:
-                field_imputer[field] = \
-                    self.engine_object_class(strategy='median')
+                field_imputer[field] = self.engine_object_class(
+                    strategy="median"
+                )
         return field_imputer
 
     def get_inference_scores(self):
@@ -46,8 +49,10 @@ class SimpleDataImputer(DataImputer):
 
     def get_data(self):
         data_list = [
-            list(row) for row in self.technique._get_data_queryset()
-            .values_list(*self.get_supported_fields())
+            list(row)
+            for row in self.technique._get_data_queryset().values_list(
+                *self.get_supported_fields()
+            )
         ]
         transposed_data_dict = {
             field: [] for field in self.get_supported_fields()
@@ -82,8 +87,9 @@ class SimpleDataImputer(DataImputer):
     def get_non_na_fields(self):
         if not self._non_na_fields:
             self._non_na_fields = [
-                f for f in self.get_supported_fields() if f not in
-                self.technique._get_data_learning_fields_na()
+                f
+                for f in self.get_supported_fields()
+                if f not in self.technique._get_data_learning_fields_na()
             ]
         return self._non_na_fields
 

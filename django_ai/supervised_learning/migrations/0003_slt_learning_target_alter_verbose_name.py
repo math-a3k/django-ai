@@ -4,15 +4,20 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('supervised_learning', '0002_svr'),
+        ("supervised_learning", "0002_svr"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='supervisedlearningtechnique',
-            name='learning_target',
-            field=models.CharField(blank=True, help_text='Field in the Data Model containing the targets for Learning', max_length=50, null=True, verbose_name='Learning Targets'),
+            model_name="supervisedlearningtechnique",
+            name="learning_target",
+            field=models.CharField(
+                blank=True,
+                help_text="Field in the Data Model containing the targets for Learning",
+                max_length=50,
+                null=True,
+                verbose_name="Learning Targets",
+            ),
         ),
     ]

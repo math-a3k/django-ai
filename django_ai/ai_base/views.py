@@ -13,6 +13,7 @@ class RunActionView(UserPassesTestMixin, RedirectView):
     """
     Runs common Actions for Systems and Techniques
     """
+
     permanent = False
     #: Available Actions
     ACTIONS = {
@@ -39,7 +40,7 @@ class RunActionView(UserPassesTestMixin, RedirectView):
             "str": "REINITIALIZING RNG",
             "method": "action_reinitialize_rng",
             "kwargs": {},
-        }
+        },
     }
 
     def test_func(self):
@@ -59,28 +60,33 @@ class RunActionView(UserPassesTestMixin, RedirectView):
     def run_action(self, action, action_object=None):
         try:
             if action_object:
-                action_method = getattr(action_object, action['method'])
+                action_method = getattr(action_object, action["method"])
             else:
-                action_method = getattr(self, action['method'])
-            action_method(**action['kwargs'])
-            messages.success(self.request,
-                             "SUCCESS AT {}".format(action['str']))
+                action_method = getattr(self, action["method"])
+            action_method(**action["kwargs"])
+            messages.success(
+                self.request, "SUCCESS AT {}".format(action["str"])
+            )
         except Exception as e:
             msg = e.args[0]
             frm = inspect.trace()[-1]
             mod = inspect.getmodule(frm[0])
             modname = mod.__name__ if mod else frm[1]
-            messages.error(self.request,
-                           "ERROR WHILE {}: [{}] {}".format(
-                               action['str'], modname, str(msg)))
+            messages.error(
+                self.request,
+                "ERROR WHILE {}: [{}] {}".format(
+                    action["str"], modname, str(msg)
+                ),
+            )
 
     def get_redirect_url(self, *args, **kwargs):
-        if kwargs['action'] not in self.ACTIONS:
+        if kwargs["action"] not in self.ACTIONS:
             raise Http404("Action not Found")
-        if self.ACTIONS[kwargs['action']]["type"] == 'object':
-            action_object = self.get_ct_object(kwargs['content_type'],
-                                               kwargs['object_id'])
+        if self.ACTIONS[kwargs["action"]]["type"] == "object":
+            action_object = self.get_ct_object(
+                kwargs["content_type"], kwargs["object_id"]
+            )
         else:
             action_object = None
-        self.run_action(self.ACTIONS[kwargs['action']], action_object)
-        return self.request.META.get('HTTP_REFERER', '/')
+        self.run_action(self.ACTIONS[kwargs["action"]], action_object)
+        return self.request.META.get("HTTP_REFERER", "/")
