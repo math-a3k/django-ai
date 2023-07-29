@@ -280,16 +280,6 @@ class HGBTreeClassifier(SupervisedLearningTechnique):
 
     def get_engine_object_conf(self):
         conf = self.get_engine_object().get_params()
-        import ipdb
-
-        ipdb.set_trace()
-        conf.pop("steps")
-        conf.pop("histgradientboostingclassifier")
-        conf.pop("columntransformer")
-        conf.pop("columntransformer__transformers")
-        conf.pop("columntransformer__ordinalencoder")
-        conf.pop("columntransformer__ordinalencoder__dtype")
-        conf.pop("columntransformer__ordinalencoder__unknown_value")
         return conf
 
     def get_inference_scores(self):
