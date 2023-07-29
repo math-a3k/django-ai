@@ -21,11 +21,7 @@ class HGBTreeClassifier(SupervisedLearningTechnique):
     PREDICT_SCORE_TYPE = _("Probability")
     LEARNING_PAIR = "django_ai.supervised_learning.models.HGBTreeRegressor"
 
-    LOSS_CHOICES = (
-        ("auto", _("Automatic")),
-        ("binary_crossentropy", _("Binary Cross-Entropy")),
-        ("categorical_crossentropy", _("Categorical Cross-Entropy")),
-    )
+    LOSS_CHOICES = (("log_loss", _("Log Loss")),)
 
     EARLY_STOPPING_CHOICES = (
         ("auto", _("Automatic")),
@@ -36,7 +32,7 @@ class HGBTreeClassifier(SupervisedLearningTechnique):
     loss = models.CharField(
         _("Loss function"),
         choices=LOSS_CHOICES,
-        default="auto",
+        default="log_loss",
         blank=True,
         null=True,
         max_length=50,

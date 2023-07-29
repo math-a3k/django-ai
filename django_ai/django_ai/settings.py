@@ -141,7 +141,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 
 DJANGO_AI_METRICS = [
-    "sklearn.metrics.SCORERS",
+    "sklearn.metrics._scorer._SCORERS",
 ]
 
 DJANGO_AI_METRICS_FORMATS = [
