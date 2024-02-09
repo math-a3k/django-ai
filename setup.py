@@ -61,7 +61,7 @@ setup(
         "Django>=3.2",
         "django-picklefield>=3.0.1",
         "Pillow>=8.4.0",
-        "scikit-learn>=1.3",
+        "scikit-learn==1.3",
     ],
     license="LGPLv3",
     zip_safe=False,
